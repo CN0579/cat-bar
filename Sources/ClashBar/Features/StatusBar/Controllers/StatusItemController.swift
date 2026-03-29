@@ -122,6 +122,7 @@ final class StatusItemController: NSObject {
         self.placePanelRelativeToStatusButton(button, preserveHorizontalPosition: false)
         NSApp.activate(ignoringOtherApps: true)
         self.panel.makeKeyAndOrderFront(nil)
+        self.panel.makeFirstResponder(nil)
         self.placePanelRelativeToStatusButton(button, preserveHorizontalPosition: true)
         self.suppressPanelScrollIndicators()
         self.schedulePanelStabilizationPasses(for: button)
