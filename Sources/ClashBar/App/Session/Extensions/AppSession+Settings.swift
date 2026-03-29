@@ -114,6 +114,7 @@ extension AppSession {
     func scheduleProxyPortsAutoSaveIfNeeded() {
         guard !suppressSettingsPersistence else { return }
         guard settingsSyncingKey == nil else { return }
+        guard proxyPortFieldsDifferFromLastSync() else { return }
 
         proxyPortsAutoSaveTask?.cancel()
         proxyPortsAutoSaveTask = Task { [weak self] in
@@ -542,6 +543,15 @@ extension AppSession {
             settingsSavedMessage = nil
             return nil
         }
+    }
+
+    private func proxyPortFieldsDifferFromLastSync() -> Bool {
+        guard let synced = lastSyncedEditableSettings else { return true }
+        return settingsPort != synced.port
+            || settingsSocksPort != synced.socksPort
+            || settingsMixedPort != synced.mixedPort
+            || settingsRedirPort != synced.redirPort
+            || settingsTProxyPort != synced.tproxyPort
     }
 
     private func syncEditableFields<Value: Equatable>(
