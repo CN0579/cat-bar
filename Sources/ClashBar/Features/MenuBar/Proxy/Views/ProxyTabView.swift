@@ -104,14 +104,14 @@ extension MenuBarRootView {
         }
     }
 
-    var proxyTabBody: some View {
+    func proxyTabBody(isMeasuring: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: T.space6) {
             self.trafficOverview
             self.proxyQuickRows
             if !appSession.sortedProxyProviderNames.isEmpty {
-                proxyProvidersSection
+                self.proxyProvidersSection(isMeasuring: isMeasuring)
             }
-            proxyGroupsSection
+            self.proxyGroupsSection(isMeasuring: isMeasuring)
         }
         .fixedSize(horizontal: false, vertical: true)
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension MenuBarRootView {
-    var rulesTabBody: some View {
+    func rulesTabBody(isMeasuring: Bool = false) -> some View {
         let visibleRules = self.rulesViewModel.visibleRules
         let providerLookup = self.rulesViewModel.providerLookup
 
@@ -57,11 +57,12 @@ extension MenuBarRootView {
                     .padding(.vertical, MenuBarLayoutTokens.space8)
                     .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
             } else {
+                let displayRules = isMeasuring ? Array(visibleRules.prefix(25)) : visibleRules
                 VStack(spacing: 0) {
-                    ForEach(Array(visibleRules.enumerated()), id: \.element.rowID) { index, rule in
+                    ForEach(Array(displayRules.enumerated()), id: \.element.rowID) { index, rule in
                         self.rulesRow(rule: rule, index: index, providerLookup: providerLookup)
 
-                        if index < visibleRules.count - 1 {
+                        if index < displayRules.count - 1 {
                             Rectangle()
                                 .fill(nativeSeparator)
                                 .frame(height: MenuBarLayoutTokens.stroke)

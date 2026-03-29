@@ -23,7 +23,7 @@ extension MenuBarRootView {
 
     private static var textWidthCache: [String: CGFloat] = [:]
 
-    var connectionsTabBody: some View {
+    func connectionsTabBody(isMeasuring: Bool = false) -> some View {
         let connections = self.connectionsViewModel.visibleConnections
 
         return VStack(alignment: .leading, spacing: MenuBarLayoutTokens.space6) {
@@ -32,8 +32,9 @@ extension MenuBarRootView {
             if connections.isEmpty {
                 emptyCard(tr("ui.empty.connections"))
             } else {
+                let displayConnections = isMeasuring ? Array(connections.prefix(25)) : connections
                 MeasurementAwareVStack(alignment: .leading, spacing: 0) {
-                    SeparatedForEach(data: connections, id: \.id, separator: nativeSeparator) { conn in
+                    SeparatedForEach(data: displayConnections, id: \.id, separator: nativeSeparator) { conn in
                         self.connectionRow(conn)
                     }
                 }

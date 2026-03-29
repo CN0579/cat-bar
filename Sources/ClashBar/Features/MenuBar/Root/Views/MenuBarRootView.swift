@@ -240,23 +240,23 @@ struct MenuBarRootView: View {
     }
 
     @ViewBuilder
-    func tabBody(for tab: RootTab) -> some View {
+    func tabBody(for tab: RootTab, isMeasuring: Bool = false) -> some View {
         switch tab {
         case .proxy:
-            proxyTabBody
+            self.proxyTabBody(isMeasuring: isMeasuring)
         case .rules:
-            rulesTabBody
+            self.rulesTabBody(isMeasuring: isMeasuring)
         case .connections:
-            connectionsTabBody
+            self.connectionsTabBody(isMeasuring: isMeasuring)
         case .logs:
-            logsTabBody
+            self.logsTabBody(isMeasuring: isMeasuring)
         case .system:
-            systemTabBody
+            self.systemTabBody // doesn't have large lists
         }
     }
 
-    func tabContent(for tab: RootTab) -> some View {
-        self.tabBody(for: tab)
+    func tabContent(for tab: RootTab, isMeasuring: Bool = false) -> some View {
+        self.tabBody(for: tab, isMeasuring: isMeasuring)
             .padding(.top, MenuBarLayoutTokens.space2)
             .frame(width: self.contentWidth, alignment: .topLeading)
             .id(tab)
@@ -270,7 +270,7 @@ struct MenuBarRootView: View {
             modeAndTabSection
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            self.tabContent(for: self.rootViewModel.currentTab)
+            self.tabContent(for: self.rootViewModel.currentTab, isMeasuring: true)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
 
             footerBar

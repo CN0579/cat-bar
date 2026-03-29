@@ -4,7 +4,7 @@ import SwiftUI
 private typealias T = MenuBarLayoutTokens
 
 extension MenuBarRootView {
-    var proxyProvidersSection: some View {
+    func proxyProvidersSection(isMeasuring: Bool = false) -> some View {
         let providers = appSession.sortedProxyProviderNames
 
         return VStack(alignment: .leading, spacing: T.space6) {
@@ -16,8 +16,9 @@ extension MenuBarRootView {
             if providers.isEmpty {
                 emptyCard(tr("ui.empty.proxy_providers"))
             } else {
+                let displayProviders = isMeasuring ? Array(providers.prefix(25)) : providers
                 VStack(spacing: T.space2) {
-                    ForEach(providers, id: \.self) { name in
+                    ForEach(displayProviders, id: \.self) { name in
                         self.proxyProviderRow(name: name, detail: appSession.proxyProvidersDetail[name])
                     }
                 }
@@ -179,7 +180,7 @@ extension MenuBarRootView {
             action: action)
     }
 
-    var proxyGroupsSection: some View {
+    func proxyGroupsSection(isMeasuring: Bool = false) -> some View {
         // Use @State filteredProxyGroups which is updated via .onChange — avoids filtering on every render
         let groups = rootViewModel.filteredProxyGroups
 
@@ -236,8 +237,9 @@ extension MenuBarRootView {
             if groups.isEmpty {
                 emptyCard(tr("ui.empty.proxy_groups"))
             } else {
+                let displayGroups = isMeasuring ? Array(groups.prefix(25)) : groups
                 VStack(spacing: T.space2) {
-                    ForEach(groups, id: \.name) { group in
+                    ForEach(displayGroups, id: \.name) { group in
                         self.proxyGroupInlineRow(group)
                     }
                 }
