@@ -250,14 +250,17 @@ extension AppSession {
 
         memory = MemorySnapshot(inuse: 0)
 
-        // Keep proxy-page presentation data warm so reopening the panel does not collapse first.
         providerProxyCount = 0
         providerRuleCount = 0
         rulesCount = 0
         providerUpdating.removeAll(keepingCapacity: false)
+
+        let hadRulesData = !ruleProviders.isEmpty || !ruleItems.isEmpty
         ruleProviders.removeAll(keepingCapacity: false)
         ruleItems.removeAll(keepingCapacity: false)
-        noteRulesPresentationChanged()
+        if hadRulesData {
+            noteRulesPresentationChanged()
+        }
     }
 
     func appendTrafficHistory(up: Int64, down: Int64) {

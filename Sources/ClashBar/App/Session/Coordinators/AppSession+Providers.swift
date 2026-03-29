@@ -265,14 +265,38 @@ extension AppSession {
                     incoming: detail)
             }
 
-            self.proxyProvidersDetail = nextProxyProviders
-            self.ruleProviders = ruleProviders.providers
-            self.ruleItems = rules.rules
-            self.noteRulesPresentationChanged()
+            if nextProxyProviders != self.proxyProvidersDetail {
+                self.proxyProvidersDetail = nextProxyProviders
+            }
 
-            self.providerProxyCount = filteredProxyProviders.count
-            self.providerRuleCount = ruleProviders.providers.count
-            self.rulesCount = rules.totalCount
+            let incomingRuleProviders = ruleProviders.providers
+            let incomingRuleItems = rules.rules
+
+            var rulesPresentationChanged = false
+            if incomingRuleProviders != self.ruleProviders {
+                self.ruleProviders = incomingRuleProviders
+                rulesPresentationChanged = true
+            }
+            if incomingRuleItems != self.ruleItems {
+                self.ruleItems = incomingRuleItems
+                rulesPresentationChanged = true
+            }
+            if rulesPresentationChanged {
+                self.noteRulesPresentationChanged()
+            }
+
+            let nextProxyCount = filteredProxyProviders.count
+            let nextRuleCount = ruleProviders.providers.count
+            let nextRulesCount = rules.totalCount
+            if self.providerProxyCount != nextProxyCount {
+                self.providerProxyCount = nextProxyCount
+            }
+            if self.providerRuleCount != nextRuleCount {
+                self.providerRuleCount = nextRuleCount
+            }
+            if self.rulesCount != nextRulesCount {
+                self.rulesCount = nextRulesCount
+            }
 
             let currentNames = Set(filteredProxyProviders.keys)
             self.providerUpdating = self.providerUpdating.intersection(currentNames)
