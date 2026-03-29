@@ -108,11 +108,9 @@ extension MenuBarRootView {
         VStack(alignment: .leading, spacing: T.space6) {
             self.trafficOverview
             self.proxyQuickRows
-            if !appSession.sortedProxyProviderNames.isEmpty {
-                self.proxyProvidersSection(isMeasuring: isMeasuring)
-            }
             self.proxyGroupsSection(isMeasuring: isMeasuring)
         }
+
         .fixedSize(horizontal: false, vertical: true)
     }
 

@@ -76,7 +76,6 @@ struct MenuBarRootView: View {
     @State var showRemoteMachineManager = false
     @State var copiedProxyCommandTarget: ProxyCommandCopyTarget?
     @State var proxyCommandCopyResetTask: Task<Void, Never>?
-    @State var hoveredProviderName: String?
     @State var hoveredRuleID: UUID?
     @State var hoveredMode: CoreMode?
     @State var hoveredTab: RootTab?
