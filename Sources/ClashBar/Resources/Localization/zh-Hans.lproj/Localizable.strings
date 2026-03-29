@@ -65,6 +65,7 @@
 "ui.machine.field.host" = "主机地址";
 "ui.machine.field.port" = "端口";
 "ui.machine.field.secret" = "密钥";
+"ui.machine.field.web_panel" = "网页面板";
 "ui.machine.return_local" = "返回本地内核";
 "ui.machine.active" = "当前";
 "ui.machine.type.local" = "本地来源";

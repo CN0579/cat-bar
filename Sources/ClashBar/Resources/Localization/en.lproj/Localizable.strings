@@ -65,6 +65,7 @@
 "ui.machine.field.host" = "Host";
 "ui.machine.field.port" = "Port";
 "ui.machine.field.secret" = "Secret";
+"ui.machine.field.web_panel" = "Web Panel";
 "ui.machine.return_local" = "Return to Local Core";
 "ui.machine.active" = "Active";
 "ui.machine.type.local" = "Local Source";

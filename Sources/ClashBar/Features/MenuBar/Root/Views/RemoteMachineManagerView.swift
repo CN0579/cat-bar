@@ -628,6 +628,7 @@ private struct RemoteMachineEditorCard: View {
     @State private var port: String = "9090"
     @State private var secret: String = ""
     @State private var useHTTPS = false
+    @State private var webPanelEnabled = false
     @FocusState private var focusedField: Field?
 
     private var language: AppLanguage {
@@ -686,6 +687,8 @@ private struct RemoteMachineEditorCard: View {
                 self.portProtocolRow
                 self.separator
                 self.secretRow
+                self.separator
+                self.webPanelRow
             }
             .background(self.formSurface)
 
@@ -705,6 +708,7 @@ private struct RemoteMachineEditorCard: View {
                 self.port = "\(machine.port)"
                 self.secret = machine.secret ?? ""
                 self.useHTTPS = machine.useHTTPS
+                self.webPanelEnabled = machine.webPanelEnabled ?? false
             } else {
                 self.focusedField = .name
             }
@@ -767,6 +771,23 @@ private struct RemoteMachineEditorCard: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.app(size: 13, weight: .regular))
                 .focused(self.$focusedField, equals: .secret)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    private var webPanelRow: some View {
+        HStack(spacing: 10) {
+            Text(self.tr("ui.machine.field.web_panel"))
+                .font(.app(size: 12, weight: .semibold))
+                .foregroundStyle(self.secondaryTextColor)
+                .frame(width: 56, alignment: .leading)
+            
+            Toggle("", isOn: self.$webPanelEnabled)
+                .toggleStyle(.switch)
+                .controlSize(.small)
+            
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -839,6 +860,7 @@ private struct RemoteMachineEditorCard: View {
             updated.port = portValue
             updated.secret = trimmedSecret.isEmpty ? nil : trimmedSecret
             updated.useHTTPS = self.useHTTPS
+            updated.webPanelEnabled = self.webPanelEnabled
             self.store.updateMachine(updated)
         } else {
             self.store.addMachine(
@@ -847,7 +869,8 @@ private struct RemoteMachineEditorCard: View {
                     host: trimmedHost,
                     port: portValue,
                     secret: trimmedSecret.isEmpty ? nil : trimmedSecret,
-                    useHTTPS: self.useHTTPS))
+                    useHTTPS: self.useHTTPS,
+                    webPanelEnabled: self.webPanelEnabled))
         }
 
         self.onSave()

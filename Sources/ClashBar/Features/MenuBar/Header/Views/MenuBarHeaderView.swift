@@ -46,6 +46,7 @@ extension MenuBarRootView {
                         if appSession.isExternalControllerWildcardIPv4 {
                             self.headerControllerWarningIcon
                         }
+                        self.headerWebPanelIcon
                     }
                 }
             }
@@ -188,6 +189,32 @@ extension MenuBarRootView {
             .foregroundStyle(nativeWarning)
             .help("external-controller is 0.0.0.0 and can be accessed from your LAN.")
             .accessibilityLabel("Warning: external-controller is bound to 0.0.0.0")
+    }
+
+    @ViewBuilder
+    var headerWebPanelIcon: some View {
+        if case let .remote(machine) = remoteMachineStore.activeTarget,
+           let webPanelURL = machine.webPanelURL
+        {
+            Button {
+                #if os(macOS)
+                NSWorkspace.shared.open(webPanelURL)
+                #endif
+            } label: {
+                Image(systemName: "safari")
+                    .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(nativeTertiaryLabel)
+            }
+            .buttonStyle(.plain)
+            .onHover { isHovered in
+                if isHovered {
+                    NSCursor.pointingHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .help(tr("ui.action.open_web_ui"))
+        }
     }
 
     func headerPopoverSection(_ title: String) -> some View {
