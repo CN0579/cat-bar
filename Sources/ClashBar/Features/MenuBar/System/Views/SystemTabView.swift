@@ -118,21 +118,25 @@ extension MenuBarRootView {
     }
 
     func settingsPortFieldRow(_ title: String, symbol: String, text: Binding<String>) -> some View {
-        HStack(spacing: T.space8) {
+        let editableText = Binding(
+            get: { text.wrappedValue },
+            set: { newValue in
+                text.wrappedValue = newValue
+                appSession.scheduleProxyPortsAutoSaveIfNeeded()
+            })
+
+        return HStack(spacing: T.space8) {
             self.settingsRowLabel(symbol: symbol, title: title)
                 .layoutPriority(1)
 
             Spacer(minLength: 0)
 
-            TextField(tr("ui.placeholder.port"), text: text)
+            TextField(tr("ui.placeholder.port"), text: editableText)
                 .textFieldStyle(.roundedBorder)
                 .font(.app(size: T.FontSize.body, weight: .regular))
                 .foregroundStyle(nativePrimaryLabel)
                 .multilineTextAlignment(.trailing)
                 .frame(width: self.settingsPortFieldWidth, alignment: .trailing)
-                .onChange(of: text.wrappedValue) { _ in
-                    appSession.scheduleProxyPortsAutoSaveIfNeeded()
-                }
                 .onSubmit {
                     Task { await appSession.applyProxyPorts(autoSaved: true) }
                 }
