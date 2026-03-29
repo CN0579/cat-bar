@@ -167,6 +167,28 @@ extension AppSession {
         }
     }
 
+    func testSingleNodeLatencyWithLoading(
+        nodeName: String,
+        groupName: String? = nil,
+        testURL: String? = nil,
+        timeout: Int? = nil) async
+    {
+        nodeLatencyLoading.insert(nodeName)
+        defer { nodeLatencyLoading.remove(nodeName) }
+        
+        let delay = await self.testSingleNodeLatency(
+            nodeName: nodeName,
+            testURL: testURL,
+            timeout: timeout)
+            
+        if let groupName = groupName, let finalDelay = delay {
+            if self.groupLatencies[groupName] == nil {
+                self.groupLatencies[groupName] = [:]
+            }
+            self.groupLatencies[groupName]?[nodeName] = finalDelay
+        }
+    }
+
     func refreshAllGroupLatencies(includeHiddenGroups: Bool = false) async {
         let groups = includeHiddenGroups
             ? proxyGroups

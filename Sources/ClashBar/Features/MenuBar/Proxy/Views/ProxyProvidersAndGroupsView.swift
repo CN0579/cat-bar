@@ -11,7 +11,7 @@ extension MenuBarRootView {
 
         var symbol: String {
             switch self {
-            case .healthcheck: "gauge.with.dots.needle.50percent"
+            case .healthcheck: "gauge"
             case .refresh: "arrow.triangle.2.circlepath"
             }
         }
@@ -184,6 +184,14 @@ extension MenuBarRootView {
                 if let iconURL {
                     self.proxyGroupLeadingIcon(iconURL)
                 }
+            } trailing: {
+                self.providerActionButton(
+                    .healthcheck,
+                    isLoading: appSession.groupLatencyLoading.contains(group.name))
+                {
+                    await appSession.refreshGroupLatency(group)
+                }
+                .frame(width: 18, alignment: .center)
             }
 
             let nodes = sortGroupNodesByLatency
@@ -196,12 +204,16 @@ extension MenuBarRootView {
                     delayText: appSession.delayText(group: group.name, node: node),
                     delayValue: appSession.delayValue(group: group.name, node: node),
                     delayColor: latencyColor(appSession.delayValue(group: group.name, node: node)),
-                    isTesting: false,
-                    selected: node == group.now)
-                {
-                    dismiss()
-                    Task { await appSession.switchProxy(group: group.name, target: node) }
-                }
+                    isTesting: appSession.nodeLatencyLoading.contains(node) || appSession.groupLatencyLoading.contains(group.name),
+                    selected: node == group.now,
+                    action: {
+                        dismiss()
+                        Task { await appSession.switchProxy(group: group.name, target: node) }
+                    },
+                    testAction: {
+                        Task { await appSession.testSingleNodeLatencyWithLoading(nodeName: node, groupName: group.name) }
+                    }
+                )
             }
         }
     }
@@ -289,7 +301,8 @@ extension MenuBarRootView {
     func popoverHeader(
         name: String,
         count: Int,
-        @ViewBuilder leading: () -> some View = { EmptyView() }) -> some View
+        @ViewBuilder leading: () -> some View = { EmptyView() },
+        @ViewBuilder trailing: () -> some View = { EmptyView() }) -> some View
     {
         VStack(spacing: 0) {
             HStack(spacing: T.space1) {
@@ -308,6 +321,8 @@ extension MenuBarRootView {
                     .padding(.horizontal, T.space4)
                     .padding(.vertical, T.space1)
                     .background(nativeBadgeCapsule())
+                
+                trailing()
             }
             .padding(.horizontal, T.space4)
             .padding(.bottom, T.space2)
@@ -349,6 +364,7 @@ private struct ProxyGroupPopoverNodeItem: View {
     let isTesting: Bool
     let selected: Bool
     let action: () -> Void
+    var testAction: (() -> Void)? = nil
 
     @State private var isHovered = false
 
@@ -386,6 +402,14 @@ private struct ProxyGroupPopoverNodeItem: View {
                 Group {
                     if self.isTesting {
                         LatencyLoadingIndicator()
+                    } else if self.isHovered, let testAction = self.testAction {
+                        Button(action: testAction) {
+                            Image(systemName: "gauge")
+                                .font(.app(size: T.FontSize.caption, weight: .semibold))
+                                .foregroundStyle(Color(nsColor: .systemTeal).opacity(T.Opacity.solid))
+                        }
+                        .buttonStyle(.plain)
+                        .frame(height: 14)
                     } else {
                         self.delayMetricView
                     }
