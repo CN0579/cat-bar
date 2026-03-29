@@ -153,6 +153,8 @@ struct MenuBarRootView: View {
                 }
             }
 
+            Spacer(minLength: 0)
+
             footerBar
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .reportHeight { updateSectionHeight($0, target: .footer) }
