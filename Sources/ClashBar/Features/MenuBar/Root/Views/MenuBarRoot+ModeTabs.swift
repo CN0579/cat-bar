@@ -179,9 +179,18 @@ extension MenuBarRootView {
     var machineSwitcherSubtitle: String {
         switch remoteMachineStore.activeTarget {
         case .local:
-            appSession.externalControllerDisplay
-        case let .remote(machine):
-            machine.displayAddress
+            ""
+        case .remote:
+            switch self.machineSwitcherStatus {
+            case .unknown, nil:
+                tr("ui.machine.status_unknown")
+            case .checking:
+                tr("ui.machine.status_checking")
+            case .connected:
+                tr("ui.machine.status_connected")
+            case let .failed(reason):
+                reason.isEmpty ? tr("ui.machine.status_unreachable") : reason
+            }
         }
     }
 

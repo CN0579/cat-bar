@@ -194,21 +194,11 @@ extension MenuBarRootView {
     var proxyQuickRows: some View {
         let localTargetDisplay = self.appSession.localProxyCommandTargetDisplay()
         let managedTargetDisplay = self.appSession.managedEndpointProxyCommandTargetDisplay()
+        let showsLocalOnlyItems = !appSession.isRemoteTarget
         let showManagedTargetAction = localTargetDisplay != managedTargetDisplay
 
         return VStack(spacing: 0) {
-            if appSession.isRemoteTarget {
-                self.quickRowContent(
-                    title: tr("ui.quick.switch_config"),
-                    symbol: "doc.text",
-                    foreground: nativePurple)
-                {
-                    Text(tr("ui.machine.remote_readonly"))
-                        .font(.app(size: T.FontSize.caption, weight: .regular))
-                        .lineLimit(1)
-                        .foregroundStyle(nativeTertiaryLabel)
-                }
-            } else {
+            if showsLocalOnlyItems {
                 AttachedPopoverMenu { _ in
                     self.quickRowContent(
                         title: tr("ui.quick.switch_config"),
@@ -232,7 +222,9 @@ extension MenuBarRootView {
                 .buttonStyle(.plain)
             }
 
-            self.systemProxyQuickToggleRow
+            if showsLocalOnlyItems {
+                self.systemProxyQuickToggleRow
+            }
 
             self.quickToggleRow(
                 title: tr("ui.quick.tun_mode"),
@@ -252,16 +244,18 @@ extension MenuBarRootView {
                 trailingFitsContent: true)
             {
                 HStack(spacing: 2) {
-                    self.proxyCommandActionButton(
-                        title: self.appSession.localProxyCommandHostDisplay(),
-                        target: .local,
-                        helpTitle: tr("ui.quick.copy_terminal"),
-                        helpDetail: localTargetDisplay)
-                    {
-                        self.appSession.copyLocalProxyCommand()
+                    if showsLocalOnlyItems {
+                        self.proxyCommandActionButton(
+                            title: self.appSession.localProxyCommandHostDisplay(),
+                            target: .local,
+                            helpTitle: tr("ui.quick.copy_terminal"),
+                            helpDetail: localTargetDisplay)
+                        {
+                            self.appSession.copyLocalProxyCommand()
+                        }
                     }
 
-                    if showManagedTargetAction {
+                    if showManagedTargetAction || !showsLocalOnlyItems {
                         self.proxyCommandActionButton(
                             title: self.appSession.managedEndpointProxyCommandHostDisplay(),
                             target: .currentEndpoint,
@@ -364,9 +358,7 @@ extension MenuBarRootView {
     }
 
     var systemProxyRowTitle: String {
-        appSession.isRemoteTarget
-            ? "\(tr("ui.quick.system_proxy")) (\(tr("ui.machine.local_label")))"
-            : tr("ui.quick.system_proxy")
+        tr("ui.quick.system_proxy")
     }
 
     var systemProxyRowDetailColor: Color {

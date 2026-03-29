@@ -53,29 +53,31 @@ extension MenuBarRootView {
             Spacer(minLength: MenuBarLayoutTokens.space6)
 
             HStack(spacing: MenuBarLayoutTokens.space6) {
-                self.compactTopIcon(
-                    "arrow.clockwise",
-                    label: appSession.primaryCoreActionLabel,
-                    toneOverride: nativeInfo)
-                {
-                    await appSession.performPrimaryCoreAction()
-                }
-                .disabled(appSession.isRemoteTarget || !appSession.isPrimaryCoreActionEnabled)
-                .opacity((appSession.isRemoteTarget || !appSession.isPrimaryCoreActionEnabled) ? 1 * 0.6 : 1)
-
-                self.compactTopIcon(
-                    appSession.isRuntimeRunning ? "stop.circle" : "play.circle",
-                    label: appSession.isRuntimeRunning ? tr("ui.action.stop") : tr("app.primary.start"),
-                    toneOverride: appSession.isRuntimeRunning ? nativeWarning : nativePositive)
-                {
-                    if appSession.isRuntimeRunning {
-                        await appSession.stopCore()
-                    } else {
-                        await appSession.startCore(trigger: .manual)
+                if !appSession.isRemoteTarget {
+                    self.compactTopIcon(
+                        "arrow.clockwise",
+                        label: appSession.primaryCoreActionLabel,
+                        toneOverride: nativeInfo)
+                    {
+                        await appSession.performPrimaryCoreAction()
                     }
+                    .disabled(!appSession.isPrimaryCoreActionEnabled)
+                    .opacity(appSession.isPrimaryCoreActionEnabled ? 1 : 0.6)
+
+                    self.compactTopIcon(
+                        appSession.isRuntimeRunning ? "stop.circle" : "play.circle",
+                        label: appSession.isRuntimeRunning ? tr("ui.action.stop") : tr("app.primary.start"),
+                        toneOverride: appSession.isRuntimeRunning ? nativeWarning : nativePositive)
+                    {
+                        if appSession.isRuntimeRunning {
+                            await appSession.stopCore()
+                        } else {
+                            await appSession.startCore(trigger: .manual)
+                        }
+                    }
+                    .disabled(appSession.isCoreActionProcessing)
+                    .opacity(appSession.isCoreActionProcessing ? 0.6 : 1)
                 }
-                .disabled(appSession.isRemoteTarget || appSession.isCoreActionProcessing)
-                .opacity((appSession.isRemoteTarget || appSession.isCoreActionProcessing) ? 0.6 : 1)
 
                 self.compactTopIcon("power", label: tr("ui.action.quit"), warning: true) {
                     await appSession.quitApp()
@@ -128,10 +130,14 @@ extension MenuBarRootView {
                 .contentShape(Rectangle())
             },
             content: { dismiss in
-                self.headerPopoverSection(self.tr("ui.machine.local_label"))
+                self.headerPopoverSection(self.tr("ui.machine.sources"))
                 AttachedPopoverMenuItem(
-                    title: tr("ui.machine.return_local"),
-                    selected: remoteMachineStore.activeTarget.isLocal)
+                    title: tr("ui.machine.local"),
+                    subtitle: nil,
+                    leadingSymbol: "desktopcomputer",
+                    leadingTint: self.localSourceTint,
+                    selected: remoteMachineStore.activeTarget.isLocal,
+                    selectionIndicatorPlacement: .trailing)
                 {
                     dismiss()
                     guard !remoteMachineStore.activeTarget.isLocal else { return }
@@ -142,33 +148,33 @@ extension MenuBarRootView {
                     }
                 }
 
-                if !remoteMachineStore.machines.isEmpty {
-                    AttachedPopoverMenuDivider()
-                    self.headerPopoverSection(self.tr("ui.machine.manage"))
-                }
-
                 ForEach(remoteMachineStore.machines) { machine in
                     let status = remoteMachineStore.statusFor(machine.id)
+                    let isActive = remoteMachineStore.activeTargetID == machine.id
                     AttachedPopoverMenuItem(
                         title: machine.name,
-                        leadingSymbol: nil,
+                        subtitle: nil,
+                        leadingSymbol: "network",
                         leadingTint: self.machineStatusTint(status),
-                        showLeadingDot: true,
-                        selected: remoteMachineStore.activeTargetID == machine.id)
+                        selected: isActive,
+                        selectionIndicatorPlacement: .trailing)
                     {
                         dismiss()
-                        guard remoteMachineStore.activeTargetID != machine.id else { return }
+                        guard status.isConnected, !isActive else { return }
                         isSwitchingMachine = true
                         Task { @MainActor in
                             await appSession.switchToMachineTarget(.remote(machine))
                             isSwitchingMachine = false
                         }
                     }
-                    .disabled(!status.isConnected)
+                    .disabled(!status.isConnected && !isActive)
                 }
 
                 AttachedPopoverMenuDivider()
-                AttachedPopoverMenuItem(title: tr("ui.machine.manage")) {
+                AttachedPopoverMenuItem(
+                    title: tr("ui.machine.manage"),
+                    leadingSymbol: "slider.horizontal.3")
+                {
                     dismiss()
                     showRemoteMachineManager = true
                 }
@@ -196,7 +202,12 @@ extension MenuBarRootView {
     }
 
     var headerConnectionDisplayText: String {
-        appSession.externalControllerDisplay
+        switch remoteMachineStore.activeTarget {
+        case .local:
+            tr("ui.machine.local")
+        case let .remote(machine):
+            machine.name
+        }
     }
 
     var headerConnectionStatusTint: Color {
@@ -204,6 +215,21 @@ extension MenuBarRootView {
             return self.machineStatusTint(status)
         }
         return self.statusColor
+    }
+
+    var localSourceTint: Color {
+        switch self.appSession.localRuntimeVisualStatus {
+        case .runningHealthy:
+            nativePositive.opacity(MenuBarLayoutTokens.Opacity.solid)
+        case .runningDegraded:
+            nativeWarning.opacity(MenuBarLayoutTokens.Opacity.solid)
+        case .starting:
+            nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid)
+        case .failed:
+            nativeCritical.opacity(MenuBarLayoutTokens.Opacity.solid)
+        case .stopped:
+            nativeSecondaryLabel
+        }
     }
 
     func compactTopIcon(

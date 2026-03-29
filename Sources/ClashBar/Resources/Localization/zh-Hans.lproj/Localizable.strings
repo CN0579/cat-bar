@@ -55,11 +55,12 @@
 "ui.mode.direct" = "直连";
 
 "ui.machine.local" = "本地";
-"ui.machine.manage" = "管理远程机器";
-"ui.machine.add" = "添加机器";
-"ui.machine.edit" = "编辑机器";
+"ui.machine.sources" = "来源";
+"ui.machine.manage" = "管理来源";
+"ui.machine.add" = "添加来源";
+"ui.machine.edit" = "编辑来源";
 "ui.machine.save" = "保存";
-"ui.machine.empty" = "暂无远程机器";
+"ui.machine.empty" = "暂无远程来源";
 "ui.machine.field.name" = "名称";
 "ui.machine.field.host" = "主机地址";
 "ui.machine.field.port" = "端口";
@@ -68,7 +69,12 @@
 "ui.machine.return_local" = "返回本地内核";
 "ui.machine.active" = "当前";
 "ui.machine.local_label" = "本地";
-"ui.machine.status_unreachable" = "无法连接";
+"ui.machine.type.local" = "本地来源";
+"ui.machine.type.remote" = "远程来源";
+"ui.machine.status_unknown" = "未知";
+"ui.machine.status_checking" = "检查中";
+"ui.machine.status_connected" = "运行中";
+"ui.machine.status_unreachable" = "未运行";
 
 "ui.section.local_app_settings" = "应用设置 (本地)";
 "ui.section.core_settings" = "内核设置";

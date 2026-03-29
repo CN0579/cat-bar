@@ -55,11 +55,12 @@
 "ui.mode.direct" = "Direct";
 
 "ui.machine.local" = "Local";
-"ui.machine.manage" = "Manage Remote Machines";
-"ui.machine.add" = "Add Machine";
-"ui.machine.edit" = "Edit Machine";
+"ui.machine.sources" = "Sources";
+"ui.machine.manage" = "Manage Sources";
+"ui.machine.add" = "Add Source";
+"ui.machine.edit" = "Edit Source";
 "ui.machine.save" = "Save";
-"ui.machine.empty" = "No remote machines";
+"ui.machine.empty" = "No remote sources";
 "ui.machine.field.name" = "Name";
 "ui.machine.field.host" = "Host";
 "ui.machine.field.port" = "Port";
@@ -68,7 +69,12 @@
 "ui.machine.return_local" = "Return to Local Core";
 "ui.machine.active" = "Active";
 "ui.machine.local_label" = "Local";
-"ui.machine.status_unreachable" = "Unreachable";
+"ui.machine.type.local" = "Local Source";
+"ui.machine.type.remote" = "Remote Source";
+"ui.machine.status_unknown" = "Unknown";
+"ui.machine.status_checking" = "Checking";
+"ui.machine.status_connected" = "Running";
+"ui.machine.status_unreachable" = "Not Running";
 
 "ui.section.local_app_settings" = "App Settings (Local)";
 "ui.section.core_settings" = "Core Settings";

@@ -250,16 +250,10 @@ extension AppSession {
 
         memory = MemorySnapshot(inuse: 0)
 
-        proxyGroups.removeAll(keepingCapacity: false)
-        groupLatencyLoading.removeAll(keepingCapacity: false)
-        groupLatencies.removeAll(keepingCapacity: false)
-        proxyHistoryLatestDelay.removeAll(keepingCapacity: false)
-        proxyNodeTypes.removeAll(keepingCapacity: false)
-
+        // Keep proxy-page presentation data warm so reopening the panel does not collapse first.
         providerProxyCount = 0
         providerRuleCount = 0
         rulesCount = 0
-        proxyProvidersDetail.removeAll(keepingCapacity: false)
         providerUpdating.removeAll(keepingCapacity: false)
         ruleProviders.removeAll(keepingCapacity: false)
         ruleItems.removeAll(keepingCapacity: false)

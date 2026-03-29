@@ -148,6 +148,17 @@ final class AppSession: ObservableObject {
         return .stopped
     }
 
+    var localRuntimeVisualStatus: RuntimeVisualStatus {
+        switch self.coreActionState {
+        case .starting, .restarting:
+            return .starting
+        case .stopping:
+            return .stopped
+        case .idle:
+            return self.coreRepository.isRunning ? .runningHealthy : .stopped
+        }
+    }
+
     var runtimeStatusText: String {
         switch self.runtimeVisualStatus {
         case .starting: tr("app.runtime.starting")
@@ -198,11 +209,10 @@ final class AppSession: ObservableObject {
     }
 
     var menuBarSpeedLines: MenuBarSpeedLines {
-        guard self.isRuntimeRunning else { return .zero }
-
+        // Keep the status-bar speed display on the same live traffic snapshot used by the panel.
         let up = self.compactMenuBarRate(max(0, self.traffic.up))
         let down = self.compactMenuBarRate(max(0, self.traffic.down))
-        return MenuBarSpeedLines(up: "\(up)↑", down: "\(down)↓")
+        return MenuBarSpeedLines(up: up, down: down)
     }
 
     private var computedMenuBarDisplay: MenuBarDisplay {
@@ -469,28 +479,26 @@ final class AppSession: ObservableObject {
         restoreLastSuccessfulConfigIfAvailable()
         self.remoteConfigSources = loadPersistedRemoteConfigSources()
         pruneRemoteConfigSourcesIfNeeded()
-        // Always start in local mode. Remote target is session-level only.
-        self.remoteMachineStore.resetActiveTarget()
-        self.controllerUIURL = makeControllerUIURL(self.controller)
-        if let persisted = loadPersistedEditableSettingsSnapshot() {
-            applyEditableSettingsSnapshotToUI(persisted)
-            self.preserveLocalSettingsOnNextSync = true
-            self.pendingAppLaunchOverlaySettings = persisted
-        }
+        self.restorePersistedPresentationSource()
 
         if startBackgroundRefresh {
             Task {
                 await refreshFromAPI(includeSlowCalls: true)
-                await applyPendingAppLaunchSettingsOverlayIfNeeded()
-                self.seedCoreFeatureRecoveryFromPersistedQuitState()
-                if self.hasSystemProxyOpenIntent {
-                    await self.systemProxyRepository.warmUpHelperIfPossible()
-                    await self.refreshSystemProxyHelperStatus()
-                    await refreshSystemProxyStatus()
-                    await ensureSystemProxyConsistencyOnFirstLaunchIfNeeded()
+                if !self.isRemoteTarget {
+                    await applyPendingAppLaunchSettingsOverlayIfNeeded()
+                    self.seedCoreFeatureRecoveryFromPersistedQuitState()
+                    if self.hasSystemProxyOpenIntent {
+                        await self.systemProxyRepository.warmUpHelperIfPossible()
+                        await self.refreshSystemProxyHelperStatus()
+                        await refreshSystemProxyStatus()
+                        await ensureSystemProxyConsistencyOnFirstLaunchIfNeeded()
+                    } else {
+                        self.resetSystemProxyObservedState()
+                        self.didCheckSystemProxyConsistencyOnLaunch = true
+                    }
                 } else {
                     self.resetSystemProxyObservedState()
-                    self.didCheckSystemProxyConsistencyOnLaunch = true
+                    await self.refreshRemoteTargetAvailabilityForMenuBarIfNeeded()
                 }
             }
 

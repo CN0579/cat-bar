@@ -41,12 +41,12 @@ enum ValueFormatter {
 
     static func speed(_ value: Int64) -> String {
         let (formatted, unit) = speedComponents(value)
-        return "\(formatted) \(unit)/s"
+        return "\(formatted)\(unit)/s"
     }
 
     static func speedCompact(_ value: Int64) -> String {
         let (formatted, unit) = speedComponents(value)
-        return "\(formatted)\(unit.replacingOccurrences(of: "B", with: ""))"
+        return "\(formatted)\(unit)/s"
     }
 
     private static func speedComponents(_ bytesPerSecond: Int64) -> (String, String) {
@@ -87,20 +87,20 @@ enum ValueFormatter {
         }
 
         if normalized == 0 {
-            return "0 KB"
+            return "0KB"
         }
-        return "1 KB"
+        return "1KB"
     }
 
     static func bytesCompact(_ value: Int64) -> String {
         let normalized = max(0, value)
         if normalized >= 1024 * 1024 * 1024 {
-            return String(format: "%.1f GB", Double(normalized) / (1024 * 1024 * 1024))
+            return String(format: "%.1fGB", Double(normalized) / (1024 * 1024 * 1024))
         }
         if normalized >= 1024 * 1024 {
-            return String(format: "%.1f MB", Double(normalized) / (1024 * 1024))
+            return String(format: "%.1fMB", Double(normalized) / (1024 * 1024))
         }
-        return String(format: "%.1f KB", Double(normalized) / 1024)
+        return String(format: "%.1fKB", Double(normalized) / 1024)
     }
 
     static func bytesCompactNoSpace(_ value: Int64) -> String {
@@ -217,7 +217,7 @@ enum ValueFormatter {
     private static func roundedBytesText(_ value: Int64, divisor: Double, unit: String) -> String {
         let scaled = Double(value) / divisor
         let rounded = Int(scaled.rounded())
-        return "\(rounded) \(unit)"
+        return "\(rounded)\(unit)"
     }
 
     private static func parseISO8601Date(_ input: String) -> Date? {
