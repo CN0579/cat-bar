@@ -91,7 +91,7 @@ struct MenuBarRootView: View {
     @State var topHeaderHeight: CGFloat = 0
     @State var modeAndTabSectionHeight: CGFloat = 0
     @State var footerBarHeight: CGFloat = 0
-    @State var currentTabContentHeight: CGFloat = 0
+    @State var naturalPanelContentHeight: CGFloat = 0
     @AppStorage("clashbar.proxy.group.hide_hidden") var hideHiddenProxyGroups: Bool = true
     @AppStorage("clashbar.proxy.group.sort_nodes_by_latency") var sortGroupNodesByLatency: Bool = false
 
@@ -122,11 +122,8 @@ struct MenuBarRootView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            self.panelContent
-            Spacer(minLength: 0)
-        }
-        .frame(width: MenuBarLayoutTokens.panelWidth, alignment: .topLeading)
+        self.panelContent
+            .frame(width: MenuBarLayoutTokens.panelWidth, alignment: .topLeading)
         .onDisappear {
             self.proxyCommandCopyResetTask?.cancel()
             self.proxyCommandCopyResetTask = nil
@@ -143,12 +140,19 @@ struct MenuBarRootView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .reportHeight { updateSectionHeight($0, target: .modeAndTab) }
 
-            ScrollView(.vertical) {
-                self.measuredTabContent(for: self.rootViewModel.currentTab)
+            Group {
+                if self.needsTabScrolling {
+                    ScrollView(.vertical) {
+                        self.tabContent(for: self.rootViewModel.currentTab)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .scrollIndicators(.visible)
+                    .frame(height: self.availableTabScrollAreaHeight, alignment: .top)
+                } else {
+                    self.tabContent(for: self.rootViewModel.currentTab)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
             }
-            .scrollIndicators(.hidden)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: tabScrollAreaHeight, alignment: .top)
 
             footerBar
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,7 +164,10 @@ struct MenuBarRootView: View {
         self.panelSections
             .frame(width: self.contentWidth, alignment: .topLeading)
             .padding(.horizontal, MenuBarLayoutTokens.space8)
-            .frame(width: MenuBarLayoutTokens.panelWidth, height: resolvedPanelHeight, alignment: .topLeading)
+            .background(alignment: .topLeading) {
+                self.naturalPanelMeasurementLayer
+            }
+            .frame(width: MenuBarLayoutTokens.panelWidth, height: self.resolvedPanelHeight, alignment: .topLeading)
             .background(self.panelBackground)
             .clipShape(RoundedRectangle(cornerRadius: MenuBarLayoutTokens.panelCornerRadius, style: .continuous))
     }
@@ -175,24 +182,21 @@ struct MenuBarRootView: View {
                     from: self.appSession.proxyGroups,
                     hideHiddenGroups: self.hideHiddenProxyGroups,
                     currentMode: self.appSession.currentMode)
-                publishPreferredPanelHeight()
+                self.publishPreferredPanelHeight()
             }
             .onChange(of: self.rootViewModel.currentTab) { tab in
-                self.currentTabContentHeight = 0
                 self.appSession.setActiveMenuTab(tab)
                 self.refreshDerivedData(for: tab)
+                self.publishPreferredPanelHeight()
             }
             .onChange(of: self.appSession.activeMenuTab) { tab in
                 guard self.rootViewModel.currentTab != tab else { return }
                 self.setCurrentTabWithoutAnimation(tab)
-                self.currentTabContentHeight = 0
                 self.refreshDerivedData(for: tab)
-            }
-            .onChange(of: resolvedPanelHeight) { _ in
-                publishPreferredPanelHeight()
+                self.publishPreferredPanelHeight()
             }
             .onChange(of: self.popoverLayoutModel.maxPanelHeight) { _ in
-                publishPreferredPanelHeight()
+                self.publishPreferredPanelHeight()
             }
             .onChange(of: ConnectionsRefreshToken(
                 connections: self.connectionsStore.connections,
@@ -252,37 +256,31 @@ struct MenuBarRootView: View {
         }
     }
 
-    func tabUsesDynamicHeight(_ tab: RootTab) -> Bool {
-        switch tab {
-        case .proxy, .system:
-            true
-        case .rules, .connections, .logs:
-            false
-        }
-    }
-
-    @ViewBuilder
-    func measuredTabContent(for tab: RootTab) -> some View {
-        let content = self.tabContent(for: tab)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-        if self.tabUsesDynamicHeight(tab) {
-            content.reportHeight { updateCurrentTabContentHeight($0, for: tab) }
-        } else {
-            content
-        }
-    }
-
-    @ViewBuilder
     func tabContent(for tab: RootTab) -> some View {
-        let content = self.tabBody(for: tab)
+        self.tabBody(for: tab)
             .padding(.top, MenuBarLayoutTokens.space2)
+            .frame(width: self.contentWidth, alignment: .topLeading)
+            .id(tab)
+    }
 
-        if self.tabUsesDynamicHeight(tab) {
-            content.fixedSize(horizontal: false, vertical: true)
-        } else {
-            content
+    private var naturalPanelMeasurementLayer: some View {
+        VStack(spacing: 0) {
+            topHeader
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            modeAndTabSection
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            self.tabContent(for: self.rootViewModel.currentTab)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+
+            footerBar
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(width: self.contentWidth, alignment: .topLeading)
+        .reportHeight { self.updateNaturalPanelContentHeight($0) }
+        .hidden()
+        .allowsHitTesting(false)
     }
 
     var panelBackground: some View {

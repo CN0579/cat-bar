@@ -2,39 +2,28 @@ import SwiftUI
 
 extension MenuBarRootView {
     private var hasMeasuredFixedSections: Bool {
-        topHeaderHeight > 0 && modeAndTabSectionHeight > 0 && footerBarHeight > 0
-    }
-
-    private var hasResolvedCurrentTabLayout: Bool {
-        self.hasMeasuredFixedSections && self.currentTabContentHeight > 0
+        self.topHeaderHeight > 0 && self.modeAndTabSectionHeight > 0 && self.footerBarHeight > 0
     }
 
     private var fixedSectionHeight: CGFloat {
-        topHeaderHeight + modeAndTabSectionHeight + footerBarHeight
+        self.topHeaderHeight + self.modeAndTabSectionHeight + self.footerBarHeight
     }
 
-    private var fallbackTabScrollAreaHeight: CGFloat {
-        max(0, popoverLayoutModel.resolvedPanelHeight - self.fixedSectionHeight)
-    }
-
-    private var availableTabScrollAreaHeight: CGFloat {
-        max(0, popoverLayoutModel.maxPanelHeight - self.fixedSectionHeight)
-    }
-
-    var tabScrollAreaHeight: CGFloat {
-        guard self.hasResolvedCurrentTabLayout else { return self.fallbackTabScrollAreaHeight }
-        return min(max(1, self.currentTabContentHeight), self.availableTabScrollAreaHeight)
+    private var naturalTabContentHeight: CGFloat {
+        max(1, self.naturalPanelContentHeight - self.fixedSectionHeight)
     }
 
     var resolvedPanelHeight: CGFloat {
-        guard self.hasResolvedCurrentTabLayout else { return popoverLayoutModel.resolvedPanelHeight }
-        return max(1, min(self.fixedSectionHeight + self.tabScrollAreaHeight, popoverLayoutModel.maxPanelHeight))
+        guard self.naturalPanelContentHeight > 0 else { return self.popoverLayoutModel.resolvedPanelHeight }
+        return min(self.naturalPanelContentHeight, self.popoverLayoutModel.maxPanelHeight)
     }
 
-    enum SectionHeightTarget {
-        case header
-        case modeAndTab
-        case footer
+    var needsTabScrolling: Bool {
+        self.naturalPanelContentHeight > self.popoverLayoutModel.maxPanelHeight + 0.5
+    }
+
+    var availableTabScrollAreaHeight: CGFloat {
+        max(1, self.resolvedPanelHeight - self.fixedSectionHeight)
     }
 
     func updateSectionHeight(_ measured: CGFloat, target: SectionHeightTarget) {
@@ -42,31 +31,32 @@ extension MenuBarRootView {
 
         switch target {
         case .header:
-            if abs(topHeaderHeight - normalized) > 0.5 {
-                topHeaderHeight = normalized
-            }
+            guard abs(self.topHeaderHeight - normalized) > 0.5 else { return }
+            self.topHeaderHeight = normalized
         case .modeAndTab:
-            if abs(modeAndTabSectionHeight - normalized) > 0.5 {
-                modeAndTabSectionHeight = normalized
-            }
+            guard abs(self.modeAndTabSectionHeight - normalized) > 0.5 else { return }
+            self.modeAndTabSectionHeight = normalized
         case .footer:
-            if abs(footerBarHeight - normalized) > 0.5 {
-                footerBarHeight = normalized
-            }
+            guard abs(self.footerBarHeight - normalized) > 0.5 else { return }
+            self.footerBarHeight = normalized
         }
     }
 
-    func updateCurrentTabContentHeight(_ measured: CGFloat, for tab: RootTab) {
-        guard tab == self.rootViewModel.currentTab else { return }
-
+    func updateNaturalPanelContentHeight(_ measured: CGFloat) {
         let normalized = max(1, measured)
-        guard abs(self.currentTabContentHeight - normalized) > 0.5 else { return }
+        guard abs(self.naturalPanelContentHeight - normalized) > 0.5 else { return }
 
-        self.currentTabContentHeight = normalized
+        self.naturalPanelContentHeight = normalized
+        self.publishPreferredPanelHeight()
     }
 
     func publishPreferredPanelHeight() {
-        guard self.hasResolvedCurrentTabLayout else { return }
-        popoverLayoutModel.requestPanelHeight(max(1, self.resolvedPanelHeight.rounded(.up)))
+        self.popoverLayoutModel.requestPanelHeight(max(1, self.resolvedPanelHeight.rounded(.up)))
+    }
+
+    enum SectionHeightTarget {
+        case header
+        case modeAndTab
+        case footer
     }
 }

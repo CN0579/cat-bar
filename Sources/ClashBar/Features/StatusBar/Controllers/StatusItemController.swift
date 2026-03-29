@@ -44,7 +44,6 @@ final class StatusItemController: NSObject {
     private let popoverScreenPadding: CGFloat = 10
     private let panelTopSpacing: CGFloat = 0
     private let panelHorizontalPadding: CGFloat = MenuBarLayoutTokens.space8
-
     private var changeCancellable: AnyCancellable?
     private var layoutCancellable: AnyCancellable?
     private var refreshWorkItem: DispatchWorkItem?
@@ -57,6 +56,8 @@ final class StatusItemController: NSObject {
     private var lockedPanelOriginX: CGFloat?
     private var popoverHostingController: NSHostingController<StatusItemPopoverRootView>?
     private var panelStabilizationTask: Task<Void, Never>?
+    private var pendingPopoverHeight: CGFloat?
+    private var popoverResizeScheduled = false
 
     private let iconOnlyRefreshInterval: TimeInterval = 0.12
     // Status-item snapshotting is expensive on macOS when traffic text changes frequently.
@@ -155,7 +156,7 @@ final class StatusItemController: NSObject {
     private func ensurePopoverContent() {
         if self.popoverHostingController == nil {
             let hc = NSHostingController(rootView: self.popoverRootView)
-            hc.sizingOptions = [.standardBounds]
+            hc.sizingOptions = []
             self.popoverHostingController = hc
         } else {
             self.popoverHostingController?.rootView = self.popoverRootView
@@ -202,8 +203,29 @@ final class StatusItemController: NSObject {
         self.layoutCancellable = self.popoverLayoutModel.$resolvedPanelHeight
             .receive(on: RunLoop.main)
             .sink { [weak self] preferredHeight in
-                self?.applyPopoverSize(preferredHeight: preferredHeight, preserveHorizontalPosition: true)
+                self?.schedulePopoverResize(to: preferredHeight)
             }
+    }
+
+    private func schedulePopoverResize(to preferredHeight: CGFloat) {
+        self.pendingPopoverHeight = preferredHeight
+
+        guard !self.popoverResizeScheduled else { return }
+        self.popoverResizeScheduled = true
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.popoverResizeScheduled = false
+
+            guard let pendingPopoverHeight = self.pendingPopoverHeight else { return }
+            self.pendingPopoverHeight = nil
+
+            guard self.panel.contentViewController != nil else { return }
+
+            self.applyPopoverSize(
+                preferredHeight: pendingPopoverHeight,
+                preserveHorizontalPosition: true)
+        }
     }
 
     private func scheduleRefresh(display: MenuBarDisplay) {
