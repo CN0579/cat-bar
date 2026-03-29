@@ -359,9 +359,7 @@ extension MenuBarRootView {
 
         return Button {
             guard self.rootViewModel.currentTab != tab else { return }
-            withAnimation(.snappy(duration: 0.18)) {
-                self.rootViewModel.syncCurrentTab(tab)
-            }
+            self.rootViewModel.syncCurrentTab(tab)
         } label: {
             ZStack(alignment: .bottom) {
                 Text(self.tr(tab.titleKey))

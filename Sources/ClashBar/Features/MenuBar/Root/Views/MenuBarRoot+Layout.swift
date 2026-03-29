@@ -20,7 +20,7 @@ extension MenuBarRootView {
             .frame(width: self.contentWidth, alignment: .topLeading)
             .id(tab)
         } else if self.needsTabScrolling, tab == .connections, self.connectionsHeaderHeight > 0 {
-            VStack(spacing: 0) {
+            VStack(spacing: MenuBarLayoutTokens.space6) {
                 self.connectionsTabPinnedHeader
                     .frame(width: self.contentWidth, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
