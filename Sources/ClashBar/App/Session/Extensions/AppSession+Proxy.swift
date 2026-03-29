@@ -148,6 +148,25 @@ extension AppSession {
         }
     }
 
+    func testSingleNodeLatency(
+        nodeName: String,
+        testURL: String? = nil,
+        timeout: Int? = nil) async -> Int?
+    {
+        let url = normalizedHealthcheckURL(testURL) ?? defaultHealthcheckURL
+        let resolvedTimeout = normalizedHealthcheckTimeout(timeout) ?? defaultHealthcheckTimeoutMilliseconds
+        do {
+            let repo = try self.proxyRepository(using: self.clientOrThrow())
+            let result = try await repo.measureNodeLatency(name: nodeName, url: url, timeout: resolvedTimeout)
+            let delay = result.delay > 0 ? result.delay : 0
+            self.proxyHistoryLatestDelay[nodeName] = delay
+            return delay
+        } catch {
+            self.proxyHistoryLatestDelay[nodeName] = 0
+            return 0
+        }
+    }
+
     func refreshAllGroupLatencies(includeHiddenGroups: Bool = false) async {
         let groups = includeHiddenGroups
             ? proxyGroups

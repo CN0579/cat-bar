@@ -2,6 +2,7 @@ import SwiftUI
 
 enum RootTab: String, CaseIterable, Hashable {
     case proxy
+    case nodes
     case rules
     case connections
     case logs
@@ -10,6 +11,7 @@ enum RootTab: String, CaseIterable, Hashable {
     var titleKey: String {
         switch self {
         case .proxy: "ui.tab.proxy"
+        case .nodes: "ui.tab.nodes"
         case .rules: "ui.tab.rules"
         case .connections: "ui.tab.connections"
         case .logs: "ui.tab.logs"
@@ -20,6 +22,7 @@ enum RootTab: String, CaseIterable, Hashable {
     var symbolName: String {
         switch self {
         case .proxy: "square.grid.2x2.fill"
+        case .nodes: "server.rack"
         case .rules: "arrow.left.arrow.right"
         case .connections: "link"
         case .logs: "doc.fill"
@@ -65,6 +68,7 @@ struct MenuBarRootView: View {
     @StateObject var connectionsViewModel = ConnectionsTabViewModel()
     @StateObject var logsViewModel = LogsTabViewModel()
     @StateObject var rulesViewModel = RulesTabViewModel()
+    @StateObject var nodesViewModel = NodesTabViewModel()
     @Namespace var segmentedSelectionNamespace
 
     @State var switchingMode: CoreMode?
@@ -239,6 +243,8 @@ struct MenuBarRootView: View {
         switch tab {
         case .proxy:
             self.proxyTabBody(isMeasuring: isMeasuring)
+        case .nodes:
+            self.nodesTabBody(isMeasuring: isMeasuring)
         case .rules:
             self.rulesTabBody(isMeasuring: isMeasuring)
         case .connections:
@@ -293,6 +299,8 @@ struct MenuBarRootView: View {
         switch tab {
         case .proxy:
             Task { await self.appSession.refreshSystemProxyHelperRuntimeSnapshot() }
+            return
+        case .nodes:
             return
         case .system:
             return

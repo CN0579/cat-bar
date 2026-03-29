@@ -167,6 +167,10 @@ extension AppSession {
             if proxyProvidersDetail.isEmpty || ruleItems.isEmpty {
                 await refreshProvidersAndRules()
             }
+        case .nodes:
+            await self.refreshMediumFrequency()
+            guard shouldContinueRefresh() else { return }
+            await refreshProvidersAndRules()
         case .rules:
             await refreshProvidersAndRules()
         case .connections:
@@ -188,7 +192,7 @@ extension AppSession {
             let client = try self.clientOrThrow()
             let snapshot = try await self.makeFetchMediumFrequencySnapshotUseCase(
                 using: client,
-                includeProxyGroups: self.activeMenuTab == .proxy)
+                includeProxyGroups: self.activeMenuTab == .proxy || self.activeMenuTab == .nodes)
                 .execute()
 
             self.version = snapshot.versionInfo.version
@@ -300,6 +304,8 @@ extension AppSession {
             if !self.isRemoteTarget {
                 await self.refreshSystemProxyStatus()
             }
+        case .nodes:
+            await refreshProvidersAndRules()
         case .rules:
             await refreshProvidersAndRules()
         case .system:
