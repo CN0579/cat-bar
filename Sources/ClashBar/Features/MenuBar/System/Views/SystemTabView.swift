@@ -339,7 +339,7 @@ extension MenuBarRootView {
 
             VStack(spacing: 0) {
                 self.settingsCardHeader(
-                    isRemote ? tr("ui.section.core_settings_remote") : tr("ui.section.core_settings"),
+                    tr("ui.section.core_settings"),
                     symbol: "gearshape.2")
                 self.settingsSelectionRow(.init(
                     title: tr("ui.settings.log_level"),
