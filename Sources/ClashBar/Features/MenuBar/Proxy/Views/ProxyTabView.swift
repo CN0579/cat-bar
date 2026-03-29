@@ -192,10 +192,7 @@ extension MenuBarRootView {
     }
 
     var proxyQuickRows: some View {
-        let localTargetDisplay = self.appSession.localProxyCommandTargetDisplay()
-        let managedTargetDisplay = self.appSession.managedEndpointProxyCommandTargetDisplay()
         let showsLocalOnlyItems = !appSession.isRemoteTarget
-        let showManagedTargetAction = localTargetDisplay != managedTargetDisplay
 
         return VStack(spacing: 0) {
             if showsLocalOnlyItems {
@@ -224,48 +221,6 @@ extension MenuBarRootView {
 
             if showsLocalOnlyItems {
                 self.systemProxyQuickToggleRow
-            }
-
-            self.quickToggleRow(
-                title: tr("ui.quick.tun_mode"),
-                symbol: "shield.lefthalf.filled",
-                foreground: nativePositive,
-                isDisabled: !appSession.isTunToggleEnabled,
-                isOn: Binding(
-                    get: { appSession.isTunEnabled },
-                    set: { value in
-                        Task { await appSession.toggleTunMode(value) }
-                    }))
-
-            self.quickRowContent(
-                title: tr("ui.quick.copy_terminal"),
-                symbol: "terminal",
-                foreground: nativeWarning,
-                trailingFitsContent: true)
-            {
-                HStack(spacing: 2) {
-                    if showsLocalOnlyItems {
-                        self.proxyCommandActionButton(
-                            title: self.appSession.localProxyCommandHostDisplay(),
-                            target: .local,
-                            helpTitle: tr("ui.quick.copy_terminal"),
-                            helpDetail: localTargetDisplay)
-                        {
-                            self.appSession.copyLocalProxyCommand()
-                        }
-                    }
-
-                    if showManagedTargetAction || !showsLocalOnlyItems {
-                        self.proxyCommandActionButton(
-                            title: self.appSession.managedEndpointProxyCommandHostDisplay(),
-                            target: .currentEndpoint,
-                            helpTitle: tr("ui.quick.copy_terminal_current_endpoint"),
-                            helpDetail: managedTargetDisplay)
-                        {
-                            self.appSession.copyManagedEndpointProxyCommand()
-                        }
-                    }
-                }
             }
         }
     }

@@ -302,6 +302,10 @@ extension MenuBarRootView {
         let selectedLogLevel = appSession.stringValue(for: .logLevel)
         let showsLocalOnlyItems = !isRemote
 
+        let localTargetDisplay = self.appSession.localProxyCommandTargetDisplay()
+        let managedTargetDisplay = self.appSession.managedEndpointProxyCommandTargetDisplay()
+        let showManagedTargetAction = localTargetDisplay != managedTargetDisplay
+
         return VStack(alignment: .leading, spacing: T.space6) {
             if showsLocalOnlyItems {
                 VStack(spacing: 0) {
@@ -362,6 +366,15 @@ extension MenuBarRootView {
                         isOn: item.isOn,
                         isDisabled: appSession.isCoreSettingSyncing)
                 }
+                self.settingsToggleRow(
+                    tr("ui.quick.tun_mode"),
+                    symbol: "shield.lefthalf.filled",
+                    isOn: Binding(
+                        get: { appSession.isTunEnabled },
+                        set: { value in
+                            Task { await appSession.toggleTunMode(value) }
+                        }),
+                    isDisabled: !appSession.isTunToggleEnabled)
             }
 
             VStack(spacing: 0) {
@@ -375,6 +388,37 @@ extension MenuBarRootView {
                             tr(item.titleKey),
                             symbol: item.symbol,
                             text: item.text)
+                    }
+                }
+                .menuRowPadding(vertical: T.space4)
+            }
+
+            VStack(spacing: 0) {
+                self.settingsCardHeader(
+                    tr("ui.quick.copy_terminal"),
+                    symbol: "terminal")
+
+                HStack(spacing: T.space6) {
+                    if showsLocalOnlyItems {
+                        self.proxyCommandActionButton(
+                            title: self.appSession.localProxyCommandHostDisplay(),
+                            target: .local,
+                            helpTitle: tr("ui.quick.copy_terminal"),
+                            helpDetail: localTargetDisplay)
+                        {
+                            self.appSession.copyLocalProxyCommand()
+                        }
+                    }
+
+                    if showManagedTargetAction || !showsLocalOnlyItems {
+                        self.proxyCommandActionButton(
+                            title: self.appSession.managedEndpointProxyCommandHostDisplay(),
+                            target: .currentEndpoint,
+                            helpTitle: tr("ui.quick.copy_terminal_current_endpoint"),
+                            helpDetail: managedTargetDisplay)
+                        {
+                            self.appSession.copyManagedEndpointProxyCommand()
+                        }
                     }
                 }
                 .menuRowPadding(vertical: T.space4)
