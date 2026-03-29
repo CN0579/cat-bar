@@ -126,7 +126,7 @@ extension MenuBarRootView {
                 .padding(.horizontal, sparklineHorizontalInset)
 
             VStack(spacing: 0) {
-                HStack(spacing: T.space6) {
+                HStack(spacing: T.space2) {
                     self.cornerMetric(
                         symbol: "link",
                         value: "\(connectionsStore.connectionsCount)",
@@ -134,10 +134,14 @@ extension MenuBarRootView {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     self.cornerMetric(
+                        symbol: "arrow.up",
+                        value: ValueFormatter.speed(appSession.traffic.up),
+                        color: nativeInfo)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
+                    self.cornerMetric(
                         symbol: "arrow.up.circle",
-                        value: ValueFormatter.speedAndTotal(
-                            rate: appSession.traffic.up,
-                            total: appSession.displayUpTotal),
+                        value: ValueFormatter.bytesOrDash(appSession.displayUpTotal),
                         color: nativeInfo,
                         iconTrailing: true)
                         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -145,7 +149,7 @@ extension MenuBarRootView {
 
                 Spacer(minLength: 0)
 
-                HStack(spacing: T.space6) {
+                HStack(spacing: T.space2) {
                     self.cornerMetric(
                         symbol: "memorychip",
                         value: ValueFormatter.bytesInteger(appSession.memory.inuse),
@@ -153,10 +157,14 @@ extension MenuBarRootView {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     self.cornerMetric(
+                        symbol: "arrow.down",
+                        value: ValueFormatter.speed(appSession.traffic.down),
+                        color: nativePositive.opacity(T.Opacity.solid))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
+                    self.cornerMetric(
                         symbol: "arrow.down.circle",
-                        value: ValueFormatter.speedAndTotal(
-                            rate: appSession.traffic.down,
-                            total: appSession.displayDownTotal),
+                        value: ValueFormatter.bytesOrDash(appSession.displayDownTotal),
                         color: nativePositive.opacity(T.Opacity.solid),
                         iconTrailing: true)
                         .frame(maxWidth: .infinity, alignment: .trailing)
