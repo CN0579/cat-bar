@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - SwiftUI row (shared with `MenuBarRootView.ruleRowByItem`)
 
-struct RulesListRowView: View {
+struct RulesListRowView: View, Equatable {
     @Environment(\.colorScheme) private var colorScheme
 
     let rule: RuleItem
@@ -11,6 +11,13 @@ struct RulesListRowView: View {
     let language: AppLanguage
     /// `NSTableView` rows draw their own hairline; SwiftUI lists use `SeparatedForEach` dividers.
     var showsBottomDivider: Bool
+
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.rule == rhs.rule &&
+        lhs.providerLookup == rhs.providerLookup &&
+        lhs.language == rhs.language &&
+        lhs.showsBottomDivider == rhs.showsBottomDivider
+    }
 
     var body: some View {
         let typeText = (rule.type.trimmedNonEmpty ?? tr("ui.common.na")).uppercased()

@@ -1,39 +1,24 @@
 import SwiftUI
 
+// MARK: - Pinned header configuration (shared by rules / connections / logs)
+
+struct PinnedHeaderTabConfig {
+    let headerSpacing: CGFloat
+    let headerHeight: CGFloat
+    let topPadding: CGFloat = MenuBarLayoutTokens.space2
+
+    var scrollContainerHeight: CGFloat {
+        headerSpacing + topPadding
+    }
+}
+
 extension MenuBarRootView {
     @ViewBuilder
     var tabScrollAreaContent: some View {
         let tab = self.rootViewModel.currentTab
-        if self.needsTabScrolling, tab == .rules, self.rulesHeaderHeight > 0 {
-            VStack(spacing: 0) {
-                self.rulesTabPinnedHeader()
-                    .frame(width: self.contentWidth, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .reportHeight { self.rulesHeaderHeight = $0 }
 
-                ThinScrollContainer(height: max(1, self.availableTabScrollAreaHeight - self.rulesHeaderHeight - MenuBarLayoutTokens.space2)) {
-                    self.rulesTabScrollableList(isMeasuring: false)
-                        .frame(width: self.contentWidth, alignment: .topLeading)
-                }
-            }
-            .padding(.top, MenuBarLayoutTokens.space2)
-            .frame(width: self.contentWidth, alignment: .topLeading)
-            .id(tab)
-        } else if self.needsTabScrolling, tab == .connections, self.connectionsHeaderHeight > 0 {
-            VStack(spacing: MenuBarLayoutTokens.space6) {
-                self.connectionsTabPinnedHeader
-                    .frame(width: self.contentWidth, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .reportHeight { self.connectionsHeaderHeight = $0 }
-
-                ThinScrollContainer(height: max(1, self.availableTabScrollAreaHeight - self.connectionsHeaderHeight - MenuBarLayoutTokens.space2 - MenuBarLayoutTokens.space6)) {
-                    self.connectionsTabScrollableList(isMeasuring: false)
-                        .frame(width: self.contentWidth, alignment: .topLeading)
-                }
-            }
-            .padding(.top, MenuBarLayoutTokens.space2)
-            .frame(width: self.contentWidth, alignment: .topLeading)
-            .id(tab)
+        if let config = self.pinnedHeaderConfig(for: tab), config.headerHeight > 0, self.needsTabScrolling {
+            self.pinnedHeaderLayout(for: tab, config: config)
         } else if self.needsTabScrolling {
             ThinScrollContainer(height: self.availableTabScrollAreaHeight) {
                 self.tabContent(for: tab)
@@ -46,6 +31,80 @@ extension MenuBarRootView {
         } else {
             self.tabContent(for: tab)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func pinnedHeaderConfig(for tab: RootTab) -> PinnedHeaderTabConfig? {
+        switch tab {
+        case .rules:
+            PinnedHeaderTabConfig(headerSpacing: 0, headerHeight: self.rulesHeaderHeight)
+        case .connections:
+            PinnedHeaderTabConfig(headerSpacing: MenuBarLayoutTokens.space6, headerHeight: self.connectionsHeaderHeight)
+        case .logs:
+            PinnedHeaderTabConfig(headerSpacing: MenuBarLayoutTokens.space6, headerHeight: self.logsHeaderHeight)
+        default:
+            nil
+        }
+    }
+
+    @ViewBuilder
+    private func pinnedHeaderLayout(for tab: RootTab, config: PinnedHeaderTabConfig) -> some View {
+        let listHeight = max(1, self.availableTabScrollAreaHeight - config.headerHeight - config.scrollContainerHeight)
+
+        VStack(spacing: config.headerSpacing) {
+            self.pinnedHeader(for: tab)
+                .frame(width: self.contentWidth, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .reportHeight { self.updatePinnedHeaderHeight(tab: tab, height: $0) }
+
+            ThinScrollContainer(height: listHeight) {
+                self.pinnedScrollableList(for: tab)
+                    .frame(width: self.contentWidth, alignment: .topLeading)
+            }
+        }
+        .padding(.top, config.topPadding)
+        .frame(width: self.contentWidth, alignment: .topLeading)
+        .id(tab)
+    }
+
+    @ViewBuilder
+    private func pinnedHeader(for tab: RootTab) -> some View {
+        switch tab {
+        case .rules:
+            self.rulesTabPinnedHeader()
+        case .connections:
+            self.connectionsTabPinnedHeader
+        case .logs:
+            self.logsTabPinnedHeader
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func pinnedScrollableList(for tab: RootTab) -> some View {
+        switch tab {
+        case .rules:
+            self.rulesTabScrollableList(isMeasuring: false)
+        case .connections:
+            self.connectionsTabScrollableList(isMeasuring: false)
+        case .logs:
+            self.logsTabScrollableList(isMeasuring: false)
+        default:
+            EmptyView()
+        }
+    }
+
+    private func updatePinnedHeaderHeight(tab: RootTab, height: CGFloat) {
+        switch tab {
+        case .rules:
+            self.rulesHeaderHeight = height
+        case .connections:
+            self.connectionsHeaderHeight = height
+        case .logs:
+            self.logsHeaderHeight = height
+        default:
+            break
         }
     }
 
@@ -106,21 +165,12 @@ extension MenuBarRootView {
     /// switch to the fixed-header + scroll-list layout without an initial blank flash.
     @ViewBuilder
     func pinnedHeaderMeasurementLayer(for tab: RootTab) -> some View {
-        switch tab {
-        case .rules where self.rulesHeaderHeight == 0:
-            self.rulesTabPinnedHeader()
+        if let config = self.pinnedHeaderConfig(for: tab), config.headerHeight == 0 {
+            self.pinnedHeader(for: tab)
                 .fixedSize(horizontal: false, vertical: true)
-                .reportHeight { self.rulesHeaderHeight = $0 }
+                .reportHeight { self.updatePinnedHeaderHeight(tab: tab, height: $0) }
                 .hidden()
                 .allowsHitTesting(false)
-        case .connections where self.connectionsHeaderHeight == 0:
-            self.connectionsTabPinnedHeader
-                .fixedSize(horizontal: false, vertical: true)
-                .reportHeight { self.connectionsHeaderHeight = $0 }
-                .hidden()
-                .allowsHitTesting(false)
-        default:
-            EmptyView()
         }
     }
 

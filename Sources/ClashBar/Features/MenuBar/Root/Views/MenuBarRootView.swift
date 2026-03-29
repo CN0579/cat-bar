@@ -82,6 +82,7 @@ struct MenuBarRootView: View {
     @State var naturalPanelContentHeight: CGFloat = 0
     @State var rulesHeaderHeight: CGFloat = 0
     @State var connectionsHeaderHeight: CGFloat = 0
+    @State var logsHeaderHeight: CGFloat = 0
     @AppStorage("clashbar.proxy.group.hide_hidden") var hideHiddenProxyGroups: Bool = true
     @AppStorage("clashbar.proxy.group.sort_nodes_by_latency") var sortGroupNodesByLatency: Bool = false
 

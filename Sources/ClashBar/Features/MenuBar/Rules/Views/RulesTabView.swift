@@ -123,6 +123,7 @@ extension MenuBarRootView {
             providerLookup: providerLookup,
             language: language,
             showsBottomDivider: false)
+            .equatable()
             .background(nativeHoverRowBackground(hovered))
             .onHover { hoveredRuleID = self.nextHovered(
                 current: hoveredRuleID, target: rule.rowID, isHovering: $0) }
