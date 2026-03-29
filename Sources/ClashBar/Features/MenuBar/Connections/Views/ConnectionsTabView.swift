@@ -22,18 +22,28 @@ extension MenuBarRootView {
     }
 
     private static var textWidthCache: [String: CGFloat] = [:]
+    private static let textWidthCacheMaxEntries = 512
 
     func connectionsTabBody(isMeasuring: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: MenuBarLayoutTokens.space6) {
+            self.connectionsTabPinnedHeader
+            self.connectionsTabScrollableList(isMeasuring: isMeasuring)
+        }
+    }
+
+    var connectionsTabPinnedHeader: some View {
+        self.connectionsControlCard
+    }
+
+    func connectionsTabScrollableList(isMeasuring: Bool = false) -> some View {
         let connections = self.connectionsViewModel.visibleConnections
 
-        return VStack(alignment: .leading, spacing: MenuBarLayoutTokens.space6) {
-            self.connectionsControlCard
-
+        return Group {
             if connections.isEmpty {
-                emptyCard(tr("ui.empty.connections"))
+                self.emptyCard(tr("ui.empty.connections"))
             } else {
                 let displayConnections = isMeasuring ? Array(connections.prefix(25)) : connections
-                MeasurementAwareVStack(alignment: .leading, spacing: 0) {
+                MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
                     SeparatedForEach(data: displayConnections, id: \.id, separator: nativeSeparator) { conn in
                         self.connectionRow(conn)
                     }
@@ -383,6 +393,9 @@ extension MenuBarRootView {
             .font: NSFont.monospacedSystemFont(ofSize: size, weight: weight),
         ]
         let width = ceil((text as NSString).size(withAttributes: attributes).width)
+        if Self.textWidthCache.count >= Self.textWidthCacheMaxEntries {
+            Self.textWidthCache.removeAll(keepingCapacity: true)
+        }
         Self.textWidthCache[cacheKey] = width
         return width
     }

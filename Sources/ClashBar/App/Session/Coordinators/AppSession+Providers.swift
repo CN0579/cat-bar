@@ -268,6 +268,7 @@ extension AppSession {
             self.proxyProvidersDetail = nextProxyProviders
             self.ruleProviders = ruleProviders.providers
             self.ruleItems = rules.rules
+            self.noteRulesPresentationChanged()
 
             self.providerProxyCount = filteredProxyProviders.count
             self.providerRuleCount = ruleProviders.providers.count

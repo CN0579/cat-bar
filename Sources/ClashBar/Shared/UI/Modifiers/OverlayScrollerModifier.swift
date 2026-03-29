@@ -4,10 +4,11 @@ import SwiftUI
 // MARK: - Public API
 
 /// A scroll container backed by a real NSScrollView where we have full
-/// control over the scroller appearance.  The native scroller is completely
-/// hidden and a thin 3-pt-wide SwiftUI overlay indicator is drawn instead.
+/// control over the scroller appearance. The native scroller is hidden; an
+/// optional thin SwiftUI overlay knob can be enabled.
 struct ThinScrollContainer<Content: View>: View {
     let height: CGFloat
+    var showsOverlayKnob: Bool = false
     @ViewBuilder let content: Content
 
     @State private var scrollFraction: CGFloat = 0
@@ -35,9 +36,12 @@ struct ThinScrollContainer<Content: View>: View {
             ) {
                 content
             }
-            .onChange(of: scrollFraction) { _ in flashIndicator() }
+            .onChange(of: scrollFraction) { _ in
+                guard self.showsOverlayKnob else { return }
+                flashIndicator()
+            }
 
-            if needsIndicator {
+            if self.showsOverlayKnob, self.needsIndicator {
                 indicatorKnob
                     .opacity(indicatorOpacity)
                     .animation(.easeInOut(duration: fadeDuration), value: indicatorOpacity)

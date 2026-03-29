@@ -1,6 +1,51 @@
 import SwiftUI
 
 extension MenuBarRootView {
+    @ViewBuilder
+    var tabScrollAreaContent: some View {
+        let tab = self.rootViewModel.currentTab
+        if self.needsTabScrolling, tab == .rules {
+            VStack(spacing: 0) {
+                self.rulesTabPinnedHeader()
+                    .frame(width: self.contentWidth, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .reportHeight { self.rulesHeaderHeight = $0 }
+
+                ThinScrollContainer(height: max(1, self.availableTabScrollAreaHeight - self.rulesHeaderHeight - MenuBarLayoutTokens.space2)) {
+                    self.rulesTabScrollableList(isMeasuring: false)
+                        .frame(width: self.contentWidth, alignment: .topLeading)
+                }
+            }
+            .padding(.top, MenuBarLayoutTokens.space2)
+            .frame(width: self.contentWidth, alignment: .topLeading)
+            .id(tab)
+        } else if self.needsTabScrolling, tab == .connections {
+            VStack(spacing: 0) {
+                self.connectionsTabPinnedHeader
+                    .frame(width: self.contentWidth, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .reportHeight { self.connectionsHeaderHeight = $0 }
+
+                ThinScrollContainer(height: max(1, self.availableTabScrollAreaHeight - self.connectionsHeaderHeight - MenuBarLayoutTokens.space2 - MenuBarLayoutTokens.space6)) {
+                    self.connectionsTabScrollableList(isMeasuring: false)
+                        .frame(width: self.contentWidth, alignment: .topLeading)
+                }
+            }
+            .padding(.top, MenuBarLayoutTokens.space2)
+            .frame(width: self.contentWidth, alignment: .topLeading)
+            .id(tab)
+        } else if self.needsTabScrolling {
+            ThinScrollContainer(height: self.availableTabScrollAreaHeight) {
+                self.tabContent(for: tab)
+                    .frame(width: self.contentWidth, alignment: .topLeading)
+            }
+            .frame(width: self.contentWidth, alignment: .topLeading)
+        } else {
+            self.tabContent(for: tab)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
     private var hasMeasuredFixedSections: Bool {
         self.topHeaderHeight > 0 && self.modeAndTabSectionHeight > 0 && self.footerBarHeight > 0
     }

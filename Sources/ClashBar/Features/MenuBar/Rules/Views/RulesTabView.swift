@@ -2,10 +2,14 @@ import SwiftUI
 
 extension MenuBarRootView {
     func rulesTabBody(isMeasuring: Bool = false) -> some View {
-        let visibleRules = self.rulesViewModel.visibleRules
-        let providerLookup = self.rulesViewModel.providerLookup
+        VStack(alignment: .leading, spacing: 0) {
+            self.rulesTabPinnedHeader()
+            self.rulesTabScrollableList(isMeasuring: isMeasuring)
+        }
+    }
 
-        return VStack(alignment: .leading, spacing: 0) {
+    func rulesTabPinnedHeader() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 0) {
                 HStack(spacing: MenuBarLayoutTokens.space8) {
                     self.rulesStatChip(title: tr("ui.rule.stats.rules"), value: "\(appSession.rulesCount)")
@@ -48,29 +52,42 @@ extension MenuBarRootView {
                     .fill(nativeSeparator)
                     .frame(height: MenuBarLayoutTokens.stroke)
             }
+        }
+    }
 
+    func rulesTabScrollableList(isMeasuring: Bool = false) -> some View {
+        let visibleRules = self.rulesViewModel.visibleRules
+        let providerLookup = self.rulesViewModel.providerLookup
+
+        return Group {
             if visibleRules.isEmpty {
                 Text(tr("ui.empty.rules"))
                     .font(.app(size: MenuBarLayoutTokens.FontSize.body, weight: .regular))
                     .foregroundStyle(nativeSecondaryLabel)
                     .padding(.horizontal, MenuBarLayoutTokens.space4)
                     .padding(.vertical, MenuBarLayoutTokens.space8)
-                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 let displayRules = isMeasuring ? Array(visibleRules.prefix(25)) : visibleRules
-                VStack(spacing: 0) {
-                    ForEach(Array(displayRules.enumerated()), id: \.element.rowID) { index, rule in
-                        self.rulesRow(rule: rule, index: index, providerLookup: providerLookup)
+                self.rulesListVStack(rows: displayRules, providerLookup: providerLookup)
+            }
+        }
+    }
 
-                        if index < displayRules.count - 1 {
-                            Rectangle()
-                                .fill(nativeSeparator)
-                                .frame(height: MenuBarLayoutTokens.stroke)
-                        }
-                    }
+    /// Plain `VStack` + dividers (no `LazyVStack` / `SeparatedForEach`) so scroll layout stays tight in SwiftUI `ScrollView`.
+    @ViewBuilder
+    private func rulesListVStack(rows: [RuleItem], providerLookup: [String: ProviderDetail]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.element.rowID) { index, rule in
+                self.ruleRowByItem(rule: rule, providerLookup: providerLookup)
+                if index < rows.count - 1 {
+                    Rectangle()
+                        .fill(self.nativeSeparator)
+                        .frame(height: MenuBarLayoutTokens.stroke)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     func rulesStatChip(title: String, value: String) -> some View {
@@ -99,112 +116,16 @@ extension MenuBarRootView {
         .opacity(appSession.isRuleProvidersRefreshing ? 0.6 : 1)
     }
 
-    func rulesRow(rule: RuleItem, index: Int, providerLookup: [String: ProviderDetail]) -> some View {
-        let hovered = hoveredRuleIndex == index
-        let typeText = (rule.type.trimmedNonEmpty ?? tr("ui.common.na")).uppercased()
-        let targetText = rule.payload.trimmedNonEmpty ?? tr("ui.common.na")
-        let policyText = rule.proxy.trimmedNonEmpty ?? tr("ui.common.na")
-        let iconSpec = self.ruleTypeIcon(for: typeText)
-        let badge = self.rulePolicyBadge(for: policyText)
-        let stats = self.ruleStats(payload: targetText, providerLookup: providerLookup)
-
-        return HStack(spacing: 0) {
-            Image(systemName: iconSpec.symbol)
-                .font(.app(size: MenuBarLayoutTokens.FontSize.subhead, weight: .medium))
-                .foregroundStyle(iconSpec.color)
-                .frame(width: 24, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: MenuBarLayoutTokens.space1) {
-                Text(targetText)
-                    .font(.app(size: MenuBarLayoutTokens.FontSize.body, weight: .medium))
-                    .foregroundStyle(nativePrimaryLabel)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Text(typeText)
-                    .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .regular))
-                    .foregroundStyle(nativeTertiaryLabel)
-                    .lineLimit(1)
-            }
-            .frame(width: 120, alignment: .leading)
-            .padding(.trailing, MenuBarLayoutTokens.space6)
-
-            HStack(spacing: MenuBarLayoutTokens.space1) {
-                if let symbol = badge.symbol {
-                    Image(systemName: symbol)
-                        .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(badge.color)
-                }
-                Text(policyText)
-                    .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .medium))
-                    .foregroundStyle(badge.color)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-            .frame(width: 90, alignment: .leading)
-
-            VStack(alignment: .trailing, spacing: MenuBarLayoutTokens.space1) {
-                Text("\(stats.count)")
-                    .font(.app(size: MenuBarLayoutTokens.FontSize.body, weight: .regular))
-                    .foregroundStyle(stats.hasProvider ? nativeSecondaryLabel : nativeTertiaryLabel)
-                if let updatedText = stats.updatedText {
-                    Text(updatedText)
-                        .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .regular))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .lineLimit(1)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-        .padding(.horizontal, MenuBarLayoutTokens.space4)
-        .frame(height: MenuBarLayoutTokens.rowHeight)
-        .background(nativeHoverRowBackground(hovered))
-        .onHover { hoveredRuleIndex = self.nextHovered(
-            current: hoveredRuleIndex, target: index, isHovering: $0) }
-    }
-
-    func ruleTypeIcon(for type: String) -> (symbol: String, color: Color) {
-        let lower = type.lowercased()
-        if lower.contains("ipcidr") {
-            return ("globe.americas.fill", nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid))
-        }
-        if lower.contains("domain") || lower.contains("suffix") || lower.contains("keyword") {
-            return ("network", nativeTeal.opacity(MenuBarLayoutTokens.Opacity.solid))
-        }
-        if lower.contains("ruleset") {
-            return ("list.bullet.rectangle.fill", nativeWarning.opacity(MenuBarLayoutTokens.Opacity.solid))
-        }
-        return ("circle.grid.2x2.fill", nativeIndigo.opacity(MenuBarLayoutTokens.Opacity.solid))
-    }
-
-    func rulePolicyBadge(for policy: String) -> (symbol: String?, color: Color) {
-        let lower = policy.lowercased()
-        if lower.contains("fishy") {
-            return (
-                symbol: "exclamationmark.triangle.fill",
-                color: nativeAccent.opacity(MenuBarLayoutTokens.Opacity.solid))
-        }
-        return (
-            symbol: nil,
-            color: nativeSecondaryLabel)
-    }
-
-    func ruleStats(
-        payload: String,
-        providerLookup: [String: ProviderDetail]) -> (count: Int, updatedText: String?, hasProvider: Bool)
-    {
-        let payloadTrimmed = payload.trimmed
-        guard !payloadTrimmed.isEmpty, payloadTrimmed != tr("ui.common.na") else {
-            return (count: 0, updatedText: nil, hasProvider: false)
-        }
-
-        if let provider = providerLookup[payloadTrimmed.lowercased()] {
-            let count = max(0, provider.ruleCount ?? 0)
-            return (
-                count: count,
-                updatedText: ValueFormatter.relativeTime(from: provider.updatedAt, language: language),
-                hasProvider: true)
-        }
-        return (count: 0, updatedText: nil, hasProvider: false)
+    func ruleRowByItem(rule: RuleItem, providerLookup: [String: ProviderDetail]) -> some View {
+        let hovered = hoveredRuleID == rule.rowID
+        return RulesListRowView(
+            rule: rule,
+            providerLookup: providerLookup,
+            language: language,
+            showsBottomDivider: false)
+            .background(nativeHoverRowBackground(hovered))
+            .onHover { hoveredRuleID = self.nextHovered(
+                current: hoveredRuleID, target: rule.rowID, isHovering: $0) }
     }
 
     func refreshVisibleRules() {

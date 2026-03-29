@@ -291,9 +291,7 @@ extension AppSession {
             connectionsStore.connectionsCount = totalCount
         }
 
-        if connectionsStore.connections != snapshot.connections {
-            connectionsStore.connections = snapshot.connections
-        }
+        connectionsStore.replaceConnections(snapshot.connections)
     }
 
     private func resetStreamReconnectState(for kind: StreamKind) {

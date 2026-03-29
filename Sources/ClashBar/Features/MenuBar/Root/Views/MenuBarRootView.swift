@@ -42,23 +42,11 @@ enum LogLevelFilter: Hashable, CaseIterable {
     }
 }
 
-private struct ConnectionsRefreshToken: Equatable {
-    let connections: [ConnectionSummary]
-    let keyword: String
-    let transport: ConnectionsTransportFilter
-    let sort: ConnectionsSortOption
-}
-
 private struct LogsRefreshToken: Equatable {
     let logs: [AppErrorLogEntry]
     let sources: Set<AppLogSource>
     let levels: Set<LogLevelFilter>
     let keyword: String
-}
-
-private struct RulesRefreshToken: Equatable {
-    let items: [RuleItem]
-    let providers: [String: ProviderDetail]
 }
 
 struct MenuBarRootView: View {
@@ -85,13 +73,15 @@ struct MenuBarRootView: View {
     @State var copiedProxyCommandTarget: ProxyCommandCopyTarget?
     @State var proxyCommandCopyResetTask: Task<Void, Never>?
     @State var hoveredProviderName: String?
-    @State var hoveredRuleIndex: Int?
+    @State var hoveredRuleID: UUID?
     @State var hoveredMode: CoreMode?
     @State var hoveredTab: RootTab?
     @State var topHeaderHeight: CGFloat = 0
     @State var modeAndTabSectionHeight: CGFloat = 0
     @State var footerBarHeight: CGFloat = 0
     @State var naturalPanelContentHeight: CGFloat = 0
+    @State var rulesHeaderHeight: CGFloat = 0
+    @State var connectionsHeaderHeight: CGFloat = 0
     @AppStorage("clashbar.proxy.group.hide_hidden") var hideHiddenProxyGroups: Bool = true
     @AppStorage("clashbar.proxy.group.sort_nodes_by_latency") var sortGroupNodesByLatency: Bool = false
 
@@ -141,16 +131,7 @@ struct MenuBarRootView: View {
                 .reportHeight { updateSectionHeight($0, target: .modeAndTab) }
 
             Group {
-                if self.needsTabScrolling {
-                    ThinScrollContainer(height: self.availableTabScrollAreaHeight) {
-                        self.tabContent(for: self.rootViewModel.currentTab)
-                            .frame(width: self.contentWidth, alignment: .topLeading)
-                    }
-                    .frame(width: self.contentWidth, alignment: .topLeading)
-                } else {
-                    self.tabContent(for: self.rootViewModel.currentTab)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
+                self.tabScrollAreaContent
             }
 
             Spacer(minLength: 0)
@@ -186,6 +167,9 @@ struct MenuBarRootView: View {
                 self.publishPreferredPanelHeight()
             }
             .onChange(of: self.rootViewModel.currentTab) { tab in
+                if tab != .connections {
+                    self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
+                }
                 self.appSession.setActiveMenuTab(tab)
                 self.refreshDerivedData(for: tab)
                 self.publishPreferredPanelHeight()
@@ -193,18 +177,29 @@ struct MenuBarRootView: View {
             .onChange(of: self.appSession.activeMenuTab) { tab in
                 guard self.rootViewModel.currentTab != tab else { return }
                 self.setCurrentTabWithoutAnimation(tab)
+                if tab != .connections {
+                    self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
+                }
                 self.refreshDerivedData(for: tab)
                 self.publishPreferredPanelHeight()
             }
             .onChange(of: self.popoverLayoutModel.maxPanelHeight) { _ in
                 self.publishPreferredPanelHeight()
             }
-            .onChange(of: ConnectionsRefreshToken(
-                connections: self.connectionsStore.connections,
-                keyword: self.connectionsViewModel.filterText,
-                transport: self.connectionsViewModel.transportFilter,
-                sort: self.connectionsViewModel.sortOption))
-            { _ in
+            .onChange(of: self.connectionsStore.connectionsRevision) { _ in
+                guard self.rootViewModel.currentTab == .connections else { return }
+                let searchText: (ConnectionSummary) -> String = { self.connectionSearchText(for: $0) }
+                self.connectionsViewModel.scheduleCoalescedVisibleConnectionsUpdate(
+                    connectionsSupplier: { self.connectionsStore.connections },
+                    searchText: searchText)
+            }
+            .onChange(of: self.connectionsViewModel.filterText) { _ in
+                self.refreshConnectionsDerivedDataIfVisible()
+            }
+            .onChange(of: self.connectionsViewModel.transportFilter) { _ in
+                self.refreshConnectionsDerivedDataIfVisible()
+            }
+            .onChange(of: self.connectionsViewModel.sortOption) { _ in
                 self.refreshConnectionsDerivedDataIfVisible()
             }
             .onChange(of: LogsRefreshToken(
@@ -215,10 +210,7 @@ struct MenuBarRootView: View {
             { _ in
                 self.refreshLogsDerivedDataIfVisible()
                 }
-                .onChange(of: RulesRefreshToken(
-                        items: self.appSession.ruleItems,
-                        providers: self.appSession.ruleProviders))
-                { _ in
+                .onChange(of: self.appSession.rulesPresentationRevision) { _ in
                     self.refreshRulesDerivedDataIfVisible()
                     }
                     .onChange(of: self.appSession.proxyGroups) { newGroups in

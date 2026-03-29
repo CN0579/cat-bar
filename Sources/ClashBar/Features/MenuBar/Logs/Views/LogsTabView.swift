@@ -64,7 +64,7 @@ extension MenuBarRootView {
                 emptyCard(tr("ui.empty.logs"))
             } else {
                 let displayLogs = isMeasuring ? Array(logs.prefix(25)) : logs
-                MeasurementAwareVStack(alignment: .leading, spacing: 0) {
+                MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
                     SeparatedForEach(data: displayLogs, id: \.id, separator: nativeSeparator) { log in
                         self.logEntryRow(log)
                             .padding(.horizontal, T.space4)

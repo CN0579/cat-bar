@@ -246,7 +246,7 @@ extension AppSession {
 
     private func releasePanelCachedData() {
         connectionsStore.connectionsCount = 0
-        connectionsStore.connections.removeAll(keepingCapacity: false)
+        connectionsStore.clearConnectionsList()
 
         memory = MemorySnapshot(inuse: 0)
 
@@ -257,6 +257,7 @@ extension AppSession {
         providerUpdating.removeAll(keepingCapacity: false)
         ruleProviders.removeAll(keepingCapacity: false)
         ruleItems.removeAll(keepingCapacity: false)
+        noteRulesPresentationChanged()
     }
 
     func appendTrafficHistory(up: Int64, down: Int64) {

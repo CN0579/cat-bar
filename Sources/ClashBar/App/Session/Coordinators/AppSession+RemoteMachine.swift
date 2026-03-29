@@ -46,7 +46,9 @@ extension AppSession {
         self.clearAllLogs()
         self.proxyGroups = []
         self.ruleItems = []
-        self.connectionsStore.connections = []
+        self.ruleProviders = [:]
+        self.noteRulesPresentationChanged()
+        self.connectionsStore.clearConnectionsList()
         self.connectionsStore.connectionsCount = 0
 
         switch target {

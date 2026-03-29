@@ -43,16 +43,31 @@ struct SeparatedForEach<Element: Equatable, ID: Hashable, RowContent: View>: Vie
 struct MeasurementAwareVStack<Content: View>: View {
     let alignment: HorizontalAlignment
     let spacing: CGFloat
+    /// `false` avoids `LazyVStack` + `NSScrollView` layout bugs (large vertical gaps / crashes when combined
+    /// with certain Auto Layout setups). Use for bounded lists inside `ThinScrollContainer` (e.g. rules,
+    /// connections).
+    var usesLazyStack: Bool
     @ViewBuilder let content: Content
 
-    init(alignment: HorizontalAlignment = .center, spacing: CGFloat = 0, @ViewBuilder content: () -> Content) {
+    init(
+        alignment: HorizontalAlignment = .center,
+        spacing: CGFloat = 0,
+        usesLazyStack: Bool = true,
+        @ViewBuilder content: () -> Content)
+    {
         self.alignment = alignment
         self.spacing = spacing
+        self.usesLazyStack = usesLazyStack
         self.content = content()
     }
 
+    @ViewBuilder
     var body: some View {
-        LazyVStack(alignment: self.alignment, spacing: self.spacing) { self.content }
+        if self.usesLazyStack {
+            LazyVStack(alignment: self.alignment, spacing: self.spacing) { self.content }
+        } else {
+            VStack(alignment: self.alignment, spacing: self.spacing) { self.content }
+        }
     }
 }
 
