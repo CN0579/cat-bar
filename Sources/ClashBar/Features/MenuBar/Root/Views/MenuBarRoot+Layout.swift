@@ -4,7 +4,7 @@ extension MenuBarRootView {
     @ViewBuilder
     var tabScrollAreaContent: some View {
         let tab = self.rootViewModel.currentTab
-        if self.needsTabScrolling, tab == .rules {
+        if self.needsTabScrolling, tab == .rules, self.rulesHeaderHeight > 0 {
             VStack(spacing: 0) {
                 self.rulesTabPinnedHeader()
                     .frame(width: self.contentWidth, alignment: .leading)
@@ -19,7 +19,7 @@ extension MenuBarRootView {
             .padding(.top, MenuBarLayoutTokens.space2)
             .frame(width: self.contentWidth, alignment: .topLeading)
             .id(tab)
-        } else if self.needsTabScrolling, tab == .connections {
+        } else if self.needsTabScrolling, tab == .connections, self.connectionsHeaderHeight > 0 {
             VStack(spacing: 0) {
                 self.connectionsTabPinnedHeader
                     .frame(width: self.contentWidth, alignment: .leading)
@@ -40,6 +40,9 @@ extension MenuBarRootView {
                     .frame(width: self.contentWidth, alignment: .topLeading)
             }
             .frame(width: self.contentWidth, alignment: .topLeading)
+            .background {
+                self.pinnedHeaderMeasurementLayer(for: tab)
+            }
         } else {
             self.tabContent(for: tab)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -97,6 +100,28 @@ extension MenuBarRootView {
 
     func publishPreferredPanelHeight() {
         self.popoverLayoutModel.requestPanelHeight(max(1, self.resolvedPanelHeight.rounded(.up)))
+    }
+
+    /// Hidden layer that measures the pinned header height so the next render can
+    /// switch to the fixed-header + scroll-list layout without an initial blank flash.
+    @ViewBuilder
+    func pinnedHeaderMeasurementLayer(for tab: RootTab) -> some View {
+        switch tab {
+        case .rules where self.rulesHeaderHeight == 0:
+            self.rulesTabPinnedHeader()
+                .fixedSize(horizontal: false, vertical: true)
+                .reportHeight { self.rulesHeaderHeight = $0 }
+                .hidden()
+                .allowsHitTesting(false)
+        case .connections where self.connectionsHeaderHeight == 0:
+            self.connectionsTabPinnedHeader
+                .fixedSize(horizontal: false, vertical: true)
+                .reportHeight { self.connectionsHeaderHeight = $0 }
+                .hidden()
+                .allowsHitTesting(false)
+        default:
+            EmptyView()
+        }
     }
 
     enum SectionHeightTarget {
