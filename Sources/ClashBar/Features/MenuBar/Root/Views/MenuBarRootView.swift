@@ -142,12 +142,11 @@ struct MenuBarRootView: View {
 
             Group {
                 if self.needsTabScrolling {
-                    ScrollView(.vertical) {
+                    ThinScrollContainer(height: self.availableTabScrollAreaHeight) {
                         self.tabContent(for: self.rootViewModel.currentTab)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .frame(width: self.contentWidth, alignment: .topLeading)
                     }
-                    .scrollIndicators(.visible)
-                    .frame(height: self.availableTabScrollAreaHeight, alignment: .top)
+                    .frame(width: self.contentWidth, alignment: .topLeading)
                 } else {
                     self.tabContent(for: self.rootViewModel.currentTab)
                         .frame(maxWidth: .infinity, alignment: .topLeading)

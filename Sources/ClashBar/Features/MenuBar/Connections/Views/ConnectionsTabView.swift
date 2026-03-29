@@ -32,7 +32,7 @@ extension MenuBarRootView {
             if connections.isEmpty {
                 emptyCard(tr("ui.empty.connections"))
             } else {
-                MeasurementAwareVStack(spacing: 0) {
+                MeasurementAwareVStack(alignment: .leading, spacing: 0) {
                     SeparatedForEach(data: connections, id: \.id, separator: nativeSeparator) { conn in
                         self.connectionRow(conn)
                     }

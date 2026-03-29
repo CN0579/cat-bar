@@ -15,6 +15,7 @@ extension MenuBarRootView {
                 Spacer(minLength: 0)
                 self.rulesRefreshButton
             }
+            .padding(.horizontal, MenuBarLayoutTokens.space4)
             .padding(.vertical, MenuBarLayoutTokens.space6)
             .overlay(alignment: .bottom) {
                 Rectangle()
