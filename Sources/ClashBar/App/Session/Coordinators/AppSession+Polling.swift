@@ -91,6 +91,7 @@ extension AppSession {
         self.updateDataAcquisitionPolicy()
 
         guard presented else { return }
+        self.refreshLaunchAtLoginStatus()
         self.flushPendingTrafficSnapshotIfNeeded(immediately: true)
         self.scheduleRefreshForActivatedTab(activeMenuTab)
         Task { [weak self] in
@@ -102,6 +103,10 @@ extension AppSession {
         let changed = activeMenuTab != tab
         activeMenuTab = tab
         self.updateDataAcquisitionPolicy()
+
+        if tab == .system {
+            self.refreshLaunchAtLoginStatus()
+        }
 
         guard changed else { return }
         self.scheduleRefreshForActivatedTab(tab)

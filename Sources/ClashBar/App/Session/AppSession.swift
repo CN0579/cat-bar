@@ -337,6 +337,7 @@ final class AppSession: ObservableObject {
     var configDirectoryMonitorTask: Task<Void, Never>?
     var trafficDecodeTask: Task<Void, Never>?
     var mihomoLogFlushTask: Task<Void, Never>?
+    var launchAtLoginApprovalMonitorTask: Task<Void, Never>?
     var providerRefreshGeneration: Int = 0
     var lastTrafficSampleAt: Date?
     var lastTrafficDecodeAt: Date = .distantPast
