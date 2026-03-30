@@ -6,7 +6,7 @@ enum AppReleaseServiceError: Error {
 }
 
 enum AppReleaseService {
-    private static let latestReleaseURL = URL(string: "https://api.github.com/repos/Sitoi/ClashBar/releases/latest")!
+    private static let latestReleaseURL = AppReleaseConfiguration.latestReleaseAPIURL
 
     static func fetchLatestRelease(currentVersion: String) async throws -> AppReleaseInfo {
         var request = URLRequest(url: Self.latestReleaseURL)

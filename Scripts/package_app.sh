@@ -9,6 +9,10 @@ BUILD_NUMBER="${BUILD_NUMBER:-1}"
 TARGET_ARCH="${TARGET_ARCH:-}"
 RELEASE_OPTIMIZE_FOR_SIZE="${RELEASE_OPTIMIZE_FOR_SIZE:-1}"
 STRIP_BINARIES="${STRIP_BINARIES:-1}"
+REPOSITORY_SLUG="${REPOSITORY_SLUG:-QuentinHsu/ClashBar}"
+SPARKLE_PUBLIC_ED_KEY="${SPARKLE_PUBLIC_ED_KEY:-}"
+SPARKLE_FEED_BASE_URL="${SPARKLE_FEED_BASE_URL:-https://github.com/${REPOSITORY_SLUG}/releases/latest/download}"
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
 PREPROCESS_DIR="${PREPROCESS_DIR:-$ROOT/dist/preprocess}"
 PREPROCESSED_ICON_PATH="${PREPROCESSED_ICON_PATH:-$PREPROCESS_DIR/${APP_NAME}.icns}"
 PREPROCESSED_MIHOMO_PATH="${PREPROCESSED_MIHOMO_PATH:-$PREPROCESS_DIR/mihomo}"
@@ -170,9 +174,43 @@ remove_bundled_mihomo_candidates() {
     "$APP/Contents/Resources/$filename" | awk '!seen[$0]++')
 }
 
+resolve_sparkle_feed_suffix() {
+  local arch="${TARGET_ARCH:-$(uname -m)}"
+  local arch_suffix=""
+
+  case "$arch" in
+    arm64)
+      arch_suffix="apple-silicon"
+      ;;
+    x86_64)
+      arch_suffix="intel"
+      ;;
+    *)
+      echo "Unsupported architecture for Sparkle feed suffix: $arch" >&2
+      exit 1
+      ;;
+  esac
+
+  if [ "$BUNDLE_MIHOMO_BINARY" = "1" ]; then
+    echo "$arch_suffix"
+  else
+    echo "${arch_suffix}-no-core"
+  fi
+}
+
+resolve_sparkle_feed_url() {
+  if [ -n "$SPARKLE_FEED_URL" ]; then
+    echo "$SPARKLE_FEED_URL"
+    return
+  fi
+
+  echo "${SPARKLE_FEED_BASE_URL}/appcast-$(resolve_sparkle_feed_suffix).xml"
+}
+
 BIN="$(resolve_build_artifact "$BIN_CANDIDATE" file "$BIN_PATTERN")"
 RESOURCE_BUNDLE="$(resolve_build_artifact "$RESOURCE_BUNDLE_CANDIDATE" dir "$RESOURCE_BUNDLE_PATTERN")"
 HELPER_BIN="$(resolve_build_artifact "$HELPER_BIN_CANDIDATE" file "$HELPER_PATTERN")"
+SPARKLE_FRAMEWORK="$(find "$ROOT/.build" -path '*/Sparkle.framework' -type d | head -n 1 || true)"
 
 if [ ! -f "$BIN" ]; then
   echo "Build output not found: $BIN" >&2
@@ -186,6 +224,10 @@ if [ ! -f "$HELPER_BIN" ]; then
   echo "Helper build output not found: $HELPER_BIN" >&2
   exit 1
 fi
+if [ ! -d "$SPARKLE_FRAMEWORK" ]; then
+  echo "Sparkle.framework not found under .build. Ensure SwiftPM dependencies have been resolved." >&2
+  exit 1
+fi
 if [ ! -f "$HELPER_PLIST_SOURCE" ]; then
   echo "Helper plist not found: $HELPER_PLIST_SOURCE" >&2
   exit 1
@@ -195,6 +237,7 @@ rm -rf "$APP"
 mkdir -p \
   "$APP/Contents/MacOS" \
   "$APP/Contents/Resources" \
+  "$APP/Contents/Frameworks" \
   "$APP/Contents/Library/HelperTools" \
   "$APP/Contents/Library/LaunchDaemons"
 
@@ -203,6 +246,9 @@ chmod +x "$APP/Contents/MacOS/ClashBar"
 
 rm -rf "$APP/Contents/Resources/ClashBar_ClashBar.bundle"
 cp -R "$RESOURCE_BUNDLE" "$APP/Contents/Resources/ClashBar_ClashBar.bundle"
+
+rm -rf "$APP/Contents/Frameworks/Sparkle.framework"
+cp -R "$SPARKLE_FRAMEWORK" "$APP/Contents/Frameworks/Sparkle.framework"
 
 if [ "$BUNDLE_MIHOMO_BINARY" = "1" ]; then
   if [ -f "$PREPROCESSED_MIHOMO_PATH" ]; then
@@ -257,6 +303,16 @@ else
   BUNDLES_MIHOMO_CORE_PLIST_VALUE="<false/>"
 fi
 
+SPARKLE_PLIST_ENTRIES=""
+if [ -n "$SPARKLE_PUBLIC_ED_KEY" ]; then
+  SPARKLE_FEED_URL_RESOLVED="$(resolve_sparkle_feed_url)"
+  SPARKLE_PLIST_ENTRIES="
+<key>SUFeedURL</key><string>${SPARKLE_FEED_URL_RESOLVED}</string>
+<key>SUPublicEDKey</key><string>${SPARKLE_PUBLIC_ED_KEY}</string>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAllowsAutomaticUpdates</key><true/>"
+fi
+
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -270,6 +326,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <key>CFBundleVersion</key><string>${BUILD_NUMBER}</string>
 $ICON_PLIST_ENTRY
 <key>ClashBarBundlesMihomoCore</key>${BUNDLES_MIHOMO_CORE_PLIST_VALUE}
+$SPARKLE_PLIST_ENTRIES
 <key>NSAppTransportSecurity</key>
 <dict>
 <key>NSAllowsArbitraryLoads</key><true/>
@@ -281,6 +338,7 @@ PLIST
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 
 if command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign "$CODESIGN_IDENTITY" --deep "$APP/Contents/Frameworks/Sparkle.framework"
   codesign --force --sign "$CODESIGN_IDENTITY" "$APP/Contents/Library/HelperTools/$HELPER_LABEL"
   codesign --force --sign "$CODESIGN_IDENTITY" "$APP"
 fi

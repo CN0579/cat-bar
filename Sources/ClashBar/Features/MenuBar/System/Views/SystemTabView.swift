@@ -466,6 +466,13 @@ extension MenuBarRootView {
                     }
 
                     HStack(spacing: T.space6) {
+                        self.maintenanceActionButton(
+                            tr("ui.action.check_app_updates"),
+                            symbol: "arrow.down.circle")
+                        {
+                            self.appUpdater.checkForUpdates()
+                        }
+
                         ForEach(maintenanceActions, id: \.titleKey) { item in
                             self.maintenanceActionButton(tr(item.titleKey), symbol: item.symbol) {
                                 await item.action()

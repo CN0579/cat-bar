@@ -49,6 +49,7 @@
 "ui.action.update_geo" = "更新 GEO";
 "ui.action.upgrade_core" = "更新内核";
 "ui.action.upgrade_ui" = "升级 UI";
+"ui.action.check_app_updates" = "检查应用更新";
 "ui.action.upgrade_geo" = "升级 GEO 资源";
 "ui.action.restart_core_api" = "重启内核";
 
@@ -171,6 +172,8 @@
 "ui.footer.core_mihomo" = "MIHOMO %@";
 "ui.footer.version" = "v%@";
 "ui.footer.version_update_help" = "查看 v%@ 版本说明";
+"ui.footer.version_install_help" = "通过应用内更新安装 v%@";
+"ui.footer.version_check_help" = "检查 ClashBar 更新";
 "ui.footer.version_update_accessibility" = "当前版本 v%@，可更新到 v%@。";
 "ui.footer.core_upgrade.running" = "更新中...";
 "ui.footer.core_upgrade.success" = "已更新";

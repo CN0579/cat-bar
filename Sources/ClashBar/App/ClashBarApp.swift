@@ -81,6 +81,11 @@ struct ClashBarApp: App {
                 }
                 .keyboardShortcut("K", modifiers: [.command, .shift])
 
+                Button(self.tr("ui.action.check_app_updates")) {
+                    self.appDelegate.appUpdater.checkForUpdates()
+                }
+                .keyboardShortcut("U", modifiers: [.command, .option])
+
                 Button(self.tr("ui.quick.copy_terminal")) {
                     self.commandsViewModel.copyProxyCommand()
                 }
@@ -114,12 +119,18 @@ final class ClashBarAppDelegate: NSObject, NSApplicationDelegate {
         self.container.appSession
     }
 
+    var appUpdater: AppUpdater {
+        self.container.appUpdater
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let image = BrandIcon.image {
             NSApp.applicationIconImage = image
         }
         NSApp.setActivationPolicy(.accessory)
-        self.statusItemController = StatusItemController(appSession: self.appSession)
+        self.statusItemController = StatusItemController(
+            appSession: self.appSession,
+            appUpdater: self.appUpdater)
         self.appSession.presentInitialNoCoreSetupGuideIfNeeded()
     }
 

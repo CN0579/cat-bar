@@ -21,11 +21,13 @@ private final class FloatingPanel: NSPanel {
 
 private struct StatusItemPopoverRootView: View {
     @ObservedObject var appSession: AppSession
+    @ObservedObject var appUpdater: AppUpdater
     @ObservedObject var popoverLayoutModel: PopoverLayoutModel
 
     var body: some View {
         MenuBarRootView()
             .environmentObject(self.appSession)
+            .environmentObject(self.appUpdater)
             .environmentObject(self.appSession.connectionsStore)
             .environmentObject(self.appSession.remoteMachineStore)
             .environmentObject(self.popoverLayoutModel)
@@ -35,6 +37,7 @@ private struct StatusItemPopoverRootView: View {
 @MainActor
 final class StatusItemController: NSObject {
     private let appSession: AppSession
+    private let appUpdater: AppUpdater
     private let viewModel: StatusBarViewModel
     private let statusItem: NSStatusItem
     private let panel: FloatingPanel
@@ -64,8 +67,9 @@ final class StatusItemController: NSObject {
     private let speedDisplayRefreshInterval: TimeInterval = 1.0
     private static let popoverContentWidth: CGFloat = MenuBarLayoutTokens.panelWidth
 
-    init(appSession: AppSession) {
+    init(appSession: AppSession, appUpdater: AppUpdater) {
         self.appSession = appSession
+        self.appUpdater = appUpdater
         self.viewModel = StatusBarViewModel(session: appSession)
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.panel = FloatingPanel(
@@ -174,6 +178,7 @@ final class StatusItemController: NSObject {
     private var popoverRootView: StatusItemPopoverRootView {
         StatusItemPopoverRootView(
             appSession: self.appSession,
+            appUpdater: self.appUpdater,
             popoverLayoutModel: self.popoverLayoutModel)
     }
 

@@ -201,6 +201,9 @@ jobs:
         run: |
           APP_VERSION="${{ needs.prepare-version.outputs.version }}" \
           BUILD_NUMBER="${{ needs.prepare-version.outputs.build_number }}" \
+          REPOSITORY_SLUG="${{ github.repository }}" \
+          SPARKLE_PUBLIC_ED_KEY="${{ vars.SPARKLE_PUBLIC_ED_KEY }}" \
+          SPARKLE_FEED_BASE_URL="https://github.com/${{ github.repository }}/releases/latest/download" \
           PREPARE_MIHOMO_BINARY="${{ matrix.bundle_mihomo_binary }}" \
           BUNDLE_MIHOMO_BINARY="${{ matrix.bundle_mihomo_binary }}" \
           TARGET_ARCH="${{ matrix.target_arch }}" \
@@ -213,6 +216,39 @@ jobs:
           DMG_SUFFIX="${{ matrix.dmg_suffix }}" \
           ./Scripts/build.sh dmg
 
+      - name: Generate Sparkle appcast
+        if: ${{ secrets.SPARKLE_PRIVATE_ED_KEY != '' && vars.SPARKLE_PUBLIC_ED_KEY != '' }}
+        shell: bash
+        env:
+          SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          key_file="$(mktemp)"
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s' "$SPARKLE_PRIVATE_ED_KEY" > "$key_file"
+          chmod 600 "$key_file"
+
+          sign_update_tool="$(find .build -path '*/Sparkle*/bin/sign_update' -type f | head -n 1 || true)"
+          if [[ -z "$sign_update_tool" || ! -x "$sign_update_tool" ]]; then
+            echo "Sparkle sign_update tool not found under .build" >&2
+            exit 1
+          fi
+
+          dmg_name="ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg"
+
+          python3 Scripts/generate_sparkle_appcast.py \
+            --dmg "dist/${dmg_name}" \
+            --sign-update-tool "$sign_update_tool" \
+            --private-key-file "$key_file" \
+            --download-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ needs.prepare-version.outputs.tag }}/${dmg_name}" \
+            --release-notes-url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ needs.prepare-version.outputs.tag }}" \
+            --version "${{ needs.prepare-version.outputs.version }}" \
+            --build-version "${{ needs.prepare-version.outputs.build_number }}" \
+            --minimum-system-version "13.0" \
+            --title "ClashBar ${{ needs.prepare-version.outputs.version }}" \
+            --output "dist/appcast-${{ matrix.dmg_suffix }}.xml"
+
       - name: Upload dmg artifact
         uses: actions/upload-artifact@v4
         with:
@@ -220,6 +256,14 @@ jobs:
           path: |
             dist/ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg
             dist/ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg.sha256
+          if-no-files-found: error
+
+      - name: Upload appcast artifact
+        if: ${{ secrets.SPARKLE_PRIVATE_ED_KEY != '' && vars.SPARKLE_PUBLIC_ED_KEY != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: appcast-${{ matrix.dmg_suffix }}
+          path: dist/appcast-${{ matrix.dmg_suffix }}.xml
           if-no-files-found: error
 
   release:
@@ -240,6 +284,14 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - name: Download appcast artifacts
+        if: ${{ secrets.SPARKLE_PRIVATE_ED_KEY != '' && vars.SPARKLE_PUBLIC_ED_KEY != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: appcast-*
+          merge-multiple: true
+          path: dist
+
       - name: Generate release body
         shell: bash
         env:
@@ -251,7 +303,8 @@ jobs:
             "${{ needs.prepare-version.outputs.version }}" \
             release.md
 
-      - name: Publish release assets
+      - name: Publish release assets with appcasts
+        if: ${{ secrets.SPARKLE_PRIVATE_ED_KEY != '' && vars.SPARKLE_PUBLIC_ED_KEY != '' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare-version.outputs.tag }}
@@ -261,3 +314,18 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/*.dmg
+            dist/*.sha256
+            dist/appcast-*.xml
+
+      - name: Publish release assets
+        if: ${{ !(secrets.SPARKLE_PRIVATE_ED_KEY != '' && vars.SPARKLE_PUBLIC_ED_KEY != '') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare-version.outputs.tag }}
+          name: ClashBar ${{ needs.prepare-version.outputs.version }}
+          body_path: release.md
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.dmg
+            dist/*.sha256

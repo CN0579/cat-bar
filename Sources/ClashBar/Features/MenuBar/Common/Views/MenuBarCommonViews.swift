@@ -385,21 +385,51 @@ extension MenuBarRootView {
     @ViewBuilder
     var footerVersionInfo: some View {
         if let update = self.appSession.availableAppUpdate {
-            Link(destination: update.releaseURL) {
-                self.footerVersionBadge(
-                    text: tr("ui.footer.version", update.displayVersion),
-                    symbol: "arrow.down.circle.fill",
-                    tint: self.nativeAccent.opacity(MenuBarLayoutTokens.Opacity.solid),
-                    emphasized: true)
+            if self.appUpdater.isConfigured {
+                Button {
+                    self.appUpdater.checkForUpdates()
+                } label: {
+                    self.footerVersionBadge(
+                        text: tr("ui.footer.version", update.displayVersion),
+                        symbol: "arrow.down.circle.fill",
+                        tint: self.nativeAccent.opacity(MenuBarLayoutTokens.Opacity.solid),
+                        emphasized: true)
+                }
+                .buttonStyle(.plain)
+                .help(tr("ui.footer.version_install_help", update.displayVersion))
+                .accessibilityLabel(tr(
+                    "ui.footer.version_update_accessibility",
+                    self.appSession.currentAppVersionText,
+                    update.displayVersion))
+            } else {
+                Link(destination: update.releaseURL) {
+                    self.footerVersionBadge(
+                        text: tr("ui.footer.version", update.displayVersion),
+                        symbol: "arrow.down.circle.fill",
+                        tint: self.nativeAccent.opacity(MenuBarLayoutTokens.Opacity.solid),
+                        emphasized: true)
+                }
+                .buttonStyle(.plain)
+                .help(tr("ui.footer.version_update_help", update.displayVersion))
+                .accessibilityLabel(tr(
+                    "ui.footer.version_update_accessibility",
+                    self.appSession.currentAppVersionText,
+                    update.displayVersion))
             }
-            .buttonStyle(.plain)
-            .help(tr("ui.footer.version_update_help", update.displayVersion))
-            .accessibilityLabel(tr(
-                "ui.footer.version_update_accessibility",
-                self.appSession.currentAppVersionText,
-                update.displayVersion))
         } else {
-            if let releaseIndexURL = self.appSession.appReleaseIndexURL {
+            if self.appUpdater.isConfigured {
+                Button {
+                    self.appUpdater.checkForUpdates()
+                } label: {
+                    self.footerVersionBadge(
+                        text: tr("ui.footer.version", self.appSession.currentAppVersionText),
+                        symbol: "arrow.clockwise.circle",
+                        tint: self.nativeSecondaryLabel,
+                        emphasized: false)
+                }
+                .buttonStyle(.plain)
+                .help(tr("ui.footer.version_check_help"))
+            } else if let releaseIndexURL = self.appSession.appReleaseIndexURL {
                 Link(destination: releaseIndexURL) {
                     self.footerVersionBadge(
                         text: tr("ui.footer.version", self.appSession.currentAppVersionText),

@@ -11,14 +11,14 @@
   <img alt="Swift" src="https://img.shields.io/badge/Swift-6.2-F05138?style=flat-square&logo=swift" />
   <img alt="Build" src="https://img.shields.io/badge/Build-SwiftPM-0A84FF?style=flat-square" />
   <img alt="i18n" src="https://img.shields.io/badge/i18n-zh--Hans%20%7C%20en-34C759?style=flat-square" />
-  <a href="https://github.com/Sitoi/ClashBar/releases" target="_blank" rel="noopener noreferrer">
-    <img alt="Version" src="https://img.shields.io/github/v/release/Sitoi/ClashBar?style=flat-square&logo=github" />
+  <a href="https://github.com/QuentinHsu/ClashBar/releases" target="_blank" rel="noopener noreferrer">
+    <img alt="Version" src="https://img.shields.io/github/v/release/QuentinHsu/ClashBar?style=flat-square&logo=github" />
   </a>
-  <a href="https://github.com/Sitoi/ClashBar/stargazers" target="_blank" rel="noopener noreferrer">
-    <img alt="Stars" src="https://img.shields.io/github/stars/Sitoi/ClashBar?style=flat-square&logo=github" />
+  <a href="https://github.com/QuentinHsu/ClashBar/stargazers" target="_blank" rel="noopener noreferrer">
+    <img alt="Stars" src="https://img.shields.io/github/stars/QuentinHsu/ClashBar?style=flat-square&logo=github" />
   </a>
-  <a href="https://github.com/Sitoi/ClashBar/issues" target="_blank" rel="noopener noreferrer">
-    <img alt="Issues" src="https://img.shields.io/github/issues/Sitoi/ClashBar?style=flat-square&logo=github" />
+  <a href="https://github.com/QuentinHsu/ClashBar/issues" target="_blank" rel="noopener noreferrer">
+    <img alt="Issues" src="https://img.shields.io/github/issues/QuentinHsu/ClashBar?style=flat-square&logo=github" />
   </a>
   <a href="https://t.me/clashbars" target="_blank" rel="noopener noreferrer">
     <img alt="Telegram" src="https://img.shields.io/badge/Telegram-@clashbars-26A5E4?style=flat-square&logo=telegram&logoColor=white" />
@@ -42,7 +42,7 @@ ClashBar 是一款基于 `mihomo` 内核的原生 macOS 菜单栏代理客户端
 
 感谢所有参与贡献的开发者：
 
-[![Contributors](https://contrib.rocks/image?repo=Sitoi/ClashBar)](https://github.com/Sitoi/ClashBar/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=QuentinHsu/ClashBar)](https://github.com/QuentinHsu/ClashBar/graphs/contributors)
 
 ## 🙏 致谢
 
@@ -51,7 +51,18 @@ ClashBar 是一款基于 `mihomo` 内核的原生 macOS 菜单栏代理客户端
 
 ## ✨ Star 数
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Sitoi/ClashBar&type=date&legend=top-left)](https://www.star-history.com/#Sitoi/ClashBar&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=QuentinHsu/ClashBar&type=date&legend=top-left)](https://www.star-history.com/#QuentinHsu/ClashBar&type=date&legend=top-left)
+
+## 应用内更新
+
+项目现在支持基于 Sparkle 的应用内更新，更新源仍然来自 GitHub Release。
+
+- 稳定版发布工作流会为每个架构和内核形态生成独立的 `appcast-*.xml`，并作为 release asset 一起上传。
+- 安装包只有在构建时注入 `SPARKLE_PUBLIC_ED_KEY` 后才会启用应用内更新；未配置时会自动回退到 GitHub Releases 页面。
+要让自动更新真正生效，需要在 GitHub Actions 中配置两个值：
+
+- `vars.SPARKLE_PUBLIC_ED_KEY`
+- `secrets.SPARKLE_PRIVATE_ED_KEY`
 
 ## 📄 许可证
 

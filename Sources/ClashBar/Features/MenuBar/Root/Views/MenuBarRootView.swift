@@ -59,6 +59,7 @@ struct MenuBarRootView: View {
     }
 
     @EnvironmentObject var appSession: AppSession
+    @EnvironmentObject var appUpdater: AppUpdater
     @EnvironmentObject var connectionsStore: ConnectionsStore
     @EnvironmentObject var remoteMachineStore: RemoteMachineStore
     @EnvironmentObject var popoverLayoutModel: PopoverLayoutModel
