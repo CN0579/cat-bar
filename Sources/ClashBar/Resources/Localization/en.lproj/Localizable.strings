@@ -1,6 +1,6 @@
 "ui.tab.proxy" = "Proxy";
 "ui.tab.nodes" = "Node";
-"ui.tab.rules" = "Rule";
+"ui.tab.rules" = "Rules";
 "ui.tab.connections" = "Connection";
 "ui.tab.logs" = "Log";
 "ui.tab.system" = "Setting";

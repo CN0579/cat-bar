@@ -14,10 +14,10 @@ extension MenuBarRootView {
 
     func rulesTabScrollableList() -> some View {
         MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
-            if self.rulesViewModel.groupedRules.isEmpty {
+            if self.rulesViewModel.ruleGroups.isEmpty {
                 self.emptyCard(tr("ui.empty.rules"))
             } else {
-                self.rulesGroupedSections()
+                self.ruleGroupSections()
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -43,23 +43,23 @@ extension MenuBarRootView {
         }
     }
 
-    private func rulesGroupedSections() -> some View {
-        let groups = self.rulesViewModel.groupedRules
+    private func ruleGroupSections() -> some View {
+        let groups = self.rulesViewModel.ruleGroups
 
         return MeasurementAwareVStack(alignment: .leading, spacing: T.space4, usesLazyStack: false) {
             ForEach(groups) { group in
-                self.rulesGroupBlock(group: group)
+                self.ruleGroupCard(group: group)
             }
         }
     }
 
-    private func rulesGroupBlock(group: RuleGroup) -> some View {
-        let isExpanded = rulesViewModel.expandedRuleGroups.contains(group.name)
+    private func ruleGroupCard(group: RulesGroup) -> some View {
+        let isExpanded = rulesViewModel.expandedGroupNames.contains(group.name)
 
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.snappy(duration: 0.18)) {
-                    rulesViewModel.toggleRuleGroup(group.name)
+                    rulesViewModel.toggleGroupExpansion(group.name)
                 }
             } label: {
                 HStack(spacing: T.space6) {
@@ -94,7 +94,7 @@ extension MenuBarRootView {
             }
             .buttonStyle(.plain)
 
-            if isExpanded { self.rulesGroupExpandedContent(group: group) }
+            if isExpanded { self.ruleGroupExpandedContent(group: group) }
         }
         .background(
             RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
@@ -106,7 +106,7 @@ extension MenuBarRootView {
                 })
     }
 
-    private func rulesGroupExpandedContent(group: RuleGroup) -> some View {
+    private func ruleGroupExpandedContent(group: RulesGroup) -> some View {
         let displayRules = group.rules
 
         return VStack(spacing: 0) {
@@ -124,7 +124,7 @@ extension MenuBarRootView {
             } else {
                 MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
                     ForEach(displayRules) { rule in
-                        self.rulesGroupRuleRow(rule: rule)
+                        self.ruleRow(rule: rule)
                     }
                 }
                 .padding(.vertical, T.space2)
@@ -132,7 +132,7 @@ extension MenuBarRootView {
         }
     }
 
-    private func rulesGroupRuleRow(rule: RuleItem) -> some View {
+    private func ruleRow(rule: RuleItem) -> some View {
         let typeText = (rule.type.trimmedNonEmpty ?? tr("ui.common.na")).uppercased()
         let targetText = rule.payload.trimmedNonEmpty ?? tr("ui.common.na")
         let iconSpec = self.ruleTypeIconSpec(for: typeText)

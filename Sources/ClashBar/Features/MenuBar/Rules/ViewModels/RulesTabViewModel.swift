@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct RuleGroup: Identifiable, Equatable {
+struct RulesGroup: Identifiable, Equatable {
     let name: String
     let rules: [RuleItem]
     var id: String { self.name }
@@ -11,29 +11,29 @@ struct RuleGroup: Identifiable, Equatable {
 final class RulesTabViewModel: ObservableObject {
     private let presentRulesUseCase: PresentRulesUseCase
 
-    @Published private(set) var groupedRules: [RuleGroup] = []
-    @Published var expandedRuleGroups: Set<String> = []
+    @Published private(set) var ruleGroups: [RulesGroup] = []
+    @Published var expandedGroupNames: Set<String> = []
 
     init(presentRulesUseCase: PresentRulesUseCase = PresentRulesUseCase()) {
         self.presentRulesUseCase = presentRulesUseCase
     }
 
-    func toggleRuleGroup(_ name: String) {
-        if self.expandedRuleGroups.contains(name) {
-            self.expandedRuleGroups.remove(name)
+    func toggleGroupExpansion(_ name: String) {
+        if self.expandedGroupNames.contains(name) {
+            self.expandedGroupNames.remove(name)
         } else {
-            self.expandedRuleGroups.insert(name)
+            self.expandedGroupNames.insert(name)
         }
     }
 
     func updateVisibleRules(items: [RuleItem], providers: [String: ProviderDetail]) {
         let nextRules = self.presentRulesUseCase.execute(items: items, providers: providers)
-        let nextGroups = Self.buildGroupedRules(from: nextRules)
-        guard nextGroups != self.groupedRules else { return }
-        self.groupedRules = nextGroups
+        let nextGroups = Self.buildRuleGroups(from: nextRules)
+        guard nextGroups != self.ruleGroups else { return }
+        self.ruleGroups = nextGroups
     }
 
-    private static func buildGroupedRules(from rules: [RuleItem]) -> [RuleGroup] {
+    private static func buildRuleGroups(from rules: [RuleItem]) -> [RulesGroup] {
         var dict: [String: [RuleItem]] = [:]
         var order: [String] = []
         for rule in rules {
@@ -43,6 +43,6 @@ final class RulesTabViewModel: ObservableObject {
             }
             dict[key, default: []].append(rule)
         }
-        return order.map { RuleGroup(name: $0, rules: dict[$0] ?? []) }
+        return order.map { RulesGroup(name: $0, rules: dict[$0] ?? []) }
     }
 }
