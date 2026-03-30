@@ -77,6 +77,8 @@ enum Endpoint {
     case closeConnection(id: String)
     case flushFakeIPCache
     case flushDNSCache
+    case restartCore
+    case updateGeoData
     case upgradeCore
 
     var method: HTTPMethod {
@@ -91,7 +93,7 @@ enum Endpoint {
             .patch
         case .closeAllConnections, .closeConnection:
             .delete
-        case .flushFakeIPCache, .flushDNSCache, .upgradeCore:
+        case .flushFakeIPCache, .flushDNSCache, .restartCore, .updateGeoData, .upgradeCore:
             .post
         }
     }
@@ -124,6 +126,8 @@ enum Endpoint {
         case let .closeConnection(id): "/connections/\(id.urlPathSegmentEscaped)"
         case .flushFakeIPCache: "/cache/fakeip/flush"
         case .flushDNSCache: "/cache/dns/flush"
+        case .restartCore: "/restart"
+        case .updateGeoData: "/configs/geo"
         case .upgradeCore: "/upgrade"
         }
     }
@@ -167,7 +171,9 @@ enum Endpoint {
              let .proxyDelay(_, _, timeout),
              let .proxyProviderProxyHealthcheck(_, _, _, timeout):
             max(5, TimeInterval(timeout) / 1000.0 + 2)
-        case .upgradeCore:
+        case .restartCore:
+            20
+        case .updateGeoData, .upgradeCore:
             60
         default:
             2

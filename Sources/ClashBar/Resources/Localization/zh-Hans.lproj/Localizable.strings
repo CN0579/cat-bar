@@ -45,11 +45,11 @@
 "ui.action.open_web_ui" = "打开 Web UI";
 "ui.action.enable_tun" = "开启 TUN 模式";
 "ui.action.disable_tun" = "关闭 TUN 模式";
-"ui.action.update_geo" = "更新 GEO 数据";
-"ui.action.upgrade_core" = "升级 Core";
+"ui.action.update_geo" = "更新 GEO";
+"ui.action.upgrade_core" = "更新内核";
 "ui.action.upgrade_ui" = "升级 UI";
 "ui.action.upgrade_geo" = "升级 GEO 资源";
-"ui.action.restart_core_api" = "API 重启 Core";
+"ui.action.restart_core_api" = "重启内核";
 
 "ui.mode.rule" = "规则";
 "ui.mode.global" = "全局";
@@ -97,7 +97,7 @@
 "ui.section.proxy_groups" = "代理组";
 "ui.section.basic_settings" = "基础设置";
 "ui.section.proxy_ports" = "代理端口";
-"ui.section.maintenance" = "系统维护";
+"ui.section.maintenance" = "内核操作";
 
 "ui.rules.column.target_type" = "目标 / 类型";
 "ui.rules.column.policy" = "策略";
@@ -358,6 +358,8 @@
 "log.action_name.close_connection" = "关闭连接 %@";
 "log.action_name.flush_fakeip_cache" = "清理 FakeIP 缓存";
 "log.action_name.flush_dns_cache" = "清理 DNS 缓存";
+"log.action_name.restart_core_api" = "重启内核";
+"log.action_name.update_geo" = "更新 GEO";
 
 "fmt.common.unknown" = "--";
 "fmt.relative.minutes" = "%dm前";

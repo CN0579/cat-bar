@@ -45,11 +45,11 @@
 "ui.action.open_web_ui" = "Open Web UI";
 "ui.action.enable_tun" = "Enable TUN Mode";
 "ui.action.disable_tun" = "Disable TUN Mode";
-"ui.action.update_geo" = "Update GEO Data";
-"ui.action.upgrade_core" = "Upgrade Core";
+"ui.action.update_geo" = "Update GEO";
+"ui.action.upgrade_core" = "Update Core";
 "ui.action.upgrade_ui" = "Upgrade UI";
 "ui.action.upgrade_geo" = "Upgrade GEO Assets";
-"ui.action.restart_core_api" = "Restart Core via API";
+"ui.action.restart_core_api" = "Restart Core";
 
 "ui.mode.rule" = "Rule";
 "ui.mode.global" = "Global";
@@ -97,7 +97,7 @@
 "ui.section.proxy_groups" = "Proxy Groups";
 "ui.section.basic_settings" = "Basic Settings";
 "ui.section.proxy_ports" = "Proxy Ports";
-"ui.section.maintenance" = "Maintenance";
+"ui.section.maintenance" = "Core Actions";
 
 "ui.rules.column.target_type" = "Target / Type";
 "ui.rules.column.policy" = "Policy";
@@ -358,6 +358,8 @@
 "log.action_name.close_connection" = "Close connection %@";
 "log.action_name.flush_fakeip_cache" = "Flush FakeIP cache";
 "log.action_name.flush_dns_cache" = "Flush DNS cache";
+"log.action_name.restart_core_api" = "Restart Core";
+"log.action_name.update_geo" = "Update GEO";
 
 "fmt.common.unknown" = "--";
 "fmt.relative.minutes" = "%dm ago";

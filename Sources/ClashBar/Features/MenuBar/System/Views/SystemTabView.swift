@@ -143,8 +143,16 @@ extension MenuBarRootView {
         }
     }
 
-    func maintenanceActionButton(_ title: String, symbol: String, action: @escaping () async -> Void) -> some View {
-        Button {
+    func maintenanceActionButton(
+        _ title: String,
+        symbol: String? = nil,
+        isLoading: Bool = false,
+        isDisabled: Bool = false,
+        action: @escaping () async -> Void) -> some View
+    {
+        let isEnabled = self.maintenanceActionEnabled && !isDisabled
+
+        return Button {
             Task { await action() }
         } label: {
             Label {
@@ -152,14 +160,19 @@ extension MenuBarRootView {
                     .lineLimit(1)
                     .multilineTextAlignment(.center)
             } icon: {
-                Image(systemName: symbol)
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if let symbol {
+                    Image(systemName: symbol)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .appBorderedButtonStyle()
         .controlSize(.small)
-        .disabled(!self.maintenanceActionEnabled)
-        .opacity(self.maintenanceActionEnabled ? 1 : 0.62)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.62)
     }
 
     func settingsFeedbackBanner(text: String, color: Color, symbol: String) -> some View {
@@ -429,6 +442,31 @@ extension MenuBarRootView {
                     symbol: "wrench.and.screwdriver")
 
                 VStack(alignment: .leading, spacing: T.space4) {
+                    HStack(spacing: T.space6) {
+                        self.maintenanceActionButton(
+                            self.footerCoreUpgradeButtonTitle,
+                            symbol: self.footerCoreUpgradeButtonSymbolName,
+                            isLoading: self.appSession.isCoreUpgradeInFlight,
+                            isDisabled: self.appSession.isCoreUpgradeInFlight)
+                        {
+                            await self.appSession.upgradeCore()
+                        }
+
+                        self.maintenanceActionButton(
+                            tr("ui.action.restart_core_api"),
+                            symbol: "arrow.clockwise")
+                        {
+                            await self.appSession.restartCoreViaAPI()
+                        }
+
+                        self.maintenanceActionButton(
+                            tr("ui.action.update_geo"),
+                            symbol: "globe.badge.chevron.backward")
+                        {
+                            await self.appSession.updateGeoData()
+                        }
+                    }
+
                     HStack(spacing: T.space6) {
                         ForEach(maintenanceActions, id: \.titleKey) { item in
                             self.maintenanceActionButton(tr(item.titleKey), symbol: item.symbol) {
