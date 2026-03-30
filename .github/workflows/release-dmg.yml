@@ -32,6 +32,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.version.outputs.build_number }}
+      previous_tag: ${{ steps.version.outputs.previous_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +67,7 @@ jobs:
 
           tag=""
           version=""
+          previous_tag=""
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             tag="${GITHUB_REF_NAME}"
@@ -73,6 +75,11 @@ jobs:
               echo "Tag '$tag' is not valid (expected v1.2.3 or 1.2.3)." >&2
               exit 1
             fi
+            previous_tag="$(
+              git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+                | grep -Fxv "$tag" \
+                | head -n 1 || true
+            )"
           else
             git fetch --tags --force
 
@@ -82,13 +89,18 @@ jobs:
                 exit 1
               fi
               version="$(extract_version "$tag")"
+              previous_tag="$(
+                git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+                  | grep -Fxv "$tag" \
+                  | head -n 1 || true
+              )"
             else
-              last_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 || true)"
+              previous_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 || true)"
               base_version="0.0.0"
               range="HEAD"
-              if [[ -n "$last_tag" ]]; then
-                base_version="${last_tag#v}"
-                range="${last_tag}..HEAD"
+              if [[ -n "$previous_tag" ]]; then
+                base_version="${previous_tag#v}"
+                range="${previous_tag}..HEAD"
               fi
 
               bump="${INPUT_BUMP:-auto}"
@@ -104,7 +116,7 @@ jobs:
                 fi
 
                 if [[ -z "$bump" ]]; then
-                  echo "No releasable commits found since ${last_tag:-repository start}. Set bump manually." >&2
+                  echo "No releasable commits found since ${previous_tag:-repository start}. Set bump manually." >&2
                   exit 1
                 fi
               fi
@@ -131,23 +143,58 @@ jobs:
               esac
               tag="v${major}.${minor}.${patch}"
               version="${major}.${minor}.${patch}"
-              echo "Auto-calculated tag: $tag (bump: $bump, base: ${last_tag:-none})"
-            fi
-
-            if git ls-remote --tags origin "refs/tags/${tag}" | grep -q .; then
-              echo "Tag ${tag} already exists on origin, reusing it."
-            else
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git tag "$tag"
-              git push origin "$tag"
-              echo "Created and pushed tag: $tag"
+              echo "Auto-calculated tag: $tag (bump: $bump, base: ${previous_tag:-none})"
             fi
           fi
 
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "build_number=${version}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${previous_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Update changelog from commits
+        if: github.event_name != 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Scripts/update_changelog.py \
+            --version "${{ steps.version.outputs.version }}" \
+            --from-ref "${{ steps.version.outputs.previous_tag }}" \
+            --to-ref HEAD \
+            --mode write
+
+      - name: Commit changelog
+        if: github.event_name != 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md unchanged."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): release ${{ steps.version.outputs.version }}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Create and push release tag
+        if: github.event_name != 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.version.outputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/${tag}" | grep -q .; then
+            echo "Tag ${tag} already exists on origin, reusing it."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$tag"
+          git push origin "$tag"
+          echo "Created and pushed tag: $tag"
 
   build-dmg:
     needs: prepare-version

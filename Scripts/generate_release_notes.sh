@@ -37,8 +37,17 @@ section = match.group(1).strip()
 sys.stdout.write(section)
 PY
 )" || {
-  echo "Failed to find release notes for version ${version} in ${changelog_path}" >&2
-  exit 1
+  previous_tag="$(
+    git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+      | grep -Fxv "$tag" \
+      | head -n 1 || true
+  )"
+
+  python3 Scripts/update_changelog.py \
+    --version "$version" \
+    --from-ref "$previous_tag" \
+    --to-ref "$tag" \
+    --mode body
 }
 
 repo_url="https://github.com/${GITHUB_REPOSITORY}"

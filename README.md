@@ -64,6 +64,15 @@ ClashBar 是一款基于 `mihomo` 内核的原生 macOS 菜单栏代理客户端
 - `vars.SPARKLE_PUBLIC_ED_KEY`
 - `secrets.SPARKLE_PRIVATE_ED_KEY`
 
+## 正式版发布
+
+正式版默认通过 GitHub Actions 里的 `Release DMG` 工作流发布，推荐直接使用 `workflow_dispatch` 的 `auto` bump 模式。
+
+- 版本号 `X.Y.Z` 会基于上一个稳定 tag 和最近提交的 Conventional Commits 自动计算。
+- `CHANGELOG.md` 会在发布前根据上一个稳定 tag 之后的 commit 自动生成对应版本段落，并先提交回当前分支。
+- `.app` 中的 `CFBundleShortVersionString` 使用语义化版本号，例如 `0.3.0`。
+- `.app` 中的 `CFBundleVersion` 使用 GitHub Actions 的 `run number`，便于区分同一版本下的不同构建。
+
 ## 📄 许可证
 
 本项目采用 `GPL-3.0 license`，详见 [LICENSE](LICENSE)。
