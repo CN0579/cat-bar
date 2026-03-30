@@ -195,7 +195,7 @@ extension MenuBarRootView {
 
     var rulesRefreshButton: some View {
         self.compactTopIcon(
-            "arrow.clockwise",
+            "arrow.triangle.2.circlepath",
             label: tr("ui.action.refresh"),
             toneOverride: nativeInfo,
             isLoading: appSession.isRuleProvidersRefreshing)
