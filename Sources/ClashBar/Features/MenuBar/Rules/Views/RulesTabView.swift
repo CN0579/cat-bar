@@ -55,44 +55,58 @@ extension MenuBarRootView {
 
     private func ruleGroupCard(group: RulesGroup) -> some View {
         let isExpanded = rulesViewModel.expandedGroupNames.contains(group.name)
+        let isUpdating = group.ruleProviderNames.contains { self.appSession.ruleProviderUpdating.contains($0) }
 
         return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.snappy(duration: 0.18)) {
-                    rulesViewModel.toggleGroupExpansion(group.name)
+            HStack(spacing: T.space4) {
+                Button {
+                    withAnimation(.snappy(duration: 0.18)) {
+                        rulesViewModel.toggleGroupExpansion(group.name)
+                    }
+                } label: {
+                    HStack(spacing: T.space6) {
+                        Image(systemName: "arrow.triangle.branch")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeInfo.opacity(T.Opacity.solid))
+                            .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
+
+                        Text(group.name)
+                            .font(.app(size: T.FontSize.body, weight: .semibold))
+                            .foregroundStyle(nativePrimaryLabel)
+                            .lineLimit(1)
+
+                        Text("\(group.totalRuleCount)")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeSecondaryLabel)
+                            .padding(.horizontal, T.space4)
+                            .padding(.vertical, T.space1)
+                            .background(nativeBadgeCapsule())
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .frame(width: T.space8, alignment: .trailing)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, T.space4)
+                    .padding(.vertical, T.space6)
+                    .contentShape(Rectangle())
                 }
-            } label: {
-                HStack(spacing: T.space6) {
-                    Image(systemName: "arrow.triangle.branch")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeInfo.opacity(T.Opacity.solid))
-                        .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
+                .buttonStyle(.plain)
 
-                    Text(group.name)
-                        .font(.app(size: T.FontSize.body, weight: .semibold))
-                        .foregroundStyle(nativePrimaryLabel)
-                        .lineLimit(1)
-
-                    Text("\(group.rules.count)")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeSecondaryLabel)
-                        .padding(.horizontal, T.space4)
-                        .padding(.vertical, T.space1)
-                        .background(nativeBadgeCapsule())
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .frame(width: T.space8, alignment: .trailing)
+                if !group.ruleProviderNames.isEmpty {
+                    self.providerActionButton(.refresh, isLoading: isUpdating) {
+                        await self.appSession.updateRuleProviders(
+                            names: group.ruleProviderNames,
+                            actionName: tr("log.action_name.update_rule_group_providers", group.name))
+                    }
+                    .frame(width: T.rowLeadingIcon, alignment: .center)
+                    .help(tr("ui.action.refresh"))
+                    .padding(.trailing, T.space4)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, T.space4)
-                .padding(.vertical, T.space6)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
 
             if isExpanded { self.ruleGroupExpandedContent(group: group) }
         }
@@ -136,6 +150,9 @@ extension MenuBarRootView {
         let typeText = String.clashRuleTypeDisplayText(from: rule.type) ?? tr("ui.common.na")
         let targetText = rule.payload.trimmedNonEmpty ?? tr("ui.common.na")
         let iconSpec = self.ruleTypeIconSpec(for: typeText)
+        let ruleProviderName = self.ruleProviderName(for: rule)
+        let ruleProviderDetail = ruleProviderName.flatMap { self.appSession.ruleProviders[$0] }
+        let isUpdating = ruleProviderName.map { self.appSession.ruleProviderUpdating.contains($0) } ?? false
 
         return HStack(spacing: T.space4) {
             Image(systemName: iconSpec.symbol)
@@ -151,6 +168,15 @@ extension MenuBarRootView {
 
             Spacer(minLength: 0)
 
+            if let ruleCount = ruleProviderDetail?.ruleCount {
+                Text("\(ruleCount)")
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(nativeSecondaryLabel)
+                    .padding(.horizontal, T.space4)
+                    .padding(.vertical, T.space1)
+                    .background(nativeBadgeCapsule())
+            }
+
             Text(typeText)
                 .font(.app(size: T.FontSize.caption, weight: .medium))
                 .foregroundStyle(nativeTertiaryLabel)
@@ -160,10 +186,32 @@ extension MenuBarRootView {
                 .background(
                     RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
                         .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.1)))
+
+            if let ruleProviderName {
+                self.providerActionButton(.refresh, isLoading: isUpdating) {
+                    await self.appSession.updateRuleProvider(name: ruleProviderName)
+                }
+                .frame(width: T.rowLeadingIcon, alignment: .center)
+                .help(tr("ui.action.refresh"))
+            }
         }
         .frame(minHeight: T.compactRowHeight, alignment: .center)
         .padding(.horizontal, T.space6)
         .padding(.vertical, T.space1)
+    }
+
+    private func ruleProviderName(for rule: RuleItem) -> String? {
+        let lowerType = rule.type?.lowercased() ?? ""
+        guard lowerType.contains("ruleset") || lowerType.contains("rule-set") else {
+            return nil
+        }
+
+        guard let payload = rule.payload?.trimmedNonEmpty,
+              self.appSession.ruleProviders[payload] != nil
+        else {
+            return nil
+        }
+        return payload
     }
 
     private func ruleTypeIconSpec(for type: String) -> (symbol: String, color: Color) {

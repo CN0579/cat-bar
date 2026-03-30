@@ -353,6 +353,7 @@
 
 "log.action_name.reload_config" = "重载配置";
 "log.action_name.switch_proxy" = "切换代理 %@ -> %@";
+"log.action_name.update_rule_group_providers" = "更新规则分组 %@";
 "log.action_name.update_rule_provider" = "更新规则提供者 %@";
 "log.action_name.update_proxy_provider" = "更新代理提供者 %@";
 "log.action_name.close_all_connections" = "关闭全部连接";

@@ -353,6 +353,7 @@
 
 "log.action_name.reload_config" = "Reload config";
 "log.action_name.switch_proxy" = "Switch proxy %@ -> %@";
+"log.action_name.update_rule_group_providers" = "Update rule group %@";
 "log.action_name.update_rule_provider" = "Update rule provider %@";
 "log.action_name.update_proxy_provider" = "Update proxy provider %@";
 "log.action_name.close_all_connections" = "Close all connections";

@@ -32,11 +32,57 @@ extension AppSession {
     }
 
     func updateRuleProvider(name: String) async {
-        await self.runSingleProviderUpdate(
+        guard !self.ruleProviderUpdating.contains(name) else { return }
+        self.ruleProviderUpdating.insert(name)
+        defer { self.ruleProviderUpdating.remove(name) }
+
+        let succeeded = await self.runSingleProviderUpdate(
             actionName: tr("log.action_name.update_rule_provider", name),
             operation: {
                 try await self.updateRuleProviderUseCase().execute(name: name)
             })
+        if succeeded {
+            self.markRuleProviderUpdatedNow(name: name)
+        }
+    }
+
+    func updateRuleProviders(names: [String], actionName: String) async {
+        let pendingNames = names.filter { !self.ruleProviderUpdating.contains($0) }
+        guard !pendingNames.isEmpty else { return }
+
+        let insertedNames = Set(pendingNames)
+        self.ruleProviderUpdating.formUnion(insertedNames)
+        defer { self.ruleProviderUpdating.subtract(insertedNames) }
+
+        var succeededNames: [String] = []
+        self.ensureAPIClient()
+        let result = await self.updateProvidersSequential(
+            names: pendingNames,
+            operation: { name in
+                try await self.updateRuleProviderUseCase().execute(name: name)
+                succeededNames.append(name)
+            },
+            onError: { name, error in
+                tr("log.providers.rule_update_failed", name, error.localizedDescription)
+            })
+
+        await self.refreshProvidersAndRules()
+        for name in succeededNames {
+            self.markRuleProviderUpdatedNow(name: name)
+        }
+
+        if result.failed == 0 {
+            self.appendLog(level: "info", message: tr("log.action.success", actionName))
+        } else {
+            self.appendLog(
+                level: succeededNames.isEmpty ? "error" : "warning",
+                message: tr(
+                    "log.action.failed",
+                    actionName,
+                    succeededNames.isEmpty
+                        ? tr("app.provider_refresh.failed")
+                        : tr("app.provider_refresh.partial_failed", result.failed)))
+        }
     }
 
     func refreshRuleProviders() async {
@@ -44,22 +90,32 @@ extension AppSession {
         isRuleProvidersRefreshing = true
         defer { isRuleProvidersRefreshing = false }
 
+        let insertedNames: Set<String>
+        var succeededNames: [String] = []
         do {
             let summary = try await self.providersRepository().fetchRuleProviders()
             let names = summary.providers.keys.sorted()
+            insertedNames = Set(names).subtracting(self.ruleProviderUpdating)
+            self.ruleProviderUpdating.formUnion(insertedNames)
             _ = await self.updateProvidersSequential(
                 names: names,
                 operation: { name in
                     try await self.updateRuleProviderUseCase().execute(name: name)
+                    succeededNames.append(name)
                 },
                 onError: { name, error in
                     tr("log.providers.rule_update_failed", name, error.localizedDescription)
                 })
         } catch {
             appendLog(level: "error", message: tr("log.providers.fetch_rule_failed", error.localizedDescription))
+            return
         }
 
         await self.refreshProvidersAndRules()
+        for name in succeededNames {
+            self.markRuleProviderUpdatedNow(name: name)
+        }
+        self.ruleProviderUpdating.subtract(insertedNames)
     }
 
     func refreshProxyProviders() async {
@@ -318,12 +374,33 @@ extension AppSession {
                 self.proxyProvidersDetail = nextProxyProviders
             }
 
+            let previousRuleProviders = self.ruleProviders
             let incomingRuleProviders = ruleProviders.providers
             let incomingRuleItems = rules.rules
 
             var rulesPresentationChanged = false
-            if incomingRuleProviders != self.ruleProviders {
-                self.ruleProviders = incomingRuleProviders
+            var nextRuleProviders: [String: ProviderDetail] = [:]
+            nextRuleProviders.reserveCapacity(incomingRuleProviders.count)
+            for (name, detail) in incomingRuleProviders {
+                let merged: ProviderDetail
+                if let preservedUpdatedAt = self.preferredProviderUpdatedAt(
+                    previous: previousRuleProviders[name]?.updatedAt,
+                    incoming: detail.updatedAt)
+                {
+                    merged = detail.with(updatedAt: preservedUpdatedAt)
+                } else {
+                    merged = detail
+                }
+
+                if let overriddenUpdatedAt = self.ruleProviderUpdatedAtOverrides[name] {
+                    nextRuleProviders[name] = merged.with(updatedAt: overriddenUpdatedAt)
+                } else {
+                    nextRuleProviders[name] = merged
+                }
+            }
+
+            if nextRuleProviders != self.ruleProviders {
+                self.ruleProviders = nextRuleProviders
                 rulesPresentationChanged = true
             }
             if incomingRuleItems != self.ruleItems {
@@ -351,6 +428,12 @@ extension AppSession {
             self.providerUpdating = self.providerUpdating.intersection(currentNames)
             self.proxyProviderUpdatedAtOverrides = self.proxyProviderUpdatedAtOverrides.filter {
                 currentNames.contains($0.key)
+            }
+
+            let currentRuleNames = Set(incomingRuleProviders.keys)
+            self.ruleProviderUpdating = self.ruleProviderUpdating.intersection(currentRuleNames)
+            self.ruleProviderUpdatedAtOverrides = self.ruleProviderUpdatedAtOverrides.filter {
+                currentRuleNames.contains($0.key)
             }
         }
     }
@@ -396,10 +479,19 @@ extension AppSession {
         }
     }
 
-    private func runSingleProviderUpdate(actionName: String, operation: @escaping () async throws -> Void) async {
-        await runNoResponseAction(actionName) {
+    private func runSingleProviderUpdate(
+        actionName: String,
+        operation: @escaping () async throws -> Void) async -> Bool
+    {
+        do {
+            self.ensureAPIClient()
             try await operation()
             await self.refreshProvidersAndRules()
+            self.appendLog(level: "info", message: tr("log.action.success", actionName))
+            return true
+        } catch {
+            self.appendLog(level: "error", message: tr("log.action.failed", actionName, error.localizedDescription))
+            return false
         }
     }
 
@@ -411,6 +503,16 @@ extension AppSession {
         var nextProviders = self.proxyProvidersDetail
         nextProviders[name] = detail.with(updatedAt: timestamp)
         self.proxyProvidersDetail = nextProviders
+    }
+
+    private func markRuleProviderUpdatedNow(name: String) {
+        let timestamp = self.currentProviderTimestamp()
+        self.ruleProviderUpdatedAtOverrides[name] = timestamp
+
+        guard let detail = self.ruleProviders[name] else { return }
+        var nextProviders = self.ruleProviders
+        nextProviders[name] = detail.with(updatedAt: timestamp)
+        self.ruleProviders = nextProviders
     }
 
     private func preferredProviderUpdatedAt(previous: String?, incoming: String?) -> String? {

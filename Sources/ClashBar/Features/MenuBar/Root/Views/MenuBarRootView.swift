@@ -158,84 +158,87 @@ struct MenuBarRootView: View {
             .clipShape(RoundedRectangle(cornerRadius: MenuBarLayoutTokens.panelCornerRadius, style: .continuous))
     }
 
+    private var observedPanelContent: some View {
+        AnyView(self.styledPanelContent)
+            .onAppear {
+                self.setCurrentTabWithoutAnimation(self.appSession.activeMenuTab)
+                self.appSession.setActiveMenuTab(self.rootViewModel.currentTab)
+                self.refreshDerivedData(for: self.rootViewModel.currentTab)
+                self.rootViewModel.updateFilteredProxyGroups(
+                    from: self.appSession.proxyGroups,
+                    hideHiddenGroups: self.hideHiddenProxyGroups,
+                    currentMode: self.appSession.currentMode)
+                self.publishPreferredPanelHeight()
+            }
+            .onChange(of: self.rootViewModel.currentTab) { tab in
+                if tab != .connections {
+                    self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
+                }
+                self.appSession.setActiveMenuTab(tab)
+                self.refreshDerivedData(for: tab)
+                self.publishPreferredPanelHeight()
+            }
+            .onChange(of: self.appSession.activeMenuTab) { tab in
+                guard self.rootViewModel.currentTab != tab else { return }
+                self.setCurrentTabWithoutAnimation(tab)
+                if tab != .connections {
+                    self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
+                }
+                self.refreshDerivedData(for: tab)
+                self.publishPreferredPanelHeight()
+            }
+            .onChange(of: self.popoverLayoutModel.maxPanelHeight) { _ in
+                self.publishPreferredPanelHeight()
+            }
+            .onChange(of: self.connectionsStore.connectionsRevision) { _ in
+                guard self.rootViewModel.currentTab == .connections else { return }
+                let searchText: (ConnectionSummary) -> String = { self.connectionSearchText(for: $0) }
+                self.connectionsViewModel.scheduleCoalescedVisibleConnectionsUpdate(
+                    connectionsSupplier: { self.connectionsStore.connections },
+                    searchText: searchText)
+            }
+            .onChange(of: self.connectionsViewModel.filterText) { _ in
+                self.refreshConnectionsDerivedDataIfVisible()
+            }
+            .onChange(of: self.connectionsViewModel.transportFilter) { _ in
+                self.refreshConnectionsDerivedDataIfVisible()
+            }
+            .onChange(of: self.connectionsViewModel.sortOption) { _ in
+                self.refreshConnectionsDerivedDataIfVisible()
+            }
+            .onChange(of: LogsRefreshToken(
+                logs: self.appSession.errorLogs,
+                sources: self.logsViewModel.selectedSources,
+                levels: self.logsViewModel.selectedLevels,
+                keyword: self.logsViewModel.searchText))
+            { _ in
+                self.refreshLogsDerivedDataIfVisible()
+            }
+            .onChange(of: self.appSession.rulesPresentationRevision) { _ in
+                self.refreshRulesDerivedDataIfVisible()
+            }
+            .onChange(of: self.appSession.proxyGroups) { newGroups in
+                self.rootViewModel.updateFilteredProxyGroups(
+                    from: newGroups,
+                    hideHiddenGroups: self.hideHiddenProxyGroups,
+                    currentMode: self.appSession.currentMode)
+            }
+            .onChange(of: self.hideHiddenProxyGroups) { _ in
+                self.rootViewModel.updateFilteredProxyGroups(
+                    from: self.appSession.proxyGroups,
+                    hideHiddenGroups: self.hideHiddenProxyGroups,
+                    currentMode: self.appSession.currentMode)
+            }
+            .onChange(of: self.appSession.currentMode) { mode in
+                self.rootViewModel.updateFilteredProxyGroups(
+                    from: self.appSession.proxyGroups,
+                    hideHiddenGroups: self.hideHiddenProxyGroups,
+                    currentMode: mode)
+            }
+    }
+
     var panelContent: AnyView {
-        AnyView(
-            self.styledPanelContent
-                .onAppear {
-                    self.setCurrentTabWithoutAnimation(self.appSession.activeMenuTab)
-                    self.appSession.setActiveMenuTab(self.rootViewModel.currentTab)
-                    self.refreshDerivedData(for: self.rootViewModel.currentTab)
-                    self.rootViewModel.updateFilteredProxyGroups(
-                        from: self.appSession.proxyGroups,
-                        hideHiddenGroups: self.hideHiddenProxyGroups,
-                        currentMode: self.appSession.currentMode)
-                    self.publishPreferredPanelHeight()
-                }
-                .onChange(of: self.rootViewModel.currentTab) { tab in
-                    if tab != .connections {
-                        self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
-                    }
-                    self.appSession.setActiveMenuTab(tab)
-                    self.refreshDerivedData(for: tab)
-                    self.publishPreferredPanelHeight()
-                }
-                .onChange(of: self.appSession.activeMenuTab) { tab in
-                    guard self.rootViewModel.currentTab != tab else { return }
-                    self.setCurrentTabWithoutAnimation(tab)
-                    if tab != .connections {
-                        self.connectionsViewModel.cancelPendingVisibleConnectionsCoalesce()
-                    }
-                    self.refreshDerivedData(for: tab)
-                    self.publishPreferredPanelHeight()
-                }
-                .onChange(of: self.popoverLayoutModel.maxPanelHeight) { _ in
-                    self.publishPreferredPanelHeight()
-                }
-                .onChange(of: self.connectionsStore.connectionsRevision) { _ in
-                    guard self.rootViewModel.currentTab == .connections else { return }
-                    let searchText: (ConnectionSummary) -> String = { self.connectionSearchText(for: $0) }
-                    self.connectionsViewModel.scheduleCoalescedVisibleConnectionsUpdate(
-                        connectionsSupplier: { self.connectionsStore.connections },
-                        searchText: searchText)
-                }
-                .onChange(of: self.connectionsViewModel.filterText) { _ in
-                    self.refreshConnectionsDerivedDataIfVisible()
-                }
-                .onChange(of: self.connectionsViewModel.transportFilter) { _ in
-                    self.refreshConnectionsDerivedDataIfVisible()
-                }
-                .onChange(of: self.connectionsViewModel.sortOption) { _ in
-                    self.refreshConnectionsDerivedDataIfVisible()
-                }
-                .onChange(of: LogsRefreshToken(
-                    logs: self.appSession.errorLogs,
-                    sources: self.logsViewModel.selectedSources,
-                    levels: self.logsViewModel.selectedLevels,
-                    keyword: self.logsViewModel.searchText))
-                { _ in
-                    self.refreshLogsDerivedDataIfVisible()
-                }
-                .onChange(of: self.appSession.rulesPresentationRevision) { _ in
-                    self.refreshRulesDerivedDataIfVisible()
-                }
-                .onChange(of: self.appSession.proxyGroups) { newGroups in
-                    self.rootViewModel.updateFilteredProxyGroups(
-                        from: newGroups,
-                        hideHiddenGroups: self.hideHiddenProxyGroups,
-                        currentMode: self.appSession.currentMode)
-                }
-                .onChange(of: self.hideHiddenProxyGroups) { _ in
-                    self.rootViewModel.updateFilteredProxyGroups(
-                        from: self.appSession.proxyGroups,
-                        hideHiddenGroups: self.hideHiddenProxyGroups,
-                        currentMode: self.appSession.currentMode)
-                }
-                .onChange(of: self.appSession.currentMode) { mode in
-                    self.rootViewModel.updateFilteredProxyGroups(
-                        from: self.appSession.proxyGroups,
-                        hideHiddenGroups: self.hideHiddenProxyGroups,
-                        currentMode: mode)
-                })
+        AnyView(self.observedPanelContent)
     }
 
     @ViewBuilder
