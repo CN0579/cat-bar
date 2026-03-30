@@ -162,7 +162,13 @@ extension AppSession {
         incoming: ProviderDetail) -> ProviderDetail
     {
         let fallbackNodes = incoming.proxies?.map {
-            ProviderProxyNode(name: $0.name, latestDelay: $0.latestDelay)
+            ProviderProxyNode(
+                id: $0.id,
+                name: $0.name,
+                type: $0.type,
+                alive: $0.alive,
+                providerName: $0.providerName,
+                latestDelay: $0.latestDelay)
         }
         let merged = incoming.with(proxies: previous?.proxies ?? fallbackNodes)
         guard let preservedUpdatedAt = self.preferredProviderUpdatedAt(

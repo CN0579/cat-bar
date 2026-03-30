@@ -142,9 +142,10 @@ extension AppSession {
                 group: group.name,
                 url: testURL,
                 timeout: timeout)
-            let delays = response.values.filter { $0.value > 0 }
+            let delays = self.normalizedMeasuredDelays(response.values)
 
             self.groupLatencies[group.name] = delays
+            self.recordMeasuredProxyDelays(delays, useProxyIdentityLookup: true)
         }
     }
 
@@ -158,11 +159,11 @@ extension AppSession {
         do {
             let repo = try self.proxyRepository(using: self.clientOrThrow())
             let result = try await repo.measureNodeLatency(name: nodeName, url: url, timeout: resolvedTimeout)
-            let delay = result.delay > 0 ? result.delay : 0
-            self.proxyHistoryLatestDelay[nodeName] = delay
+            let delay = max(result.delay, 0)
+            self.recordMeasuredProxyDelays([nodeName: delay], useProxyIdentityLookup: true)
             return delay
         } catch {
-            self.proxyHistoryLatestDelay[nodeName] = 0
+            self.recordMeasuredProxyDelays([nodeName: 0], useProxyIdentityLookup: true)
             return 0
         }
     }
@@ -185,7 +186,7 @@ extension AppSession {
             if self.groupLatencies[groupName] == nil {
                 self.groupLatencies[groupName] = [:]
             }
-            self.groupLatencies[groupName]?[nodeName] = finalDelay
+            self.groupLatencies[groupName]?[self.proxyDelayLookupKey(nodeName: nodeName)] = finalDelay
         }
     }
 
@@ -213,16 +214,101 @@ extension AppSession {
     }
 
     func delayValue(group: String, node: String, fallbackToGroupHistory: Bool = false) -> Int? {
-        if let liveValue = groupLatencies[group]?[node] {
+        self.resolvedDelayValue(
+            currentGroup: group,
+            proxyName: node,
+            fallbackGroupName: fallbackToGroupHistory ? group : nil,
+            visitedGroups: [group])
+    }
+
+    func latestDelay(for proxyName: String, nodeID: String? = nil) -> Int? {
+        let key = self.proxyDelayLookupKey(nodeName: proxyName, nodeID: nodeID)
+        return self.liveProxyLatestDelay[key] ?? self.proxyHistoryLatestDelay[key]
+    }
+
+    func clearMeasuredProxyDelays() {
+        self.groupLatencies = [:]
+        self.liveProxyLatestDelay = [:]
+        self.proxyHistoryLatestDelay = [:]
+    }
+
+    private func recordMeasuredProxyDelays(_ delays: [String: Int]) {
+        guard !delays.isEmpty else { return }
+        self.recordMeasuredProxyDelays(delays, useProxyIdentityLookup: false)
+    }
+
+    private func recordMeasuredProxyDelays(_ delays: [String: Int], useProxyIdentityLookup: Bool) {
+        guard !delays.isEmpty else { return }
+        for (name, delay) in delays {
+            let key = useProxyIdentityLookup
+                ? self.proxyDelayLookupKey(nodeName: name)
+                : name
+            self.liveProxyLatestDelay[key] = max(delay, 0)
+        }
+    }
+
+    private func normalizedMeasuredDelays(_ delays: [String: Int]) -> [String: Int] {
+        delays.reduce(into: [:]) { partialResult, entry in
+            let key = self.proxyDelayLookupKey(nodeName: entry.key)
+            partialResult[key] = max(entry.value, 0)
+        }
+    }
+
+    private func proxyDelayLookupKey(nodeName: String, nodeID: String? = nil) -> String {
+        nodeID?.trimmedNonEmpty ?? self.proxyNodeIDs[nodeName] ?? nodeName
+    }
+
+    private func resolvedDelayValue(
+        currentGroup: String,
+        proxyName: String,
+        fallbackGroupName: String?,
+        visitedGroups: Set<String>) -> Int?
+    {
+        let nodeDelayKey = self.proxyDelayLookupKey(nodeName: proxyName)
+        if let liveValue = groupLatencies[currentGroup]?[nodeDelayKey] {
             return liveValue
         }
-        if let historyValue = proxyHistoryLatestDelay[node] {
-            return historyValue
+
+        if let referencedGroup = self.proxyGroup(named: proxyName),
+           !visitedGroups.contains(referencedGroup.name)
+        {
+            let nextVisitedGroups = visitedGroups.union([referencedGroup.name])
+            if let nestedNode = referencedGroup.now?.trimmedNonEmpty,
+               let resolvedNestedDelay = self.resolvedDelayValue(
+                   currentGroup: referencedGroup.name,
+                   proxyName: nestedNode,
+                   fallbackGroupName: referencedGroup.name,
+                   visitedGroups: nextVisitedGroups)
+            {
+                return resolvedNestedDelay
+            }
+
+            if let referencedGroupDelay = self.groupDelayValue(for: referencedGroup.name) {
+                return referencedGroupDelay
+            }
         }
-        if fallbackToGroupHistory {
-            return proxyHistoryLatestDelay[group]
+
+        if let liveValue = latestDelay(for: proxyName, nodeID: self.proxyNodeIDs[proxyName]) {
+            return liveValue
         }
+
+        if let fallbackGroupName {
+            return self.groupDelayValue(for: fallbackGroupName)
+        }
+
         return nil
+    }
+
+    private func groupDelayValue(for groupName: String) -> Int? {
+        let key = self.proxyDelayLookupKey(nodeName: groupName)
+        return self.liveProxyLatestDelay[key]
+            ?? self.proxyHistoryLatestDelay[key]
+            ?? self.liveProxyLatestDelay[groupName]
+            ?? self.proxyHistoryLatestDelay[groupName]
+    }
+
+    private func proxyGroup(named name: String) -> ProxyGroup? {
+        self.proxyGroups.first { $0.name == name }
     }
 
     func controllerHost() -> String {

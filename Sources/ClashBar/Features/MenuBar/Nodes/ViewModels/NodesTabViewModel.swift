@@ -8,8 +8,16 @@ final class NodesTabViewModel: ObservableObject {
     @Published var searchText: String = ""
 
     struct LocalNode: Equatable, Hashable {
+        let id: String?
         let name: String
         let type: String
+
+        var stableIdentity: String {
+            if let id = self.id?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
+                return id
+            }
+            return self.name
+        }
     }
 
     func toggleProvider(_ name: String) {
@@ -21,6 +29,7 @@ final class NodesTabViewModel: ObservableObject {
     }
 
     func buildLocalNodes(
+        proxyNodeIDs: [String: String],
         proxyNodeTypes: [String: String],
         proxyProvidersDetail: [String: ProviderDetail]) -> [LocalNode]
     {
@@ -43,7 +52,7 @@ final class NodesTabViewModel: ObservableObject {
             .filter { name, type in
                 !providerNodeNames.contains(name) && !groupTypes.contains(type)
             }
-            .map { LocalNode(name: $0.key, type: $0.value) }
+            .map { LocalNode(id: proxyNodeIDs[$0.key], name: $0.key, type: $0.value) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 

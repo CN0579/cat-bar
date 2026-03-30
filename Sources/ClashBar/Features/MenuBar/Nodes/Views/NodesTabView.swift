@@ -168,7 +168,7 @@ extension MenuBarRootView {
                     .padding(.vertical, T.space4)
             } else {
                 MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
-                    ForEach(filtered, id: \.name) { node in
+                    ForEach(filtered, id: \.stableIdentity) { node in
                         self.nodesProviderNodeRow(
                             providerName: providerName,
                             node: node,
@@ -188,7 +188,7 @@ extension MenuBarRootView {
         timeout: Int?) -> some View
     {
         let isTesting = nodesViewModel.nodeTestingInProgress.contains(node.name)
-        let delay = appSession.proxyHistoryLatestDelay[node.name] ?? node.latestDelay
+        let delay = appSession.latestDelay(for: node.name, nodeID: node.id) ?? node.latestDelay
         let delayText = self.nodeDelayText(delay)
         let delayColor = latencyColor(delay)
         let nodeType = appSession.proxyNodeTypes[node.name]
@@ -209,6 +209,7 @@ extension MenuBarRootView {
 
     func nodesLocalSection() -> some View {
         let allLocal = nodesViewModel.buildLocalNodes(
+            proxyNodeIDs: appSession.proxyNodeIDs,
             proxyNodeTypes: appSession.proxyNodeTypes,
             proxyProvidersDetail: appSession.proxyProvidersDetail)
         let filtered = nodesViewModel.filteredLocalNodes(allLocal, searchText: nodesViewModel.searchText)
@@ -224,7 +225,7 @@ extension MenuBarRootView {
                     : tr("ui.nodes.no_match"))
             } else {
                 MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
-                    ForEach(filtered, id: \.name) { node in
+                    ForEach(filtered, id: \.stableIdentity) { node in
                         self.nodesLocalNodeRow(node)
                     }
                 }
@@ -234,7 +235,7 @@ extension MenuBarRootView {
 
     private func nodesLocalNodeRow(_ node: NodesTabViewModel.LocalNode) -> some View {
         let isTesting = nodesViewModel.nodeTestingInProgress.contains(node.name)
-        let delay = appSession.proxyHistoryLatestDelay[node.name]
+        let delay = appSession.latestDelay(for: node.name, nodeID: node.id)
         let delayText = self.nodeDelayText(delay)
         let delayColor = latencyColor(delay)
 
