@@ -37,7 +37,7 @@ extension MenuBarRootView {
     private func pinnedHeaderConfig(for tab: RootTab) -> PinnedHeaderTabConfig? {
         switch tab {
         case .rules:
-            PinnedHeaderTabConfig(headerSpacing: 0, headerHeight: self.rulesHeaderHeight)
+            PinnedHeaderTabConfig(headerSpacing: MenuBarLayoutTokens.space6, headerHeight: self.rulesHeaderHeight)
         case .connections:
             PinnedHeaderTabConfig(headerSpacing: MenuBarLayoutTokens.space6, headerHeight: self.connectionsHeaderHeight)
         case .logs:
@@ -85,7 +85,7 @@ extension MenuBarRootView {
     private func pinnedScrollableList(for tab: RootTab) -> some View {
         switch tab {
         case .rules:
-            self.rulesTabScrollableList(isMeasuring: false)
+            self.rulesTabScrollableList()
         case .connections:
             self.connectionsTabScrollableList(isMeasuring: false)
         case .logs:
