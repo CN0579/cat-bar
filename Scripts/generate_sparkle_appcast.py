@@ -15,7 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate a single-item Sparkle appcast for a DMG asset.")
     parser.add_argument("--dmg", required=True, help="Path to the DMG asset")
     parser.add_argument("--sign-update-tool", required=True, help="Path to Sparkle's sign_update tool")
-    parser.add_argument("--private-key-file", required=True, help="Path to the Sparkle private EdDSA key file")
+    parser.add_argument("--private-key-file", help="Path to the Sparkle private EdDSA key file")
+    parser.add_argument("--private-key-stdin", help="Sparkle private EdDSA key content passed via standard input")
     parser.add_argument("--download-url", required=True, help="Release asset download URL")
     parser.add_argument("--release-notes-url", required=True, help="Release notes URL")
     parser.add_argument("--version", required=True, help="CFBundleShortVersionString value")
@@ -26,10 +27,28 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def sign_update(sign_update_tool: str, private_key_file: str, dmg_path: pathlib.Path) -> str:
-    command = [sign_update_tool, "--ed-key-file", private_key_file, str(dmg_path)]
-    completed = subprocess.run(command, capture_output=True, text=True, check=True)
-    return "\n".join(part for part in [completed.stdout.strip(), completed.stderr.strip()] if part)
+def sign_update(
+    sign_update_tool: str,
+    private_key_file: str | None,
+    private_key_stdin: str | None,
+    dmg_path: pathlib.Path,
+) -> str:
+    if bool(private_key_file) == bool(private_key_stdin):
+        raise ValueError("Provide exactly one of --private-key-file or --private-key-stdin")
+
+    ed_key_file = private_key_file if private_key_file else "-"
+    command = [sign_update_tool, "--ed-key-file", ed_key_file, str(dmg_path)]
+    completed = subprocess.run(
+        command,
+        input=private_key_stdin,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    output = "\n".join(part for part in [completed.stdout.strip(), completed.stderr.strip()] if part)
+    if completed.returncode != 0:
+        raise RuntimeError(f"sign_update failed with exit code {completed.returncode}:\n{output}")
+    return output
 
 
 def parse_signature(command_output: str) -> str:
@@ -59,7 +78,12 @@ def main() -> int:
     if not dmg_path.is_file():
         raise FileNotFoundError(f"DMG not found: {dmg_path}")
 
-    signature_output = sign_update(args.sign_update_tool, args.private_key_file, dmg_path)
+    signature_output = sign_update(
+        args.sign_update_tool,
+        args.private_key_file,
+        args.private_key_stdin,
+        dmg_path,
+    )
     ed_signature = parse_signature(signature_output)
     enclosure_length = str(dmg_path.stat().st_size)
     pub_date = dt.datetime.now(dt.timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")

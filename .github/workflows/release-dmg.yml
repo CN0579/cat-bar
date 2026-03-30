@@ -277,11 +277,6 @@ jobs:
             exit 0
           fi
 
-          key_file="$(mktemp)"
-          trap 'rm -f "$key_file"' EXIT
-          printf '%s' "$SPARKLE_PRIVATE_ED_KEY" > "$key_file"
-          chmod 600 "$key_file"
-
           sign_update_tool="$(find .build -path '*/Sparkle*/bin/sign_update' -type f | head -n 1 || true)"
           if [[ -z "$sign_update_tool" || ! -x "$sign_update_tool" ]]; then
             echo "Sparkle sign_update tool not found under .build" >&2
@@ -293,7 +288,7 @@ jobs:
           python3 Scripts/generate_sparkle_appcast.py \
             --dmg "dist/${dmg_name}" \
             --sign-update-tool "$sign_update_tool" \
-            --private-key-file "$key_file" \
+            --private-key-stdin "$SPARKLE_PRIVATE_ED_KEY" \
             --download-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ needs.prepare-version.outputs.tag }}/${dmg_name}" \
             --release-notes-url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ needs.prepare-version.outputs.tag }}" \
             --version "${{ needs.prepare-version.outputs.version }}" \
