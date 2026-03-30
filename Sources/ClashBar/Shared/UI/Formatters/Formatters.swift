@@ -38,6 +38,7 @@ enum ValueFormatter {
 
     private static let iso8601WithFractionalKey = "clashbar.formatter.iso8601.fractional"
     private static let iso8601BasicKey = "clashbar.formatter.iso8601.basic"
+    private static let timeFormatterKey = "clashbar.formatter.time"
 
     static func speed(_ value: Int64) -> String {
         let (formatted, unit) = speedComponents(value)
@@ -185,6 +186,14 @@ enum ValueFormatter {
         return self.dateTime(date)
     }
 
+    static func timeFromISO(_ input: String?) -> String {
+        guard let input = input?.trimmingCharacters(in: .whitespacesAndNewlines), !input.isEmpty else {
+            return "--"
+        }
+        guard let date = parseISO8601Date(input) else { return "--" }
+        return self.threadLocalTimeFormatter().string(from: date)
+    }
+
     static func daysUntilExpiryShort(from unixSeconds: Int64?, language: AppLanguage, now: Date = Date()) -> String {
         guard let unixSeconds else { return L10n.t("fmt.common.unknown", language: language) }
         if unixSeconds == 0 {
@@ -236,6 +245,18 @@ enum ValueFormatter {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         Thread.current.threadDictionary[self.timestampFormatterKey] = formatter
+        return formatter
+    }
+
+    private static func threadLocalTimeFormatter() -> DateFormatter {
+        if let formatter = Thread.current.threadDictionary[self.timeFormatterKey] as? DateFormatter {
+            return formatter
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm:ss"
+        Thread.current.threadDictionary[self.timeFormatterKey] = formatter
         return formatter
     }
 

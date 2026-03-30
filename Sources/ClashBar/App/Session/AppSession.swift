@@ -68,10 +68,12 @@ final class AppSession: ObservableObject {
 
     private(set) var sortedProxyProviderNames: [String] = []
     @Published var providerUpdating: Set<String> = []
+    @Published var proxyProviderUpdatedAtOverrides: [String: String] = [:]
     @Published var ruleProviders: [String: ProviderDetail] = [:]
     @Published var ruleItems: [RuleItem] = []
     /// Bumps when rule list or rule-provider map is replaced (avoids heavy array equality in SwiftUI `onChange`).
     @Published private(set) var rulesPresentationRevision: UInt64 = 0
+    @Published var isProxyProvidersRefreshing: Bool = false
     @Published var isRuleProvidersRefreshing: Bool = false
 
     func noteRulesPresentationChanged() {

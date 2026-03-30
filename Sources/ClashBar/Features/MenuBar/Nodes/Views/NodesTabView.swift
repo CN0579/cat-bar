@@ -60,6 +60,9 @@ extension MenuBarRootView {
                 tr("ui.nodes.section.providers"),
                 symbol: "externaldrive.fill.badge.icloud",
                 count: "\(providers.count)")
+            {
+                self.nodesProvidersRefreshButton
+            }
 
             let displayProviders = isMeasuring ? Array(providers.prefix(10)) : providers
             VStack(spacing: T.space2) {
@@ -80,50 +83,60 @@ extension MenuBarRootView {
     {
         let isExpanded = nodesViewModel.expandedProviders.contains(name)
         let nodeCount = detail?.proxies?.count ?? 0
-        let updatedText = ValueFormatter.relativeTime(from: detail?.updatedAt, language: language)
+        let isUpdating = appSession.providerUpdating.contains(name)
+        let effectiveUpdatedAt = appSession.proxyProviderUpdatedAtOverrides[name] ?? detail?.updatedAt
+        let updatedText = ValueFormatter.dateTimeFromISO(effectiveUpdatedAt)
 
         return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.snappy(duration: 0.18)) {
-                    nodesViewModel.toggleProvider(name)
+            HStack(spacing: T.space4) {
+                Button {
+                    withAnimation(.snappy(duration: 0.18)) {
+                        nodesViewModel.toggleProvider(name)
+                    }
+                } label: {
+                    HStack(spacing: T.space6) {
+                        Image(systemName: "externaldrive.fill")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeTeal.opacity(T.Opacity.solid))
+                            .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
+
+                        Text(name)
+                            .font(.app(size: T.FontSize.body, weight: .semibold))
+                            .foregroundStyle(nativePrimaryLabel)
+                            .lineLimit(1)
+
+                        Text("\(nodeCount)")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeSecondaryLabel)
+                            .padding(.horizontal, T.space4)
+                            .padding(.vertical, T.space1)
+                            .background(nativeBadgeCapsule())
+
+                        Spacer(minLength: 0)
+
+                        Text(updatedText)
+                            .font(.app(size: T.FontSize.caption, weight: .regular))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .lineLimit(1)
+
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .frame(width: T.space8, alignment: .trailing)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-            } label: {
-                HStack(spacing: T.space6) {
-                    Image(systemName: "externaldrive.fill")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeTeal.opacity(T.Opacity.solid))
-                        .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
+                .buttonStyle(.plain)
 
-                    Text(name)
-                        .font(.app(size: T.FontSize.body, weight: .semibold))
-                        .foregroundStyle(nativePrimaryLabel)
-                        .lineLimit(1)
-
-                    Text("\(nodeCount)")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeSecondaryLabel)
-                        .padding(.horizontal, T.space4)
-                        .padding(.vertical, T.space1)
-                        .background(nativeBadgeCapsule())
-
-                    Spacer(minLength: 0)
-
-                    Text(updatedText)
-                        .font(.app(size: T.FontSize.caption, weight: .regular))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .lineLimit(1)
-
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .frame(width: T.space8, alignment: .trailing)
+                self.providerActionButton(.refresh, isLoading: isUpdating) {
+                    await appSession.updateProxyProvider(name: name)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, T.space4)
-                .padding(.vertical, T.space6)
-                .contentShape(Rectangle())
+                .frame(width: T.rowLeadingIcon, alignment: .center)
+                .help(tr("ui.action.refresh"))
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, T.space4)
+            .padding(.vertical, T.space6)
 
             if isExpanded {
                 self.nodesProviderExpandedContent(
@@ -252,6 +265,19 @@ extension MenuBarRootView {
             nodeName: nodeName,
             testURL: testUrl,
             timeout: timeout)
+    }
+
+    private var nodesProvidersRefreshButton: some View {
+        self.compactTopIcon(
+            "arrow.triangle.2.circlepath",
+            label: tr("ui.action.refresh"),
+            toneOverride: nativeInfo,
+            isLoading: appSession.isProxyProvidersRefreshing)
+        {
+            await appSession.refreshProxyProviders()
+        }
+        .help(tr("ui.action.refresh"))
+        .opacity(appSession.isProxyProvidersRefreshing ? 0.6 : 1)
     }
 
     func nodeDelayText(_ value: Int?) -> String {

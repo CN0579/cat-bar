@@ -62,16 +62,50 @@ extension AppSession {
         await self.refreshProvidersAndRules()
     }
 
+    func refreshProxyProviders() async {
+        guard !isProxyProvidersRefreshing else { return }
+        isProxyProvidersRefreshing = true
+        defer { isProxyProvidersRefreshing = false }
+
+        let insertedNames: Set<String>
+        var succeededNames: [String] = []
+        do {
+            let summary = try await self.providersRepository().fetchProxyProviders()
+            let names = summary.providers.keys.sorted()
+            insertedNames = Set(names).subtracting(self.providerUpdating)
+            self.providerUpdating.formUnion(insertedNames)
+
+            _ = await self.updateProvidersSequential(
+                names: names,
+                operation: { name in
+                    try await self.updateProxyProviderUseCase().execute(name: name)
+                    succeededNames.append(name)
+                },
+                onError: { name, error in
+                    tr("log.providers.proxy_update_failed", name, error.localizedDescription)
+                })
+        } catch {
+            appendLog(level: "error", message: tr("log.providers.fetch_proxy_failed", error.localizedDescription))
+            return
+        }
+
+        await self.refreshProvidersAndRules()
+        for name in succeededNames {
+            self.markProxyProviderUpdatedNow(name: name)
+        }
+        self.providerUpdating.subtract(insertedNames)
+    }
+
     func updateProxyProvider(name: String) async {
         guard !providerUpdating.contains(name) else { return }
         providerUpdating.insert(name)
         defer { providerUpdating.remove(name) }
 
-        await self.runSingleProviderUpdate(
-            actionName: tr("log.action_name.update_proxy_provider", name),
-            operation: {
-                try await self.updateProxyProviderUseCase().execute(name: name)
-            })
+        await runNoResponseAction(tr("log.action_name.update_proxy_provider", name)) {
+            try await self.updateProxyProviderUseCase().execute(name: name)
+            await self.refreshProvidersAndRules()
+            self.markProxyProviderUpdatedNow(name: name)
+        }
     }
 
     private func mergedProviderDetailPreservingNodes(
@@ -81,7 +115,21 @@ extension AppSession {
         let fallbackNodes = incoming.proxies?.map {
             ProviderProxyNode(name: $0.name, latestDelay: $0.latestDelay)
         }
-        return incoming.with(proxies: previous?.proxies ?? fallbackNodes)
+        let merged = incoming.with(proxies: previous?.proxies ?? fallbackNodes)
+        guard let preservedUpdatedAt = self.preferredProviderUpdatedAt(
+            previous: previous?.updatedAt,
+            incoming: incoming.updatedAt)
+        else {
+            return merged
+        }
+        return merged.with(updatedAt: preservedUpdatedAt)
+    }
+
+    private func effectiveProviderDetail(name: String, detail: ProviderDetail) -> ProviderDetail {
+        guard let overriddenUpdatedAt = self.proxyProviderUpdatedAtOverrides[name] else {
+            return detail
+        }
+        return detail.with(updatedAt: overriddenUpdatedAt)
     }
 
     private func shouldIncludeProxyProvider(named key: String, detail: ProviderDetail) -> Bool {
@@ -260,9 +308,10 @@ extension AppSession {
             var nextProxyProviders: [String: ProviderDetail] = [:]
             nextProxyProviders.reserveCapacity(filteredProxyProviders.count)
             for (name, detail) in filteredProxyProviders {
-                nextProxyProviders[name] = self.mergedProviderDetailPreservingNodes(
+                let merged = self.mergedProviderDetailPreservingNodes(
                     previous: previousProxyProviders[name],
                     incoming: detail)
+                nextProxyProviders[name] = self.effectiveProviderDetail(name: name, detail: merged)
             }
 
             if nextProxyProviders != self.proxyProvidersDetail {
@@ -300,6 +349,9 @@ extension AppSession {
 
             let currentNames = Set(filteredProxyProviders.keys)
             self.providerUpdating = self.providerUpdating.intersection(currentNames)
+            self.proxyProviderUpdatedAtOverrides = self.proxyProviderUpdatedAtOverrides.filter {
+                currentNames.contains($0.key)
+            }
         }
     }
 
@@ -349,5 +401,50 @@ extension AppSession {
             try await operation()
             await self.refreshProvidersAndRules()
         }
+    }
+
+    private func markProxyProviderUpdatedNow(name: String) {
+        let timestamp = self.currentProviderTimestamp()
+        self.proxyProviderUpdatedAtOverrides[name] = timestamp
+
+        guard let detail = self.proxyProvidersDetail[name] else { return }
+        var nextProviders = self.proxyProvidersDetail
+        nextProviders[name] = detail.with(updatedAt: timestamp)
+        self.proxyProvidersDetail = nextProviders
+    }
+
+    private func preferredProviderUpdatedAt(previous: String?, incoming: String?) -> String? {
+        switch (self.parseProviderUpdatedAt(previous), self.parseProviderUpdatedAt(incoming)) {
+        case let (previousDate?, incomingDate?):
+            return previousDate >= incomingDate ? previous : incoming
+        case (_?, nil):
+            return previous
+        case (nil, _?):
+            return incoming
+        case (nil, nil):
+            return incoming ?? previous
+        }
+    }
+
+    private func currentProviderTimestamp() -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: Date())
+    }
+
+    private func parseProviderUpdatedAt(_ value: String?) -> Date? {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
+            return nil
+        }
+
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractionalFormatter.date(from: value) {
+            return date
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
     }
 }

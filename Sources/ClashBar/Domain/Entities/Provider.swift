@@ -72,6 +72,18 @@ struct ProviderDetail: Decodable, Equatable {
             subscriptionInfo: self.subscriptionInfo,
             proxies: proxies)
     }
+
+    func with(updatedAt: String) -> ProviderDetail {
+        ProviderDetail(
+            name: self.name,
+            vehicleType: self.vehicleType,
+            testUrl: self.testUrl,
+            timeout: self.timeout,
+            updatedAt: updatedAt,
+            ruleCount: self.ruleCount,
+            subscriptionInfo: self.subscriptionInfo,
+            proxies: self.proxies)
+    }
 }
 
 struct ProviderSubscriptionInfo: Decodable, Equatable {
