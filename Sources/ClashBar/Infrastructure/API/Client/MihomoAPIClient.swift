@@ -167,6 +167,8 @@ enum Endpoint {
         switch self {
         case .proxyProviderHealthcheck:
             180
+        case .updateProxyProvider, .updateRuleProvider:
+            15
         case let .groupDelay(_, _, timeout),
              let .proxyDelay(_, _, timeout),
              let .proxyProviderProxyHealthcheck(_, _, _, timeout):

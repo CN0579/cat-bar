@@ -2,6 +2,11 @@ import Foundation
 
 @MainActor
 extension AppSession {
+    private enum ProviderCollectionKind {
+        case proxy
+        case rule
+    }
+
     private struct ProviderRefreshStatusUpdate {
         let phase: ProviderRefreshPhase
         let trigger: ProviderRefreshTrigger?
@@ -36,14 +41,13 @@ extension AppSession {
         self.ruleProviderUpdating.insert(name)
         defer { self.ruleProviderUpdating.remove(name) }
 
-        let succeeded = await self.runSingleProviderUpdate(
+        _ = await self.runSingleProviderUpdate(
+            name: name,
+            kind: .rule,
             actionName: tr("log.action_name.update_rule_provider", name),
             operation: {
-                try await self.updateRuleProviderUseCase().execute(name: name)
+                try await self.performRuleProviderUpdate(name: name)
             })
-        if succeeded {
-            self.markRuleProviderUpdatedNow(name: name)
-        }
     }
 
     func updateRuleProviders(names: [String], actionName: String) async {
@@ -59,7 +63,7 @@ extension AppSession {
         let result = await self.updateProvidersSequential(
             names: pendingNames,
             operation: { name in
-                try await self.updateRuleProviderUseCase().execute(name: name)
+                try await self.performRuleProviderUpdate(name: name)
                 succeededNames.append(name)
             },
             onError: { name, error in
@@ -67,9 +71,6 @@ extension AppSession {
             })
 
         await self.refreshProvidersAndRules()
-        for name in succeededNames {
-            self.markRuleProviderUpdatedNow(name: name)
-        }
 
         if result.failed == 0 {
             self.appendLog(level: "info", message: tr("log.action.success", actionName))
@@ -91,7 +92,6 @@ extension AppSession {
         defer { isRuleProvidersRefreshing = false }
 
         let insertedNames: Set<String>
-        var succeededNames: [String] = []
         do {
             let summary = try await self.providersRepository().fetchRuleProviders()
             let names = summary.providers.keys.sorted()
@@ -100,8 +100,7 @@ extension AppSession {
             _ = await self.updateProvidersSequential(
                 names: names,
                 operation: { name in
-                    try await self.updateRuleProviderUseCase().execute(name: name)
-                    succeededNames.append(name)
+                    try await self.performRuleProviderUpdate(name: name)
                 },
                 onError: { name, error in
                     tr("log.providers.rule_update_failed", name, error.localizedDescription)
@@ -112,9 +111,6 @@ extension AppSession {
         }
 
         await self.refreshProvidersAndRules()
-        for name in succeededNames {
-            self.markRuleProviderUpdatedNow(name: name)
-        }
         self.ruleProviderUpdating.subtract(insertedNames)
     }
 
@@ -124,7 +120,6 @@ extension AppSession {
         defer { isProxyProvidersRefreshing = false }
 
         let insertedNames: Set<String>
-        var succeededNames: [String] = []
         do {
             let summary = try await self.providersRepository().fetchProxyProviders()
             let names = summary.providers.keys.sorted()
@@ -134,8 +129,7 @@ extension AppSession {
             _ = await self.updateProvidersSequential(
                 names: names,
                 operation: { name in
-                    try await self.updateProxyProviderUseCase().execute(name: name)
-                    succeededNames.append(name)
+                    try await self.performProxyProviderUpdate(name: name)
                 },
                 onError: { name, error in
                     tr("log.providers.proxy_update_failed", name, error.localizedDescription)
@@ -146,9 +140,6 @@ extension AppSession {
         }
 
         await self.refreshProvidersAndRules()
-        for name in succeededNames {
-            self.markProxyProviderUpdatedNow(name: name)
-        }
         self.providerUpdating.subtract(insertedNames)
     }
 
@@ -157,11 +148,13 @@ extension AppSession {
         providerUpdating.insert(name)
         defer { providerUpdating.remove(name) }
 
-        await runNoResponseAction(tr("log.action_name.update_proxy_provider", name)) {
-            try await self.updateProxyProviderUseCase().execute(name: name)
-            await self.refreshProvidersAndRules()
-            self.markProxyProviderUpdatedNow(name: name)
-        }
+        _ = await self.runSingleProviderUpdate(
+            name: name,
+            kind: .proxy,
+            actionName: tr("log.action_name.update_proxy_provider", name),
+            operation: {
+                try await self.performProxyProviderUpdate(name: name)
+            })
     }
 
     private func mergedProviderDetailPreservingNodes(
@@ -179,13 +172,6 @@ extension AppSession {
             return merged
         }
         return merged.with(updatedAt: preservedUpdatedAt)
-    }
-
-    private func effectiveProviderDetail(name: String, detail: ProviderDetail) -> ProviderDetail {
-        guard let overriddenUpdatedAt = self.proxyProviderUpdatedAtOverrides[name] else {
-            return detail
-        }
-        return detail.with(updatedAt: overriddenUpdatedAt)
     }
 
     private func shouldIncludeProxyProvider(named key: String, detail: ProviderDetail) -> Bool {
@@ -294,7 +280,7 @@ extension AppSession {
         let proxyResult = await self.updateProvidersSequential(
             names: proxyNames,
             operation: { name in
-                try await self.updateProxyProviderUseCase().execute(name: name)
+                try await self.performProxyProviderUpdate(name: name)
             },
             onError: { name, error in
                 tr("log.providers.proxy_update_failed", name, error.localizedDescription)
@@ -310,7 +296,7 @@ extension AppSession {
         let ruleResult = await self.updateProvidersSequential(
             names: ruleNames,
             operation: { name in
-                try await self.updateRuleProviderUseCase().execute(name: name)
+                try await self.performRuleProviderUpdate(name: name)
             },
             onError: { name, error in
                 tr("log.providers.rule_update_failed", name, error.localizedDescription)
@@ -367,7 +353,7 @@ extension AppSession {
                 let merged = self.mergedProviderDetailPreservingNodes(
                     previous: previousProxyProviders[name],
                     incoming: detail)
-                nextProxyProviders[name] = self.effectiveProviderDetail(name: name, detail: merged)
+                nextProxyProviders[name] = merged
             }
 
             if nextProxyProviders != self.proxyProvidersDetail {
@@ -391,12 +377,7 @@ extension AppSession {
                 } else {
                     merged = detail
                 }
-
-                if let overriddenUpdatedAt = self.ruleProviderUpdatedAtOverrides[name] {
-                    nextRuleProviders[name] = merged.with(updatedAt: overriddenUpdatedAt)
-                } else {
-                    nextRuleProviders[name] = merged
-                }
+                nextRuleProviders[name] = merged
             }
 
             if nextRuleProviders != self.ruleProviders {
@@ -426,14 +407,14 @@ extension AppSession {
 
             let currentNames = Set(filteredProxyProviders.keys)
             self.providerUpdating = self.providerUpdating.intersection(currentNames)
-            self.proxyProviderUpdatedAtOverrides = self.proxyProviderUpdatedAtOverrides.filter {
-                currentNames.contains($0.key)
+            if !self.proxyProviderUpdatedAtOverrides.isEmpty {
+                self.proxyProviderUpdatedAtOverrides = [:]
             }
 
             let currentRuleNames = Set(incomingRuleProviders.keys)
             self.ruleProviderUpdating = self.ruleProviderUpdating.intersection(currentRuleNames)
-            self.ruleProviderUpdatedAtOverrides = self.ruleProviderUpdatedAtOverrides.filter {
-                currentRuleNames.contains($0.key)
+            if !self.ruleProviderUpdatedAtOverrides.isEmpty {
+                self.ruleProviderUpdatedAtOverrides = [:]
             }
         }
     }
@@ -480,13 +461,20 @@ extension AppSession {
     }
 
     private func runSingleProviderUpdate(
+        name: String,
+        kind: ProviderCollectionKind,
         actionName: String,
         operation: @escaping () async throws -> Void) async -> Bool
     {
+        let previousUpdatedAt = self.providerUpdatedAt(for: name, kind: kind)
         do {
             self.ensureAPIClient()
             try await operation()
             await self.refreshProvidersAndRules()
+            await self.refreshProviderUpdatedAtIfNeeded(
+                name: name,
+                kind: kind,
+                previousUpdatedAt: previousUpdatedAt)
             self.appendLog(level: "info", message: tr("log.action.success", actionName))
             return true
         } catch {
@@ -495,24 +483,36 @@ extension AppSession {
         }
     }
 
-    private func markProxyProviderUpdatedNow(name: String) {
-        let timestamp = self.currentProviderTimestamp()
-        self.proxyProviderUpdatedAtOverrides[name] = timestamp
-
-        guard let detail = self.proxyProvidersDetail[name] else { return }
-        var nextProviders = self.proxyProvidersDetail
-        nextProviders[name] = detail.with(updatedAt: timestamp)
-        self.proxyProvidersDetail = nextProviders
+    private func performProxyProviderUpdate(name: String) async throws {
+        let previousUpdatedAt = self.providerUpdatedAt(for: name, kind: .proxy)
+        do {
+            try await self.updateProxyProviderUseCase().execute(name: name)
+        } catch {
+            guard self.isRequestTimeoutError(error),
+                  await self.confirmProviderUpdateAfterTimeout(
+                      name: name,
+                      kind: .proxy,
+                      previousUpdatedAt: previousUpdatedAt)
+            else {
+                throw error
+            }
+        }
     }
 
-    private func markRuleProviderUpdatedNow(name: String) {
-        let timestamp = self.currentProviderTimestamp()
-        self.ruleProviderUpdatedAtOverrides[name] = timestamp
-
-        guard let detail = self.ruleProviders[name] else { return }
-        var nextProviders = self.ruleProviders
-        nextProviders[name] = detail.with(updatedAt: timestamp)
-        self.ruleProviders = nextProviders
+    private func performRuleProviderUpdate(name: String) async throws {
+        let previousUpdatedAt = self.providerUpdatedAt(for: name, kind: .rule)
+        do {
+            try await self.updateRuleProviderUseCase().execute(name: name)
+        } catch {
+            guard self.isRequestTimeoutError(error),
+                  await self.confirmProviderUpdateAfterTimeout(
+                      name: name,
+                      kind: .rule,
+                      previousUpdatedAt: previousUpdatedAt)
+            else {
+                throw error
+            }
+        }
     }
 
     private func preferredProviderUpdatedAt(previous: String?, incoming: String?) -> String? {
@@ -528,10 +528,94 @@ extension AppSession {
         }
     }
 
-    private func currentProviderTimestamp() -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: Date())
+    private func providerUpdatedAt(for name: String, kind: ProviderCollectionKind) -> String? {
+        switch kind {
+        case .proxy:
+            self.proxyProvidersDetail[name]?.updatedAt
+        case .rule:
+            self.ruleProviders[name]?.updatedAt
+        }
+    }
+
+    private func refreshProviderUpdatedAtIfNeeded(
+        name: String,
+        kind: ProviderCollectionKind,
+        previousUpdatedAt: String?) async
+    {
+        guard !self.didProviderUpdatedAtAdvance(previous: previousUpdatedAt, current: self.providerUpdatedAt(for: name, kind: kind))
+        else {
+            return
+        }
+
+        let confirmed = await self.confirmProviderUpdateAfterTimeout(
+            name: name,
+            kind: kind,
+            previousUpdatedAt: previousUpdatedAt)
+        guard confirmed else { return }
+        await self.refreshProvidersAndRules()
+    }
+
+    private func confirmProviderUpdateAfterTimeout(
+        name: String,
+        kind: ProviderCollectionKind,
+        previousUpdatedAt: String?) async -> Bool
+    {
+        let retryIntervals: [UInt64] = [0, 250_000_000, 500_000_000, 1_000_000_000]
+
+        for delay in retryIntervals {
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: delay)
+            }
+
+            do {
+                let summary = try await self.fetchProviderSummary(kind: kind)
+                let currentUpdatedAt = summary.providers[name]?.updatedAt
+                if self.didProviderUpdatedAtAdvance(previous: previousUpdatedAt, current: currentUpdatedAt) {
+                    return true
+                }
+            } catch {
+                continue
+            }
+        }
+
+        return false
+    }
+
+    private func fetchProviderSummary(kind: ProviderCollectionKind) async throws -> ProviderSummary {
+        switch kind {
+        case .proxy:
+            try await self.providersRepository().fetchProxyProviders()
+        case .rule:
+            try await self.providersRepository().fetchRuleProviders()
+        }
+    }
+
+    private func didProviderUpdatedAtAdvance(previous: String?, current: String?) -> Bool {
+        let normalizedCurrent = current?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return switch (self.parseProviderUpdatedAt(previous), self.parseProviderUpdatedAt(current)) {
+        case let (previousDate?, currentDate?):
+            currentDate > previousDate
+        case (nil, _):
+            !(normalizedCurrent?.isEmpty ?? true)
+        default:
+            false
+        }
+    }
+
+    private func isRequestTimeoutError(_ error: Error) -> Bool {
+        if let urlError = error as? URLError {
+            return urlError.code == .timedOut
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == URLError.timedOut.rawValue {
+            return true
+        }
+
+        guard let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? Error else {
+            return false
+        }
+        return self.isRequestTimeoutError(underlyingError)
     }
 
     private func parseProviderUpdatedAt(_ value: String?) -> Date? {

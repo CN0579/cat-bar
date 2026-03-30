@@ -76,8 +76,7 @@ extension MenuBarRootView {
         let isExpanded = nodesViewModel.expandedProviders.contains(name)
         let nodeCount = detail?.proxies?.count ?? 0
         let isUpdating = appSession.providerUpdating.contains(name)
-        let effectiveUpdatedAt = appSession.proxyProviderUpdatedAtOverrides[name] ?? detail?.updatedAt
-        let updatedText = ValueFormatter.dateTimeFromISO(effectiveUpdatedAt)
+        let updatedText = ValueFormatter.dateTimeFromISO(detail?.updatedAt)
 
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: T.space4) {
