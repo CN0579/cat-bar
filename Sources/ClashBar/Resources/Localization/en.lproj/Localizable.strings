@@ -148,10 +148,10 @@
 "ui.settings.allow_lan" = "Allow LAN";
 "ui.settings.ipv6" = "IPv6";
 "ui.settings.tcp_concurrent" = "TCP Concurrent";
-"ui.settings.tun_mode" = "TUN Mode";
+"ui.settings.tun_mode" = "Tun Mode";
 "ui.settings.log_level" = "Log Level";
 "ui.settings.port.port" = "HTTP Port";
-"ui.settings.port.socks" = "SOCKS Port";
+"ui.settings.port.socks" = "Socks Port";
 "ui.settings.port.mixed" = "Mixed Port";
 "ui.settings.port.redir" = "Redir Port";
 "ui.settings.port.tproxy" = "TProxy Port";
