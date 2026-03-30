@@ -383,20 +383,11 @@ extension MenuBarRootView {
                             Task { await appSession.toggleTunMode(value) }
                         }),
                     isDisabled: !appSession.isTunToggleEnabled)
-            }
-
-            VStack(spacing: 0) {
-                self.settingsCardHeader(
-                    tr("ui.section.proxy_ports"),
-                    symbol: "point.3.connected.trianglepath.dotted")
-
-                VStack(alignment: .leading, spacing: T.space4) {
-                    ForEach(proxyPortFields, id: \.titleKey) { item in
-                        self.settingsPortFieldRow(
-                            tr(item.titleKey),
-                            symbol: item.symbol,
-                            text: item.text)
-                    }
+                ForEach(proxyPortFields, id: \.titleKey) { item in
+                    self.settingsPortFieldRow(
+                        tr(item.titleKey),
+                        symbol: item.symbol,
+                        text: item.text)
                 }
                 .menuRowPadding(vertical: T.space4)
             }
