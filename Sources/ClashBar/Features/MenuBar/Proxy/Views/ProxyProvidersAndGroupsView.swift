@@ -41,6 +41,18 @@ extension MenuBarRootView {
             action: action)
     }
 
+    @ViewBuilder
+    func providerUpdateStatusIndicator(isLoading: Bool) -> some View {
+        if isLoading {
+            ProgressView()
+                .controlSize(.mini)
+                .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon, alignment: .center)
+        } else {
+            Color.clear
+                .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
+        }
+    }
+
     func proxyGroupsSection(isMeasuring: Bool = false) -> some View {
         // Use @State filteredProxyGroups which is updated via .onChange — avoids filtering on every render
         let groups = rootViewModel.filteredProxyGroups

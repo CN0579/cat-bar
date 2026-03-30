@@ -83,13 +83,7 @@ extension MenuBarRootView {
                 .buttonStyle(.plain)
 
                 if !group.ruleProviderNames.isEmpty {
-                    self.providerActionButton(.refresh, isLoading: isUpdating) {
-                        await self.appSession.updateRuleProviders(
-                            names: group.ruleProviderNames,
-                            actionName: tr("log.action_name.update_rule_group_providers", group.name))
-                    }
-                    .frame(width: T.rowLeadingIcon, alignment: .center)
-                    .help(tr("ui.action.refresh"))
+                    self.providerUpdateStatusIndicator(isLoading: isUpdating)
                 }
 
                 Button {
@@ -107,6 +101,18 @@ extension MenuBarRootView {
             }
             .padding(.horizontal, T.space4)
             .padding(.vertical, T.space6)
+            .contentShape(Rectangle())
+            .contextMenu {
+                if !group.ruleProviderNames.isEmpty {
+                    Button(tr("ui.action.update")) {
+                        Task {
+                            await self.appSession.updateRuleProviders(
+                                names: group.ruleProviderNames,
+                                actionName: tr("log.action_name.update_rule_group_providers", group.name))
+                        }
+                    }
+                }
+            }
 
             if isExpanded { self.ruleGroupExpandedContent(group: group) }
         }
@@ -149,7 +155,6 @@ extension MenuBarRootView {
     private func ruleRow(rule: RuleItem) -> some View {
         let typeText = String.clashRuleTypeDisplayText(from: rule.type) ?? tr("ui.common.na")
         let targetText = rule.payload.trimmedNonEmpty ?? tr("ui.common.na")
-        let iconSpec = self.ruleTypeIconSpec(for: typeText)
         let ruleProviderName = self.ruleProviderName(for: rule)
         let ruleProviderDetail = ruleProviderName.flatMap { self.appSession.ruleProviders[$0] }
         let isUpdating = ruleProviderName.map { self.appSession.ruleProviderUpdating.contains($0) } ?? false
@@ -183,17 +188,23 @@ extension MenuBarRootView {
                     RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
                         .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.1)))
 
-            if let ruleProviderName {
-                self.providerActionButton(.refresh, isLoading: isUpdating) {
-                    await self.appSession.updateRuleProvider(name: ruleProviderName)
-                }
-                .frame(width: T.rowLeadingIcon, alignment: .center)
-                .help(tr("ui.action.refresh"))
+            if ruleProviderName != nil {
+                self.providerUpdateStatusIndicator(isLoading: isUpdating)
             }
         }
         .frame(minHeight: T.compactRowHeight, alignment: .center)
         .padding(.horizontal, T.space6)
         .padding(.vertical, T.space1)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if let ruleProviderName {
+                Button(tr("ui.action.update")) {
+                    Task {
+                        await self.appSession.updateRuleProvider(name: ruleProviderName)
+                    }
+                }
+            }
+        }
     }
 
     private func ruleProviderName(for rule: RuleItem) -> String? {

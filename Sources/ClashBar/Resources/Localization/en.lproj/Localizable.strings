@@ -26,6 +26,7 @@
 "ui.action.sort_nodes_by_latency" = "Sort Nodes by Latency";
 "ui.action.sort_nodes_default" = "Default Node Order";
 "ui.action.refresh" = "Refresh";
+"ui.action.update" = "Update";
 "ui.action.close_all" = "Close All";
 "ui.action.close_connection" = "Close Connection";
 "ui.action.copy_all_logs" = "Copy All Logs";

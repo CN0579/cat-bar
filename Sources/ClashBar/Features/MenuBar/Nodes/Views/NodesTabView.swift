@@ -111,11 +111,7 @@ extension MenuBarRootView {
                 }
                 .buttonStyle(.plain)
 
-                self.providerActionButton(.refresh, isLoading: isUpdating) {
-                    await appSession.updateProxyProvider(name: name)
-                }
-                .frame(width: T.rowLeadingIcon, alignment: .center)
-                .help(tr("ui.action.refresh"))
+                self.providerUpdateStatusIndicator(isLoading: isUpdating)
 
                 Button {
                     withAnimation(.snappy(duration: 0.18)) {
@@ -132,6 +128,14 @@ extension MenuBarRootView {
             }
             .padding(.horizontal, T.space4)
             .padding(.vertical, T.space6)
+            .contentShape(Rectangle())
+            .contextMenu {
+                Button(tr("ui.action.update")) {
+                    Task {
+                        await appSession.updateProxyProvider(name: name)
+                    }
+                }
+            }
 
             if isExpanded {
                 self.nodesProviderExpandedContent(
