@@ -124,12 +124,10 @@ struct ConnectionRowView: View, Equatable {
 
         return HStack(spacing: ConnectionsLayout.secondLineSpacing) {
             self.metricColumn(
-                symbol: "clock",
                 text: time,
                 fallback: self.tr("ui.common.na"),
                 width: columnWidth)
             self.metricColumn(
-                symbol: "network",
                 text: network,
                 fallback: self.tr("ui.common.na"),
                 width: columnWidth)
@@ -191,7 +189,7 @@ struct ConnectionRowView: View, Equatable {
     }
 
     private func metricColumn(
-        symbol: String,
+        symbol: String? = nil,
         text: String,
         symbolColor: Color = .secondary,
         textColor: Color = .secondary,
@@ -203,10 +201,13 @@ struct ConnectionRowView: View, Equatable {
         let renderedText = text.isEmpty ? (fallback ?? "") : text
 
         return HStack(spacing: spacing) {
-            Image(systemName: symbol)
-                .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
-                .foregroundStyle(symbolColor)
-                .frame(width: 10, alignment: .leading)
+            if let symbol {
+                Image(systemName: symbol)
+                    .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(symbolColor)
+                    .frame(width: 10, alignment: .leading)
+            }
+
             Text(renderedText)
                 .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .regular))
                 .foregroundStyle(textColor)
@@ -243,12 +244,7 @@ struct ConnectionRowView: View, Equatable {
         let chainText = parts.joined(separator: " > ")
         let displayText = parts.isEmpty ? self.tr("ui.common.na") : chainText
 
-        return HStack(spacing: MenuBarLayoutTokens.space2) {
-            Image(systemName: "point.3.connected.trianglepath.dotted")
-                .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
-                .foregroundStyle(self.nativeSecondaryLabel)
-                .frame(width: 10, alignment: .leading)
-
+        return HStack(spacing: 0) {
             Text(displayText)
                 .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .regular))
                 .foregroundStyle(self.nativeSecondaryLabel)

@@ -65,11 +65,6 @@ extension MenuBarRootView {
                     }
                 } label: {
                     HStack(spacing: T.space6) {
-                        Image(systemName: "arrow.triangle.branch")
-                            .font(.app(size: T.FontSize.caption, weight: .semibold))
-                            .foregroundStyle(nativeInfo.opacity(T.Opacity.solid))
-                            .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
-
                         Text(group.name)
                             .font(.app(size: T.FontSize.body, weight: .semibold))
                             .foregroundStyle(nativePrimaryLabel)
@@ -160,10 +155,6 @@ extension MenuBarRootView {
         let isUpdating = ruleProviderName.map { self.appSession.ruleProviderUpdating.contains($0) } ?? false
 
         return HStack(spacing: T.space4) {
-            Image(systemName: iconSpec.symbol)
-                .font(.app(size: T.FontSize.caption, weight: .medium))
-                .foregroundStyle(iconSpec.color)
-                .frame(width: T.rowLeadingIcon, alignment: .center)
 
             Text(targetText)
                 .font(.app(size: T.FontSize.body, weight: .medium))

@@ -19,10 +19,6 @@ extension MenuBarRootView {
 
     private var nodesSearchBar: some View {
         HStack(spacing: T.space4) {
-            Image(systemName: "magnifyingglass")
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .foregroundStyle(nativeTertiaryLabel)
-
             TextField(tr("ui.nodes.search_placeholder"), text: $nodesViewModel.searchText)
                 .font(.app(size: T.FontSize.body, weight: .regular))
                 .textFieldStyle(.plain)
@@ -58,7 +54,6 @@ extension MenuBarRootView {
         return MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSectionHeader(
                 tr("ui.nodes.section.providers"),
-                symbol: "externaldrive.fill.badge.icloud",
                 count: "\(providers.count)")
             {
                 self.nodesProvidersRefreshButton
@@ -92,11 +87,6 @@ extension MenuBarRootView {
                     }
                 } label: {
                     HStack(spacing: T.space6) {
-                        Image(systemName: "externaldrive.fill")
-                            .font(.app(size: T.FontSize.caption, weight: .semibold))
-                            .foregroundStyle(nativeTeal.opacity(T.Opacity.solid))
-                            .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
-
                         Text(name)
                             .font(.app(size: T.FontSize.body, weight: .semibold))
                             .foregroundStyle(nativePrimaryLabel)
@@ -223,7 +213,6 @@ extension MenuBarRootView {
         return MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSectionHeader(
                 tr("ui.nodes.section.local"),
-                symbol: "internaldrive.fill",
                 count: "\(filtered.count)")
 
             if filtered.isEmpty {

@@ -48,7 +48,6 @@ extension MenuBarRootView {
         return VStack(alignment: .leading, spacing: T.space6) {
             self.nodesSectionHeader(
                 tr("ui.section.proxy_groups"),
-                symbol: "point.3.connected.trianglepath.dotted",
                 count: "\(groups.count)")
             {
                 HStack(spacing: T.space6) {
@@ -260,18 +259,20 @@ extension MenuBarRootView {
 
     func nodesSectionHeader(
         _ title: String,
-        symbol: String,
+        symbol: String? = nil,
         count: String? = nil,
         @ViewBuilder trailing: () -> some View = { EmptyView() }) -> some View
     {
         HStack(spacing: T.space6) {
-            Image(systemName: symbol)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .foregroundStyle(nativeTertiaryLabel)
-                .frame(
-                    width: T.rowLeadingIcon,
-                    height: T.rowLeadingIcon,
-                    alignment: .center)
+            if let symbol {
+                Image(systemName: symbol)
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(nativeTertiaryLabel)
+                    .frame(
+                        width: T.rowLeadingIcon,
+                        height: T.rowLeadingIcon,
+                        alignment: .center)
+            }
 
             Text(title)
                 .font(.app(size: T.FontSize.body, weight: .bold))
