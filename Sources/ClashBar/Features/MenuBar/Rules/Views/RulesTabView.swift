@@ -74,17 +74,11 @@ extension MenuBarRootView {
         }
     }
 
-    /// Plain `VStack` + dividers (no `LazyVStack` / `SeparatedForEach`) so scroll layout stays tight in SwiftUI `ScrollView`.
     @ViewBuilder
     private func rulesListVStack(rows: [RuleItem], providerLookup: [String: ProviderDetail]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.rowID) { index, rule in
+        MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
+            SeparatedForEach(data: rows, id: \.id, separator: nativeSeparator) { rule in
                 self.ruleRowByItem(rule: rule, providerLookup: providerLookup)
-                if index < rows.count - 1 {
-                    Rectangle()
-                        .fill(self.nativeSeparator)
-                        .frame(height: MenuBarLayoutTokens.stroke)
-                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
