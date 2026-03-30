@@ -115,11 +115,6 @@ extension MenuBarRootView {
                             .font(.app(size: T.FontSize.caption, weight: .regular))
                             .foregroundStyle(nativeTertiaryLabel)
                             .lineLimit(1)
-
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.app(size: T.FontSize.caption, weight: .semibold))
-                            .foregroundStyle(nativeTertiaryLabel)
-                            .frame(width: T.space8, alignment: .trailing)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
@@ -131,6 +126,19 @@ extension MenuBarRootView {
                 }
                 .frame(width: T.rowLeadingIcon, alignment: .center)
                 .help(tr("ui.action.refresh"))
+
+                Button {
+                    withAnimation(.snappy(duration: 0.18)) {
+                        nodesViewModel.toggleProvider(name)
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.app(size: T.FontSize.caption, weight: .semibold))
+                        .foregroundStyle(nativeTertiaryLabel)
+                        .frame(width: T.rowLeadingIcon, alignment: .trailing)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, T.space4)
             .padding(.vertical, T.space6)

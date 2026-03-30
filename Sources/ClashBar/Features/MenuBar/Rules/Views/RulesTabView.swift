@@ -81,17 +81,8 @@ extension MenuBarRootView {
                             .padding(.horizontal, T.space4)
                             .padding(.vertical, T.space1)
                             .background(nativeBadgeCapsule())
-
-                        Spacer(minLength: 0)
-
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.app(size: T.FontSize.caption, weight: .semibold))
-                            .foregroundStyle(nativeTertiaryLabel)
-                            .frame(width: T.space8, alignment: .trailing)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, T.space4)
-                    .padding(.vertical, T.space6)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -104,9 +95,23 @@ extension MenuBarRootView {
                     }
                     .frame(width: T.rowLeadingIcon, alignment: .center)
                     .help(tr("ui.action.refresh"))
-                    .padding(.trailing, T.space4)
                 }
+
+                Button {
+                    withAnimation(.snappy(duration: 0.18)) {
+                        rulesViewModel.toggleGroupExpansion(group.name)
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.app(size: T.FontSize.caption, weight: .semibold))
+                        .foregroundStyle(nativeTertiaryLabel)
+                        .frame(width: T.rowLeadingIcon, alignment: .trailing)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, T.space4)
+            .padding(.vertical, T.space6)
 
             if isExpanded { self.ruleGroupExpandedContent(group: group) }
         }
