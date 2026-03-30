@@ -11,7 +11,7 @@ extension MenuBarRootView {
 
         var symbol: String {
             switch self {
-            case .healthcheck: "gauge"
+            case .healthcheck: "bolt.horizontal"
             case .refresh: "arrow.triangle.2.circlepath"
             }
         }
@@ -85,7 +85,7 @@ extension MenuBarRootView {
                                 : "ui.action.hide_hidden_proxy_groups"))
 
                     self.compactTopIcon(
-                        "gauge",
+                        "bolt.horizontal",
                         label: tr("ui.action.test_latency"),
                         toneOverride: nativeTeal)
                     {
@@ -404,7 +404,7 @@ private struct ProxyGroupPopoverNodeItem: View {
                         LatencyLoadingIndicator()
                     } else if self.isHovered, let testAction = self.testAction {
                         Button(action: testAction) {
-                            Image(systemName: "gauge")
+                            Image(systemName: "bolt.horizontal")
                                 .font(.app(size: T.FontSize.caption, weight: .semibold))
                                 .foregroundStyle(Color(nsColor: .systemTeal).opacity(T.Opacity.solid))
                         }
