@@ -1,3 +1,71 @@
+## v0.3.0
+
+![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.3.0-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+
+> 本次更新包含 **12 项新增功能**、**15 项优化改进** 和 **24 项问题修复**，详情如下。
+
+### 📝 更新日志 (Changelog)
+
+**✨ 新增功能 (New Features)**
+
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **proxy**：show proxy command targets inline
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **menu-bar**：add thin scroll indicator for tab content
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **remote-machine**：support web panel entry for remote machines
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **nodes**：add dedicated nodes tab for raw proxies management
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **proxy**：support batch and single-node speed testing in proxy groups
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **nodes**：add provider refresh actions and sync update time
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **system**：add core restart and geo update actions
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **system**：reorganize terminal proxy command actions
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **rules**：support group-based remote ruleset updates
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **menu-bar**：move provider updates to context menus
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **update**：add Sparkle-based in-app updates
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **release**：automate changelog updates for stable releases
+
+**🚀 优化改进 (Improvements)**
+
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **formatter**：unify speed formatting logic and adjust display precision
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **menu-bar**：cap list samples during panel height measurement
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **menu-bar**：optimize rules and connections tab rendering
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **connections**：extract connection row into standalone Equatable view
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **menubar**：unify pinned header and optimize row rendering
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **settings**：prevent redundant proxy port auto-saves
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **session**：prevent redundant view updates on identical polling payloads
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **menubar**：move tun mode and proxy commands to system tab
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **proxy**：remove proxy providers section from proxy tab
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **proxy**：redesign traffic overview layout
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **rules**：align rules tab naming
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **system**：reorganize system settings sections
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **settings**：merge proxy ports into core settings
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **ui**：remove redundant leading icons
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **ui**：unify core upgrade feedback and normalize version display
+
+**🐞 修复问题 (Bug Fixes)**
+
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **remote**：guard offline switching and improve proxy host copy
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **remote**：sync statusText on target switch for speed display
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **menu-bar**：restore source-aware state and panel behavior
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **ui**：remove source labels from settings
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **settings**：avoid autosave on system tab init
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **popover**：stabilize menu bar panel height calculation
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **status-bar**：reset first responder when opening panel
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **menu-bar**：adjust footer bar spacing
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **menu-bar**：prevent blank flash on first rules/connections tab switch
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **proxy**：unify icon for latency test actions
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **rules**：stabilize rule list item identifiers
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **menu-bar**：rebuild rules tab and trim rules view pipeline
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **package**：avoid reserved variable name in awk
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **nodes**：correct panel sizing after expanding remote providers
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **i18n**：normalize labels for mode and port settings
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **rules**：show rule types in Clash-native format
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **rules**：unify rule type display formatting
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **rules**：align refresh icon with nodes tab
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **menu-bar**：align collapse toggles on nodes and rules tabs
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **providers**：correct provider update success handling
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **proxy**：resolve latency display for referenced proxy groups
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **system**：sync launch-at-login state after approval
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **release**：handle releases without Sparkle keys
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **release**：pass Sparkle private key through stdin
+
 ## v0.2.1
 
 ![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.2.1-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
