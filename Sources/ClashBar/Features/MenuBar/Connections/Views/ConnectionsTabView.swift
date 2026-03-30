@@ -366,9 +366,9 @@ struct ConnectionRowView: View, Equatable {
     private static func connectionRuleTypeText(_ raw: String?, fallback: String?) -> String {
         let candidate = fallback.trimmedNonEmpty ?? raw.trimmedNonEmpty ?? ""
         guard !candidate.isEmpty else { return "--" }
-        let normalized = candidate.uppercased()
-        if normalized == "MATCH" || normalized == "FINAL" { return "--" }
-        return candidate
+        let formatted = String.clashRuleTypeDisplayText(from: candidate) ?? candidate
+        if formatted == "MATCH" || formatted == "FINAL" { return "--" }
+        return formatted
     }
 
     static func connectionChainsParts(_ chains: [String]?) -> [String] {
