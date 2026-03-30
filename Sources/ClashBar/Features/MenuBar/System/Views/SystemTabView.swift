@@ -255,7 +255,7 @@ extension MenuBarRootView {
             ("ui.settings.port.redir", "arrowshape.turn.up.right", $appSession.settingsRedirPort),
             ("ui.settings.port.tproxy", "shield.lefthalf.filled", $appSession.settingsTProxyPort),
         ]
-        let localOnlyItems: [(id: String, title: String, symbol: String, isOn: Binding<Bool>)] = [
+        let basicToggleItems: [(id: String, title: String, symbol: String, isOn: Binding<Bool>)] = [
             (
                 "launch-at-login",
                 tr("ui.settings.launch_at_login"),
@@ -263,6 +263,8 @@ extension MenuBarRootView {
                 Binding(
                     get: { appSession.launchAtLoginEnabled },
                     set: { appSession.applyLaunchAtLogin($0) })),
+        ]
+        let localCoreBehaviorItems: [(id: String, title: String, symbol: String, isOn: Binding<Bool>)] = [
             (
                 "auto-start-core",
                 tr("ui.settings.auto_start_core"),
@@ -307,41 +309,39 @@ extension MenuBarRootView {
         let showManagedTargetAction = localTargetDisplay != managedTargetDisplay
 
         return VStack(alignment: .leading, spacing: T.space6) {
-            if showsLocalOnlyItems {
-                VStack(spacing: 0) {
-                    self.settingsCardHeader(
-                        tr("ui.section.basic_settings"),
-                        symbol: "slider.horizontal.3")
-                    ForEach(localOnlyItems, id: \.id) { item in
-                        self.settingsToggleRow(
-                            item.title,
-                            symbol: item.symbol,
-                            isOn: item.isOn)
-                    }
-                    self.settingsSelectionRow(.init(
-                        title: tr("ui.settings.menu_bar_style"),
-                        symbol: "menubar.rectangle",
-                        valueText: self.statusBarModeLabel(appSession.statusBarDisplayMode),
-                        options: StatusBarDisplayMode.allCases,
-                        optionTitle: self.statusBarModeLabel,
-                        isSelected: { appSession.statusBarDisplayMode == $0 },
-                        onSelect: { appSession.statusBarDisplayMode = $0 }))
-                    self.settingsSelectionRow(.init(
-                        title: tr("ui.settings.language"),
-                        symbol: "character.book.closed",
-                        valueText: appSession.uiLanguage == .zhHans ? tr("ui.language.zh_hans") : tr("ui.language.en"),
-                        options: AppLanguage.allCases,
-                        optionTitle: { $0 == .zhHans ? tr("ui.language.zh_hans") : tr("ui.language.en") },
-                        isSelected: { appSession.uiLanguage == $0 },
-                        onSelect: appSession.setUILanguage))
-                    self.settingsSelectionRow(.init(
-                        title: tr("ui.settings.appearance"),
-                        symbol: "circle.lefthalf.filled",
-                        valueText: self.appearanceModeLabel(appSession.appearanceMode),
-                        options: AppAppearanceMode.allCases,
-                        optionTitle: self.appearanceModeLabel,
-                        isSelected: { appSession.appearanceMode == $0 },
-                        onSelect: appSession.setAppearanceMode))
+            VStack(spacing: 0) {
+                self.settingsCardHeader(
+                    tr("ui.section.basic_settings"),
+                    symbol: "slider.horizontal.3")
+                self.settingsSelectionRow(.init(
+                    title: tr("ui.settings.menu_bar_style"),
+                    symbol: "menubar.rectangle",
+                    valueText: self.statusBarModeLabel(appSession.statusBarDisplayMode),
+                    options: StatusBarDisplayMode.allCases,
+                    optionTitle: self.statusBarModeLabel,
+                    isSelected: { appSession.statusBarDisplayMode == $0 },
+                    onSelect: { appSession.statusBarDisplayMode = $0 }))
+                self.settingsSelectionRow(.init(
+                    title: tr("ui.settings.language"),
+                    symbol: "character.book.closed",
+                    valueText: appSession.uiLanguage == .zhHans ? tr("ui.language.zh_hans") : tr("ui.language.en"),
+                    options: AppLanguage.allCases,
+                    optionTitle: { $0 == .zhHans ? tr("ui.language.zh_hans") : tr("ui.language.en") },
+                    isSelected: { appSession.uiLanguage == $0 },
+                    onSelect: appSession.setUILanguage))
+                self.settingsSelectionRow(.init(
+                    title: tr("ui.settings.appearance"),
+                    symbol: "circle.lefthalf.filled",
+                    valueText: self.appearanceModeLabel(appSession.appearanceMode),
+                    options: AppAppearanceMode.allCases,
+                    optionTitle: self.appearanceModeLabel,
+                    isSelected: { appSession.appearanceMode == $0 },
+                    onSelect: appSession.setAppearanceMode))
+                ForEach(basicToggleItems, id: \.id) { item in
+                    self.settingsToggleRow(
+                        item.title,
+                        symbol: item.symbol,
+                        isOn: item.isOn)
                 }
             }
 
@@ -349,6 +349,14 @@ extension MenuBarRootView {
                 self.settingsCardHeader(
                     tr("ui.section.core_settings"),
                     symbol: "gearshape.2")
+                if showsLocalOnlyItems {
+                    ForEach(localCoreBehaviorItems, id: \.id) { item in
+                        self.settingsToggleRow(
+                            item.title,
+                            symbol: item.symbol,
+                            isOn: item.isOn)
+                    }
+                }
                 self.settingsSelectionRow(.init(
                     title: tr("ui.settings.log_level"),
                     symbol: "text.alignleft",
