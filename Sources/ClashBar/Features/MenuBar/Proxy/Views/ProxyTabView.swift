@@ -251,19 +251,29 @@ extension MenuBarRootView {
                 action()
             }
         } label: {
-            HStack(spacing: T.space4) {
-                Text(title)
-                    .font(.app(size: T.FontSize.caption, weight: .medium))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .minimumScaleFactor(T.minimumScale)
-                    .monospacedDigit()
-                    .foregroundStyle(foreground)
+            HStack(spacing: T.space6) {
+                VStack(alignment: .leading, spacing: T.space1) {
+                    Text(helpTitle)
+                        .font(.app(size: T.FontSize.caption, weight: .semibold))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .foregroundStyle(foreground)
+                    Text(title)
+                        .font(.app(size: T.FontSize.caption, weight: .medium))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .minimumScaleFactor(T.minimumScale)
+                        .monospacedDigit()
+                        .foregroundStyle(self.nativeTertiaryLabel)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
                 Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
                     .font(.app(size: T.FontSize.caption, weight: .semibold))
                     .foregroundStyle(iconForeground)
             }
-            .padding(T.space2)
+            .padding(.horizontal, T.space6)
+            .padding(.vertical, T.space4)
             .background {
                 Capsule(style: .continuous)
                     .fill(copied ? self.nativePositive.opacity(T.Opacity.tint) : self.nativeBadgeFill)

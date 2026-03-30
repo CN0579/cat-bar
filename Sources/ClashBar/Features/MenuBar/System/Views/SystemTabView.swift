@@ -407,37 +407,6 @@ extension MenuBarRootView {
 
             VStack(spacing: 0) {
                 self.settingsCardHeader(
-                    tr("ui.quick.copy_terminal"),
-                    symbol: "terminal")
-
-                HStack(spacing: T.space6) {
-                    if showsLocalOnlyItems {
-                        self.proxyCommandActionButton(
-                            title: self.appSession.localProxyCommandHostDisplay(),
-                            target: .local,
-                            helpTitle: tr("ui.quick.copy_terminal"),
-                            helpDetail: localTargetDisplay)
-                        {
-                            self.appSession.copyLocalProxyCommand()
-                        }
-                    }
-
-                    if showManagedTargetAction || !showsLocalOnlyItems {
-                        self.proxyCommandActionButton(
-                            title: self.appSession.managedEndpointProxyCommandHostDisplay(),
-                            target: .currentEndpoint,
-                            helpTitle: tr("ui.quick.copy_terminal_current_endpoint"),
-                            helpDetail: managedTargetDisplay)
-                        {
-                            self.appSession.copyManagedEndpointProxyCommand()
-                        }
-                    }
-                }
-                .menuRowPadding(vertical: T.space4)
-            }
-
-            VStack(spacing: 0) {
-                self.settingsCardHeader(
                     tr("ui.section.maintenance"),
                     symbol: "wrench.and.screwdriver")
 
@@ -471,6 +440,39 @@ extension MenuBarRootView {
                         ForEach(maintenanceActions, id: \.titleKey) { item in
                             self.maintenanceActionButton(tr(item.titleKey), symbol: item.symbol) {
                                 await item.action()
+                            }
+                        }
+                    }
+                }
+                .menuRowPadding(vertical: T.space4)
+            }
+
+            VStack(spacing: 0) {
+                self.settingsCardHeader(
+                    tr("ui.section.other_actions"),
+                    symbol: "ellipsis.circle")
+
+                VStack(alignment: .leading, spacing: T.space4) {
+                    HStack(spacing: T.space6) {
+                        if showsLocalOnlyItems {
+                            self.proxyCommandActionButton(
+                                title: self.appSession.localProxyCommandHostDisplay(),
+                                target: .local,
+                                helpTitle: tr("ui.quick.copy_terminal"),
+                                helpDetail: localTargetDisplay)
+                            {
+                                self.appSession.copyLocalProxyCommand()
+                            }
+                        }
+
+                        if showManagedTargetAction || !showsLocalOnlyItems {
+                            self.proxyCommandActionButton(
+                                title: self.appSession.managedEndpointProxyCommandHostDisplay(),
+                                target: .currentEndpoint,
+                                helpTitle: tr("ui.quick.copy_terminal_current_endpoint"),
+                                helpDetail: managedTargetDisplay)
+                            {
+                                self.appSession.copyManagedEndpointProxyCommand()
                             }
                         }
                     }

@@ -97,6 +97,7 @@
 "ui.section.proxy_groups" = "代理组";
 "ui.section.basic_settings" = "基础设置";
 "ui.section.proxy_ports" = "代理端口";
+"ui.section.other_actions" = "其他操作";
 "ui.section.maintenance" = "内核操作";
 
 "ui.rules.column.target_type" = "目标 / 类型";
