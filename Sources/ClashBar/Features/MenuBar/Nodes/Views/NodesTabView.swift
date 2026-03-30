@@ -4,15 +4,15 @@ import SwiftUI
 private typealias T = MenuBarLayoutTokens
 
 extension MenuBarRootView {
-    func nodesTabBody(isMeasuring: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: T.space6) {
+    func nodesTabBody(isMeasuring _: Bool = false) -> some View {
+        MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSearchBar
 
             if !appSession.sortedProxyProviderNames.isEmpty {
-                self.nodesProvidersSections(isMeasuring: isMeasuring)
+                self.nodesProvidersSections()
             }
 
-            self.nodesLocalSection(isMeasuring: isMeasuring)
+            self.nodesLocalSection()
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -52,10 +52,10 @@ extension MenuBarRootView {
         .padding(.horizontal, T.space4)
     }
 
-    private func nodesProvidersSections(isMeasuring: Bool) -> some View {
+    private func nodesProvidersSections() -> some View {
         let providers = appSession.sortedProxyProviderNames
 
-        return VStack(alignment: .leading, spacing: T.space6) {
+        return MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSectionHeader(
                 tr("ui.nodes.section.providers"),
                 symbol: "externaldrive.fill.badge.icloud",
@@ -64,13 +64,11 @@ extension MenuBarRootView {
                 self.nodesProvidersRefreshButton
             }
 
-            let displayProviders = isMeasuring ? Array(providers.prefix(10)) : providers
-            VStack(spacing: T.space2) {
-                ForEach(displayProviders, id: \.self) { name in
+            MeasurementAwareVStack(alignment: .leading, spacing: T.space2, usesLazyStack: false) {
+                ForEach(providers, id: \.self) { name in
                     self.nodesProviderBlock(
                         name: name,
-                        detail: appSession.proxyProvidersDetail[name],
-                        isMeasuring: isMeasuring)
+                        detail: appSession.proxyProvidersDetail[name])
                 }
             }
         }
@@ -78,8 +76,7 @@ extension MenuBarRootView {
 
     private func nodesProviderBlock(
         name: String,
-        detail: ProviderDetail?,
-        isMeasuring: Bool) -> some View
+        detail: ProviderDetail?) -> some View
     {
         let isExpanded = nodesViewModel.expandedProviders.contains(name)
         let nodeCount = detail?.proxies?.count ?? 0
@@ -141,8 +138,7 @@ extension MenuBarRootView {
             if isExpanded {
                 self.nodesProviderExpandedContent(
                     providerName: name,
-                    detail: detail,
-                    isMeasuring: isMeasuring)
+                    detail: detail)
             }
         }
         .background(
@@ -152,19 +148,17 @@ extension MenuBarRootView {
 
     private func nodesProviderExpandedContent(
         providerName: String,
-        detail: ProviderDetail?,
-        isMeasuring: Bool) -> some View
+        detail: ProviderDetail?) -> some View
     {
         let allNodes = detail?.proxies ?? []
         let filtered = nodesViewModel.filteredProviderNodes(allNodes, searchText: nodesViewModel.searchText)
-        let displayNodes = isMeasuring ? Array(filtered.prefix(25)) : filtered
 
         return VStack(spacing: 0) {
             Divider()
                 .overlay(nativeSeparator)
                 .padding(.horizontal, T.space4)
 
-            if displayNodes.isEmpty {
+            if filtered.isEmpty {
                 Text(nodesViewModel.searchText.isEmpty ? tr("ui.common.na") : tr("ui.nodes.no_match"))
                     .font(.app(size: T.FontSize.caption, weight: .regular))
                     .foregroundStyle(nativeSecondaryLabel)
@@ -172,8 +166,8 @@ extension MenuBarRootView {
                     .padding(.horizontal, T.space6)
                     .padding(.vertical, T.space4)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(displayNodes, id: \.name) { node in
+                MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
+                    ForEach(filtered, id: \.name) { node in
                         self.nodesProviderNodeRow(
                             providerName: providerName,
                             node: node,
@@ -212,13 +206,13 @@ extension MenuBarRootView {
         }
     }
 
-    func nodesLocalSection(isMeasuring: Bool) -> some View {
+    func nodesLocalSection() -> some View {
         let allLocal = nodesViewModel.buildLocalNodes(
             proxyNodeTypes: appSession.proxyNodeTypes,
             proxyProvidersDetail: appSession.proxyProvidersDetail)
         let filtered = nodesViewModel.filteredLocalNodes(allLocal, searchText: nodesViewModel.searchText)
 
-        return VStack(alignment: .leading, spacing: T.space6) {
+        return MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSectionHeader(
                 tr("ui.nodes.section.local"),
                 symbol: "internaldrive.fill",
@@ -229,9 +223,8 @@ extension MenuBarRootView {
                     ? tr("ui.nodes.empty_local")
                     : tr("ui.nodes.no_match"))
             } else {
-                let displayNodes = isMeasuring ? Array(filtered.prefix(25)) : filtered
-                VStack(spacing: 0) {
-                    ForEach(displayNodes, id: \.name) { node in
+                MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
+                    ForEach(filtered, id: \.name) { node in
                         self.nodesLocalNodeRow(node)
                     }
                 }
