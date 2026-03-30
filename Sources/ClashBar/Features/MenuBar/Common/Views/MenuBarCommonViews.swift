@@ -229,8 +229,6 @@ extension MenuBarRootView {
                         tr("ui.footer.core_mihomo", appSession.version),
                         url: mihomoRepositoryURL,
                         iconSystemName: mihomoSymbol)
-
-                    self.footerCoreUpgradeControl
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(1)
@@ -289,7 +287,7 @@ extension MenuBarRootView {
 
     var footerCoreUpgradeControl: some View {
         self.compactAsyncIconButton(
-            symbol: self.footerCoreUpgradeButtonSymbolName ?? "arrow.down.circle",
+            symbol: self.footerCoreUpgradeButtonSymbolName ?? "arrow.clockwise.circle",
             label: self.footerCoreUpgradeButtonTitle,
             tint: self.footerCoreUpgradeButtonTint,
             baseTint: self.nativeSecondaryLabel,
@@ -326,7 +324,7 @@ extension MenuBarRootView {
     var footerCoreUpgradeButtonSymbolName: String? {
         switch self.appSession.coreUpgradeState {
         case .idle:
-            "arrow.down.circle"
+            "arrow.clockwise.circle"
         case .running:
             nil
         case .succeeded:

@@ -200,7 +200,7 @@ extension AppSession {
                 includeProxyGroups: self.activeMenuTab == .proxy || self.activeMenuTab == .nodes)
                 .execute()
 
-            self.version = snapshot.versionInfo.version
+            self.version = AppSemanticVersion.normalizedDisplayVersion(from: snapshot.versionInfo.version)
             self.applyRuntimeConfigSnapshot(snapshot.configSnapshot)
 
             if let proxyGroupsPayload = snapshot.proxyGroupsPayload {

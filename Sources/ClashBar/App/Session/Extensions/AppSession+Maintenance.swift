@@ -132,7 +132,7 @@ extension AppSession {
         do {
             let versionInfo = try await self.fetchVersionUseCase().execute()
             guard !Task.isCancelled else { return }
-            self.version = versionInfo.version
+            self.version = AppSemanticVersion.normalizedDisplayVersion(from: versionInfo.version)
         } catch {
             // Best effort only. The core may be restarting briefly after an upgrade request.
         }

@@ -23,7 +23,7 @@ extension AppSession {
         let status = await self.remoteMachineStore.refreshConnectivity(for: machine)
         switch status {
         case let .connected(version):
-            self.version = version
+            self.version = AppSemanticVersion.normalizedDisplayVersion(from: version)
             self.apiStatus = .healthy
             self.synchronizeRuntimeStatusForActiveTarget(remoteIsReachable: true)
             self.startPolling()

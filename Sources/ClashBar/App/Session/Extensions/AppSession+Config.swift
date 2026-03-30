@@ -475,7 +475,7 @@ extension AppSession {
     private func normalizedMihomoVersionForUserAgent(_ rawVersion: String) -> String? {
         let trimmed = rawVersion.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed != "-" else { return nil }
-        return trimmed
+        return AppSemanticVersion.normalizedDisplayVersion(from: trimmed)
     }
 
     private func restoreTunAfterConfigReloadIfNeeded(expectedEnabled: Bool) async throws {

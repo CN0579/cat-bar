@@ -148,6 +148,7 @@ extension MenuBarRootView {
         symbol: String? = nil,
         isLoading: Bool = false,
         isDisabled: Bool = false,
+        help: String? = nil,
         action: @escaping () async -> Void) -> some View
     {
         let isEnabled = self.maintenanceActionEnabled && !isDisabled
@@ -173,6 +174,7 @@ extension MenuBarRootView {
         .controlSize(.small)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.62)
+        .help(help ?? title)
     }
 
     func settingsFeedbackBanner(text: String, color: Color, symbol: String) -> some View {
@@ -239,16 +241,42 @@ extension MenuBarRootView {
     }
 
     var settingsFeedbackState: (message: String, color: Color, symbol: String)? {
-        guard let feedback = SystemTabViewModel.feedbackState(session: appSession) else { return nil }
-        let color: Color = switch feedback.kind {
-        case .error:
-            nativeCritical.opacity(T.Opacity.solid)
-        case .warning:
-            nativeWarning.opacity(T.Opacity.solid)
-        case .success:
-            nativePositive.opacity(T.Opacity.solid)
+        if let feedback = SystemTabViewModel.feedbackState(session: appSession) {
+            let color: Color = switch feedback.kind {
+            case .error:
+                nativeCritical.opacity(T.Opacity.solid)
+            case .warning:
+                nativeWarning.opacity(T.Opacity.solid)
+            case .success:
+                nativePositive.opacity(T.Opacity.solid)
+            }
+            return (feedback.message, color, feedback.symbol)
         }
-        return (feedback.message, color, feedback.symbol)
+
+        switch self.appSession.coreUpgradeState {
+        case .idle:
+            return nil
+        case .running:
+            return (
+                self.footerCoreUpgradeButtonHelp,
+                self.nativeAccent.opacity(T.Opacity.solid),
+                "arrow.clockwise.circle")
+        case .succeeded:
+            return (
+                self.footerCoreUpgradeButtonHelp,
+                self.nativePositive.opacity(T.Opacity.solid),
+                "checkmark.circle.fill")
+        case .alreadyLatest:
+            return (
+                self.footerCoreUpgradeButtonHelp,
+                self.nativePositive.opacity(T.Opacity.solid),
+                "checkmark.circle")
+        case .failed:
+            return (
+                self.footerCoreUpgradeButtonHelp,
+                self.nativeCritical.opacity(T.Opacity.solid),
+                "exclamationmark.triangle.fill")
+        }
     }
 
     func editableCoreSettingBinding(_ setting: AppSession.EditableCoreSetting) -> Binding<Bool> {
@@ -416,7 +444,8 @@ extension MenuBarRootView {
                             self.footerCoreUpgradeButtonTitle,
                             symbol: self.footerCoreUpgradeButtonSymbolName,
                             isLoading: self.appSession.isCoreUpgradeInFlight,
-                            isDisabled: self.appSession.isCoreUpgradeInFlight)
+                            isDisabled: !self.isFooterCoreUpgradeEnabled,
+                            help: self.footerCoreUpgradeButtonHelp)
                         {
                             await self.appSession.upgradeCore()
                         }
