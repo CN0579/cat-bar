@@ -1,3 +1,12 @@
+## v0.5.1
+
+> 本次更新优化了品牌视觉形象并重构了更新日志的生成方式，使项目呈现更加规范统一。
+
+### 🚀 优化改进
+
+- **release**：restructure changelog format and generation logic
+- **branding**：replace brand logo and optimize static images
+
 ## v0.5.0
 
 > 本次更新优化了批量延迟测试的去重与分组逻辑，使代理测速结果更准确，同时简化了发布流程并升级了 Actions 运行环境，提升整体稳定性与维护效率。
