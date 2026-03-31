@@ -21,6 +21,8 @@
 - 发布产物仅提供 `no-core` 安装包。
 - 首次启动后，可在设置页打开 `~/Library/Application Support/clashbar/core/`，并放入 `mihomo`。
 - 版本号 `X.Y.Z` 会基于上一个稳定 tag 和最近提交的 Conventional Commits 自动计算。
-- `CHANGELOG.md` 会在发布前根据上一个稳定 tag 之后的 commit 自动生成对应版本段落，并先提交回当前分支。
+- `CHANGELOG.md` 会在发布前根据上一个稳定 tag 之后的 commit 自动生成对应版本段落：默认按 scope 聚合、输出简洁统计与摘要，并先提交回当前分支。
+- 如需启用 GitHub Copilot 摘要，请在仓库 Secrets 中配置 `COPILOT_GITHUB_TOKEN`。该 token 需要包含 GitHub Copilot 的 `Copilot Requests` 权限；工作流检测到该 secret 后会自动安装 Copilot CLI，并通过 `CHANGELOG_SUMMARY_COMMAND` 为发布摘要生成一句面向用户结果的总结。
+- 如果未来要接入其他 AI 提供方，也可以在工作流里自定义 `CHANGELOG_SUMMARY_COMMAND`；脚本会将提示词写入临时文件，并把 `{prompt_file}` 替换为该文件路径后执行。
 - `.app` 中的 `CFBundleShortVersionString` 使用语义化版本号，例如 `0.3.0`。
 - `.app` 中的 `CFBundleVersion` 使用 GitHub Actions 的 `run number`，便于区分同一版本下的不同构建。

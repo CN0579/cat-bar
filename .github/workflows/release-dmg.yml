@@ -155,11 +155,41 @@ jobs:
           echo "build_number=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "previous_tag=${previous_tag}" >> "$GITHUB_OUTPUT"
 
+      - name: Set up Node.js for optional Copilot summary
+        if: github.event_name != 'push'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Copilot CLI when token is configured
+        if: github.event_name != 'push'
+        shell: bash
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${COPILOT_GITHUB_TOKEN:-}" ]]; then
+            echo "COPILOT_GITHUB_TOKEN is not configured. Skipping Copilot CLI installation."
+            exit 0
+          fi
+
+          npm install -g @github/copilot
+
       - name: Update changelog from commits
         if: github.event_name != 'push'
         shell: bash
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+
+          if [[ -n "${COPILOT_GITHUB_TOKEN:-}" ]]; then
+            export CHANGELOG_SUMMARY_COMMAND='copilot -p "$(cat {prompt_file})"'
+            echo "Using Copilot CLI for changelog summary."
+          else
+            echo "COPILOT_GITHUB_TOKEN is not configured. Falling back to local changelog summary."
+          fi
+
           python3 Scripts/update_changelog.py \
             --version "${{ steps.version.outputs.version }}" \
             --from-ref "${{ steps.version.outputs.previous_tag }}" \

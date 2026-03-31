@@ -33,12 +33,13 @@ cat >"$output_path" <<EOF
 - 提交：\`${commit_sha}\` ${commit_subject}
 - 提交时间：${commit_date}
 
-### 📥 下载地址 (Downloads)
+### 下载地址
 
-请根据您的 Mac 处理器芯片选择对应的版本下载。当前 Beta 仅提供无内核安装包，首次启动后可在 ClashBar 设置页打开内核目录并放入 \`mihomo\`。
+- 当前 Beta 仅提供无内核安装包。
+- 首次启动后，可在 ClashBar 设置页打开内核目录并放入 \`mihomo\`。
 
-| 🖥 平台架构 (Architecture) | 🛠️ 无内核安装包 |
+| 平台架构 | 无内核安装包 |
 | :--- | :--- |
-| ![Apple Silicon](https://img.shields.io/badge/Apple_Silicon-M系列芯片-0071E3?style=flat-square&logo=apple&logoColor=white) | [ClashBar-${version}-apple-silicon-no-core.dmg](${download_base}/ClashBar-${version}-apple-silicon-no-core.dmg) |
-| ![Intel](https://img.shields.io/badge/Intel-x86__64-0071C5?style=flat-square&logo=intel&logoColor=white) | [ClashBar-${version}-intel-no-core.dmg](${download_base}/ClashBar-${version}-intel-no-core.dmg) |
+| Apple Silicon (M 系列) | [ClashBar-${version}-apple-silicon-no-core.dmg](${download_base}/ClashBar-${version}-apple-silicon-no-core.dmg) |
+| Intel (x86_64) | [ClashBar-${version}-intel-no-core.dmg](${download_base}/ClashBar-${version}-intel-no-core.dmg) |
 EOF

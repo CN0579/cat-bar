@@ -3,31 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import re
 import subprocess
 import sys
+import tempfile
+from collections import OrderedDict
 from dataclasses import dataclass
 
 
-BADGES = {
-    "feature": "![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square)",
-    "improvement": "![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square)",
-    "fix": "![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square)",
-}
-
-
-SECTION_HEADERS = {
-    "feature": "**✨ 新增功能 (New Features)**",
-    "improvement": "**🚀 优化改进 (Improvements)**",
-    "fix": "**🐞 修复问题 (Bug Fixes)**",
-}
-
-
-PLACEHOLDERS = {
-    "feature": f"- {BADGES['feature']} **暂无内容**：当前版本未新增独立功能项。",
-    "improvement": f"- {BADGES['improvement']} **暂无内容**：当前版本未包含单独归类的优化项。",
-    "fix": f"- {BADGES['fix']} **暂无内容**：当前版本未包含单独归类的问题修复。",
+CATEGORY_TITLES = {
+    "feature": "新增",
+    "improvement": "优化",
+    "fix": "修复",
 }
 
 
@@ -46,6 +35,12 @@ TYPE_TO_CATEGORY = {
 }
 
 
+SCOPE_ALIASES = {
+    "menubar": "menu-bar",
+    "remote": "remote-machine",
+}
+
+
 IGNORED_SUBJECT_PREFIXES = (
     "merge ",
 )
@@ -59,7 +54,8 @@ CONVENTIONAL_COMMIT_PATTERN = re.compile(
 @dataclass
 class CommitEntry:
     category: str
-    text: str
+    scope: str | None
+    description: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,6 +89,21 @@ def build_revision_range(from_ref: str, to_ref: str) -> str:
     return to_ref
 
 
+def normalize_scope(scope: str | None) -> str | None:
+    if scope is None:
+        return None
+
+    normalized = scope.strip().lower().replace("_", "-")
+    if not normalized:
+        return None
+    return SCOPE_ALIASES.get(normalized, normalized)
+
+
+def normalize_description(description: str) -> str:
+    cleaned = re.sub(r"\s+", " ", description.strip())
+    return cleaned.rstrip("。.;；")
+
+
 def collect_commits(from_ref: str, to_ref: str) -> list[tuple[str, str, str]]:
     revision_range = build_revision_range(from_ref, to_ref)
     raw_log = run_git("log", "--reverse", "--format=%s%x1f%b%x1e", revision_range)
@@ -117,62 +128,202 @@ def classify_commit(subject: str, body: str, lower_subject: str) -> CommitEntry:
 
     if match:
         commit_type = match.group("type").lower()
-        scope = match.group("scope")
-        description = match.group("description").strip()
+        scope = normalize_scope(match.group("scope"))
+        description = normalize_description(match.group("description"))
         breaking = bool(match.group("breaking")) or "BREAKING CHANGE" in body
         category = TYPE_TO_CATEGORY.get(commit_type, "improvement")
-        prefix = "Breaking: " if breaking else ""
-        if scope:
-            text = f"**{scope}**：{prefix}{description}"
-        else:
-            text = f"{prefix}{description}"
-        return CommitEntry(category=category, text=text)
+        if breaking:
+            description = f"Breaking: {description}"
+        return CommitEntry(category=category, scope=scope, description=description)
 
     fallback_category = "fix" if any(keyword in lower_subject for keyword in ("fix", "bug")) else "improvement"
-    return CommitEntry(category=fallback_category, text=subject)
-
-
-def build_summary(entries_by_category: dict[str, list[CommitEntry]]) -> str:
-    feature_count = len(entries_by_category["feature"])
-    improvement_count = len(entries_by_category["improvement"])
-    fix_count = len(entries_by_category["fix"])
-    return (
-        f"> 本次更新包含 **{feature_count} 项新增功能**、"
-        f"**{improvement_count} 项优化改进** 和 **{fix_count} 项问题修复**，详情如下。"
+    return CommitEntry(
+        category=fallback_category,
+        scope=None,
+        description=normalize_description(subject),
     )
 
 
-def render_category(category: str, entries: list[CommitEntry]) -> str:
-    lines = [SECTION_HEADERS[category], ""]
-    if not entries:
-        lines.append(PLACEHOLDERS[category])
+def group_entries(entries: list[CommitEntry]) -> OrderedDict[str, dict[str, list[str]]]:
+    grouped: OrderedDict[str, dict[str, list[str]]] = OrderedDict()
+
+    for entry in entries:
+        scope_key = entry.scope or "other"
+        if scope_key not in grouped:
+            grouped[scope_key] = {
+                "feature": [],
+                "improvement": [],
+                "fix": [],
+            }
+        grouped[scope_key][entry.category].append(entry.description)
+
+    return grouped
+
+
+def dedupe_items(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in items:
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+    return result
+
+
+def format_scope_label(scope: str) -> str:
+    if scope == "other":
+        return "其他"
+    return f"`{scope}`"
+
+
+def format_descriptions(items: list[str]) -> str:
+    return "；".join(dedupe_items(items))
+
+
+def build_summary(entries: list[CommitEntry]) -> str:
+    counts = {
+        "feature": 0,
+        "improvement": 0,
+        "fix": 0,
+    }
+    scope_counts: OrderedDict[str, int] = OrderedDict()
+    scope_order: dict[str, int] = {}
+
+    for index, entry in enumerate(entries):
+        counts[entry.category] += 1
+        scope_key = entry.scope or "other"
+        if scope_key not in scope_order:
+            scope_order[scope_key] = index
+        scope_counts[scope_key] = scope_counts.get(scope_key, 0) + 1
+
+    ranked_scopes = [
+        scope
+        for scope, _ in sorted(
+            scope_counts.items(),
+            key=lambda item: (-item[1], scope_order[item[0]]),
+        )
+    ]
+    display_scopes = [format_scope_label(scope) for scope in ranked_scopes if scope != "other"][:3]
+    scope_text = "、".join(display_scopes) if display_scopes else "多个模块"
+
+    if counts["feature"] and counts["improvement"] and counts["fix"]:
+        result_text = "同时包含能力补齐、交互整理和稳定性修复。"
+    elif counts["feature"] and counts["improvement"]:
+        result_text = "主要补齐能力并整理交互体验。"
+    elif counts["feature"] and counts["fix"]:
+        result_text = "主要补齐功能并修复关键问题。"
+    elif counts["improvement"] and counts["fix"]:
+        result_text = "主要提升交互表现并修复稳定性问题。"
+    elif counts["feature"]:
+        result_text = "以新能力补齐为主。"
+    elif counts["improvement"]:
+        result_text = "主要是一次体验与交互整理。"
+    else:
+        result_text = "以稳定性修复为主。"
+
+    return f"> 本次更新重点覆盖 {scope_text}，{result_text}"
+
+
+def build_summary_prompt(version: str, entries: list[CommitEntry]) -> str:
+    grouped_changes = render_grouped_changes(entries)
+    stats = render_stats(entries)
+    return (
+        f"请为 ClashBar v{version} 生成一句中文发布摘要。\n"
+        "要求：\n"
+        "1. 只输出一句话，不要标题，不要列表。\n"
+        "2. 重点说明这次更新给用户带来的结果。\n"
+        "3. 不要虚构未出现的能力，不要提及 Git commit、scope 或统计数字。\n"
+        "4. 语气克制、简洁，适合放在 GitHub Release 顶部。\n\n"
+        f"{stats}\n\n{grouped_changes}\n"
+    )
+
+
+def build_summary_with_optional_command(version: str, entries: list[CommitEntry]) -> str:
+    command_template = os.getenv("CHANGELOG_SUMMARY_COMMAND", "").strip()
+    if not command_template:
+        return build_summary(entries)
+
+    prompt = build_summary_prompt(version, entries)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as prompt_file:
+        prompt_file.write(prompt)
+        prompt_path = prompt_file.name
+
+    try:
+        command = command_template.replace("{prompt_file}", prompt_path)
+        completed = subprocess.run(
+            ["/bin/sh", "-lc", command],
+            capture_output=True,
+            text=True,
+        )
+    finally:
+        pathlib.Path(prompt_path).unlink(missing_ok=True)
+
+    if completed.returncode != 0:
+        print(
+            f"Warning: summary command failed, falling back to local summary: {completed.stderr.strip()}",
+            file=sys.stderr,
+        )
+        return build_summary(entries)
+
+    summary = completed.stdout.strip()
+    summary = re.sub(r"^```(?:markdown|md)?\s*", "", summary)
+    summary = re.sub(r"\s*```$", "", summary).strip()
+    if not summary:
+        return build_summary(entries)
+
+    summary = summary.lstrip("> ").strip()
+    return f"> {summary}"
+
+
+def render_stats(entries: list[CommitEntry]) -> str:
+    counts = {
+        "feature": 0,
+        "improvement": 0,
+        "fix": 0,
+    }
+    for entry in entries:
+        counts[entry.category] += 1
+
+    return "\n".join(
+        [
+            "### 变更统计",
+            "",
+            f"- 新增功能：{counts['feature']} 项",
+            f"- 优化改进：{counts['improvement']} 项",
+            f"- 问题修复：{counts['fix']} 项",
+        ]
+    )
+
+
+def render_grouped_changes(entries: list[CommitEntry]) -> str:
+    grouped = group_entries(entries)
+    lines = ["### 按模块归纳", ""]
+
+    if not grouped:
+        lines.append("- 暂无独立条目。")
         return "\n".join(lines)
 
-    badge = BADGES[category]
-    for entry in entries:
-        lines.append(f"- {badge} {entry.text}")
+    for scope, categories in grouped.items():
+        lines.append(f"- {format_scope_label(scope)}")
+        for category in ("feature", "improvement", "fix"):
+            descriptions = categories[category]
+            if not descriptions:
+                continue
+            lines.append(f"  - {CATEGORY_TITLES[category]}：{format_descriptions(descriptions)}")
+
     return "\n".join(lines)
 
 
-def render_section(version: str, entries_by_category: dict[str, list[CommitEntry]]) -> str:
+def render_section(version: str, entries: list[CommitEntry]) -> str:
     section_parts = [
         f"## v{version}",
         "",
-        (
-            f"![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) "
-            f"![Version](https://img.shields.io/badge/Release-v{version}-10B981?style=flat-square) "
-            f"![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)"
-        ),
+        build_summary_with_optional_command(version, entries),
         "",
-        build_summary(entries_by_category),
+        render_stats(entries),
         "",
-        "### 📝 更新日志 (Changelog)",
-        "",
-        render_category("feature", entries_by_category["feature"]),
-        "",
-        render_category("improvement", entries_by_category["improvement"]),
-        "",
-        render_category("fix", entries_by_category["fix"]),
+        render_grouped_changes(entries),
     ]
     return "\n".join(section_parts).strip() + "\n"
 
@@ -197,16 +348,8 @@ def main() -> int:
         print("No commits found for changelog generation.", file=sys.stderr)
         return 1
 
-    entries_by_category: dict[str, list[CommitEntry]] = {
-        "feature": [],
-        "improvement": [],
-        "fix": [],
-    }
-    for subject, body, lower_subject in commits:
-        entry = classify_commit(subject, body, lower_subject)
-        entries_by_category[entry.category].append(entry)
-
-    section = render_section(args.version, entries_by_category)
+    entries = [classify_commit(subject, body, lower_subject) for subject, body, lower_subject in commits]
+    section = render_section(args.version, entries)
 
     if args.mode == "section":
         sys.stdout.write(section)
