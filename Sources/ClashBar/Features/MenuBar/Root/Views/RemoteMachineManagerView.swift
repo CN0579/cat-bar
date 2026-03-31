@@ -371,7 +371,7 @@ struct RemoteMachineManagerView: View {
     private func remoteCard(_ machine: RemoteMachine) -> some View {
         let status = self.store.statusFor(machine.id)
         let isActive = self.store.activeTargetID == machine.id
-        let isSwitchEnabled = status.isConnected && !isActive
+        let isSwitchEnabled = !isActive
         let hovered = self.hoveredMachineID == machine.id
 
         return self.sourceCard(
@@ -476,12 +476,8 @@ struct RemoteMachineManagerView: View {
         case .runningHealthy:
             .green
         case .runningDegraded:
-            .orange
-        case .starting:
-            .blue
-        case .failed:
-            .red
-        case .stopped:
+            .green
+        case .starting, .failed, .stopped:
             self.tertiaryTextColor
         }
     }
@@ -580,8 +576,8 @@ struct RemoteMachineManagerView: View {
         case .checking:
             self.sourcePill(
                 title: self.tr("ui.machine.status_checking"),
-                tint: .orange,
-                fill: Color.orange.opacity(self.isDarkAppearance ? 0.20 : 0.10),
+                tint: self.tertiaryTextColor,
+                fill: self.badgeBackgroundFill,
                 showsProgress: true)
         case .connected:
             self.sourcePill(
@@ -591,8 +587,8 @@ struct RemoteMachineManagerView: View {
         case .failed:
             self.sourcePill(
                 title: self.tr("ui.machine.status_unreachable"),
-                tint: .red,
-                fill: Color.red.opacity(self.isDarkAppearance ? 0.18 : 0.10))
+                tint: self.tertiaryTextColor,
+                fill: self.badgeBackgroundFill)
         }
     }
 
@@ -753,16 +749,14 @@ struct RemoteMachineManagerView: View {
             }
     }
 
-    private func statusTint(_ status: MachineConnectionStatus, active: Bool) -> Color {
+    private func statusTint(_ status: MachineConnectionStatus, active _: Bool) -> Color {
         switch status {
-        case .unknown:
+        case .unknown, .checking:
             self.tertiaryTextColor
-        case .checking:
-            .orange
         case .connected:
-            active ? Color.green : Color(red: 0.10, green: 0.73, blue: 0.34)
+            Color(red: 0.10, green: 0.73, blue: 0.34)
         case .failed:
-            .red
+            self.tertiaryTextColor
         }
     }
 }

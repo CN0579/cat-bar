@@ -34,11 +34,6 @@ extension AppSession {
     }
 
     func switchToMachineTarget(_ target: MachineTarget) async {
-        if case let .remote(machine) = target {
-            let status = await self.remoteMachineStore.refreshConnectivity(for: machine)
-            guard status.isConnected else { return }
-        }
-
         self.remoteMachineStore.selectTarget(target)
 
         self.cancelPolling()

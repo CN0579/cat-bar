@@ -198,14 +198,14 @@ extension MenuBarRootView {
         switch self.machineSwitcherStatus {
         case .unknown, nil:
             remoteMachineStore.activeTarget.isLocal
-                ? nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid)
+                ? self.localSourceTint
                 : nativeSecondaryLabel
         case .checking:
-            nativeWarning.opacity(MenuBarLayoutTokens.Opacity.solid)
+            nativeSecondaryLabel
         case .connected:
             nativePositive.opacity(MenuBarLayoutTokens.Opacity.solid)
         case .failed:
-            nativeCritical.opacity(MenuBarLayoutTokens.Opacity.solid)
+            nativeSecondaryLabel
         }
     }
 
@@ -251,14 +251,12 @@ extension MenuBarRootView {
 
     func machineStatusTint(_ status: MachineConnectionStatus) -> Color {
         switch status {
-        case .unknown:
+        case .unknown, .checking:
             nativeSecondaryLabel
-        case .checking:
-            nativeWarning.opacity(MenuBarLayoutTokens.Opacity.solid)
         case .connected:
             nativePositive.opacity(MenuBarLayoutTokens.Opacity.solid)
         case .failed:
-            nativeCritical.opacity(MenuBarLayoutTokens.Opacity.solid)
+            nativeSecondaryLabel
         }
     }
 

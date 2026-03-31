@@ -161,14 +161,13 @@ extension MenuBarRootView {
                         selectionIndicatorPlacement: .trailing)
                     {
                         dismiss()
-                        guard status.isConnected, !isActive else { return }
+                        guard !isActive else { return }
                         isSwitchingMachine = true
                         Task { @MainActor in
                             await appSession.switchToMachineTarget(.remote(machine))
                             isSwitchingMachine = false
                         }
                     }
-                    .disabled(!status.isConnected && !isActive)
                 }
 
                 AttachedPopoverMenuDivider()
@@ -241,7 +240,7 @@ extension MenuBarRootView {
         if let status = self.machineSwitcherStatus {
             return self.machineStatusTint(status)
         }
-        return self.statusColor
+        return self.localSourceTint
     }
 
     var localSourceTint: Color {
@@ -249,12 +248,8 @@ extension MenuBarRootView {
         case .runningHealthy:
             nativePositive.opacity(MenuBarLayoutTokens.Opacity.solid)
         case .runningDegraded:
-            nativeWarning.opacity(MenuBarLayoutTokens.Opacity.solid)
-        case .starting:
-            nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid)
-        case .failed:
-            nativeCritical.opacity(MenuBarLayoutTokens.Opacity.solid)
-        case .stopped:
+            nativePositive.opacity(MenuBarLayoutTokens.Opacity.solid)
+        case .starting, .failed, .stopped:
             nativeSecondaryLabel
         }
     }
