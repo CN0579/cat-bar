@@ -165,7 +165,7 @@ extension AppSession {
 
         guard let snapshot = self.loadPersistedEditableSettingsSnapshot() else { return }
         self.applyEditableSettingsSnapshotToUI(snapshot)
-        self.lastSyncedEditableSettings = nil
+        self.lastSyncedEditableSettings = snapshot
         self.preserveLocalSettingsOnNextSync = true
         self.pendingAppLaunchOverlaySettings = snapshot
     }

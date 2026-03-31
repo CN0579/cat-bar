@@ -100,6 +100,10 @@ extension AppSession {
     }
 
     func applyProxyPorts(autoSaved: Bool = false) async {
+        if autoSaved, !proxyPortFieldsDifferFromLastSync() {
+            return
+        }
+
         guard let body = self.validatedPortPatchBody(
             fields: self.proxyPortFields,
             errorMessageKey: "app.settings.error.port_range",

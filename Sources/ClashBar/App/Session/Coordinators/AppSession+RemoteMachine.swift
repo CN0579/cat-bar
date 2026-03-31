@@ -71,10 +71,12 @@ extension AppSession {
 
             if let snapshot = self.loadPersistedEditableSettingsSnapshot() {
                 self.applyEditableSettingsSnapshotToUI(snapshot)
+                self.lastSyncedEditableSettings = snapshot
                 self.preserveLocalSettingsOnNextSync = true
                 self.pendingAppLaunchOverlaySettings = snapshot
+            } else {
+                self.lastSyncedEditableSettings = nil
             }
-            self.lastSyncedEditableSettings = nil
 
         case let .remote(machine):
             self.appendLog(
