@@ -17,7 +17,7 @@
 </p>
 
 <p>
-  <img src="docs/static-resources/app-screenshot-dark.png" alt="ClashBar App Screenshot" width="300" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <img src="docs/static-resources/app-screenshot-dark.webp" alt="ClashBar App Screenshot" width="300" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
 </p>
 
 </div>
