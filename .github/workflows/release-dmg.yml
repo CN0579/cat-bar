@@ -1,18 +1,21 @@
 name: Release DMG
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     tags:
-      - 'v*'
-      - '*.*.*'
+      - "v*"
+      - "*.*.*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Optional explicit tag (v1.2.3 or 1.2.3). Leave empty to auto-increment.'
+        description: "Optional explicit tag (v1.2.3 or 1.2.3). Leave empty to auto-increment."
         required: false
         type: string
       bump:
-        description: 'Version bump when tag is empty.'
+        description: "Version bump when tag is empty."
         required: false
         default: auto
         type: choice
