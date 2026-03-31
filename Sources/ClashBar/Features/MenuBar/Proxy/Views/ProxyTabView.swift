@@ -224,10 +224,6 @@ extension MenuBarRootView {
                 }
                 .buttonStyle(.plain)
             }
-
-            if showsLocalOnlyItems {
-                self.systemProxyQuickToggleRow
-            }
         }
     }
 

@@ -61,6 +61,42 @@ extension MenuBarRootView {
         .menuRowPadding(vertical: T.space4)
     }
 
+    func settingsSystemProxyToggleRow(
+        isOn: Binding<Bool>,
+        isDisabled: Bool = false) -> some View
+    {
+        HStack(spacing: T.space8) {
+            HStack(spacing: T.space6) {
+                self.systemProxyCompositeIcon
+
+                Text(self.systemProxyRowTitle)
+                    .font(.app(size: T.FontSize.body, weight: .medium))
+                    .foregroundStyle(nativePrimaryLabel)
+                    .lineLimit(1)
+                    .minimumScaleFactor(T.minimumScale)
+
+                if let detailText = self.systemProxyRowDetailText {
+                    Text(detailText)
+                        .font(.app(size: T.FontSize.caption, weight: .medium))
+                        .foregroundStyle(self.systemProxyRowDetailColor)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .minimumScaleFactor(T.minimumScale)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 0)
+
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(isDisabled)
+        }
+        .menuRowPadding(vertical: T.space4)
+    }
+
     func settingsMenuRow(
         _ title: String,
         symbol: String,
@@ -386,6 +422,30 @@ extension MenuBarRootView {
                 }
             }
 
+            if showsLocalOnlyItems {
+                VStack(spacing: 0) {
+                    self.settingsCardHeader(
+                        tr("ui.section.network_mode"),
+                        symbol: "network")
+                    self.settingsToggleRow(
+                        tr("ui.settings.tun_mode"),
+                        symbol: "shield.lefthalf.filled",
+                        isOn: Binding(
+                            get: { appSession.isTunEnabled },
+                            set: { value in
+                                Task { await appSession.toggleTunMode(value) }
+                            }),
+                        isDisabled: !appSession.isTunToggleEnabled)
+                    self.settingsSystemProxyToggleRow(
+                        isOn: Binding(
+                            get: { appSession.isSystemProxyEnabled },
+                            set: { value in
+                                Task { await appSession.toggleSystemProxy(value) }
+                            }),
+                        isDisabled: appSession.isProxySyncing)
+                }
+            }
+
             VStack(spacing: 0) {
                 self.settingsCardHeader(
                     tr("ui.section.core_settings"),
@@ -415,15 +475,6 @@ extension MenuBarRootView {
                         isOn: item.isOn,
                         isDisabled: appSession.isCoreSettingSyncing)
                 }
-                self.settingsToggleRow(
-                    tr("ui.quick.tun_mode"),
-                    symbol: "shield.lefthalf.filled",
-                    isOn: Binding(
-                        get: { appSession.isTunEnabled },
-                        set: { value in
-                            Task { await appSession.toggleTunMode(value) }
-                        }),
-                    isDisabled: !appSession.isTunToggleEnabled)
                 ForEach(proxyPortFields, id: \.titleKey) { item in
                     self.settingsPortFieldRow(
                         tr(item.titleKey),
