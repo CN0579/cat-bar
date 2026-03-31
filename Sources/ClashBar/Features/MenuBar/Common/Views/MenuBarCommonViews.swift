@@ -226,7 +226,7 @@ extension MenuBarRootView {
             HStack(spacing: MenuBarLayoutTokens.space6) {
                 HStack(spacing: MenuBarLayoutTokens.space6) {
                     self.footerInfo(
-                        tr("ui.footer.core_mihomo", appSession.version),
+                        tr("ui.footer.core_mihomo", self.footerCoreVersionText),
                         url: mihomoRepositoryURL,
                         iconSystemName: mihomoSymbol)
                 }
@@ -241,6 +241,18 @@ extension MenuBarRootView {
         }
         .padding(.top, MenuBarLayoutTokens.space4)
         .padding(.bottom, MenuBarLayoutTokens.space8)
+    }
+
+    var footerCoreVersionText: String {
+        if !self.appSession.isRemoteTarget && !self.appSession.hasDetectedCoreBinary {
+            return tr("ui.common.unknown")
+        }
+
+        guard let version = self.appSession.version.trimmedNonEmpty, version != "-" else {
+            return tr("ui.common.unknown")
+        }
+
+        return version
     }
 
     var footerSurfaceBackground: some View {

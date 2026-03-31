@@ -442,7 +442,7 @@ final class AppSession: ObservableObject {
         applyAppAppearance()
         refreshLaunchAtLoginStatus()
 
-        self.mihomoBinaryPath = self.coreRepository.detectedBinaryPath ?? "-"
+        self.refreshDetectedCoreStatus()
         if let managedProcess = self.processManager as? MihomoProcessManager {
             managedProcess.onLog = { [weak self] line in
                 Task { @MainActor in

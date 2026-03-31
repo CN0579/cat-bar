@@ -3,6 +3,26 @@ import Foundation
 
 @MainActor
 extension AppSession {
+    var coreDirectoryPath: String {
+        self.workingDirectoryManager.coreDirectoryURL.path
+    }
+
+    var hasDetectedCoreBinary: Bool {
+        if self.coreRepository.isRunning {
+            return true
+        }
+
+        if self.hasInstalledManagedMihomoCore() {
+            return true
+        }
+
+        return self.bundlesMihomoCore
+    }
+
+    func refreshDetectedCoreStatus() {
+        self.mihomoBinaryPath = self.coreRepository.detectedBinaryPath ?? "-"
+    }
+
     func hasInstalledManagedMihomoCore() -> Bool {
         FileManager.default.fileExists(atPath: workingDirectoryManager.managedMihomoBinaryURL.path)
     }
@@ -32,7 +52,7 @@ extension AppSession {
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = tr("app.core.setup_required.title")
-        alert.informativeText = tr("app.core.setup_required.message", workingDirectoryManager.coreDirectoryURL.path)
+        alert.informativeText = tr("app.core.setup_required.message", self.coreDirectoryPath)
         alert.addButton(withTitle: tr("ui.action.open_core_directory"))
         alert.addButton(withTitle: tr("ui.action.ok"))
         self.prepareModalWindowPresentation()

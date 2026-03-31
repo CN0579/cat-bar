@@ -444,6 +444,22 @@ extension AppSession {
         }
     }
 
+    func presentSettingsFeedback(successMessage: String? = nil, errorMessage: String? = nil) {
+        settingsFeedbackClearTask?.cancel()
+        settingsFeedbackClearTask = nil
+
+        if let errorMessage = errorMessage?.trimmedNonEmpty {
+            settingsErrorMessage = errorMessage
+            settingsSavedMessage = nil
+            return
+        }
+
+        guard let successMessage = successMessage?.trimmedNonEmpty else { return }
+        settingsErrorMessage = nil
+        settingsSavedMessage = successMessage
+        self.scheduleSettingsFeedbackAutoClearIfNeeded(message: successMessage)
+    }
+
     func clientOrThrow() throws -> MihomoAPIClient {
         if apiClient == nil {
             ensureAPIClient()

@@ -271,19 +271,36 @@ extension AppSession {
         }
     }
 
-    func showCoreDirectoryInFinder() {
+    func showCoreDirectoryInFinder(announceResult: Bool = false) {
         do {
             try workingDirectoryManager.bootstrapDirectories()
             let coreDirectory = try workingDirectoryManager.normalizeAndValidateWithinRoot(
                 workingDirectoryManager.coreDirectoryURL,
                 mustBeDirectory: true)
             if !NSWorkspace.shared.open(coreDirectory) {
+                let message = tr("app.settings.error.open_core_directory_failed", coreDirectory.path)
                 appendLog(level: "error", message: tr("log.core.show_in_finder.failed", coreDirectory.path))
+                if announceResult {
+                    self.presentSettingsFeedback(errorMessage: message)
+                }
+                return
+            }
+
+            if announceResult {
+                self.refreshDetectedCoreStatus()
+                let successMessageKey = self.hasDetectedCoreBinary
+                    ? "app.settings.saved.core_directory_opened"
+                    : "app.settings.saved.core_directory_opened_missing"
+                self.presentSettingsFeedback(successMessage: tr(successMessageKey))
             }
         } catch {
+            let message = tr("app.settings.error.open_core_directory_failed", workingDirectoryManager.coreDirectoryURL.path)
             appendLog(
                 level: "error",
                 message: tr("log.core.show_in_finder.failed", workingDirectoryManager.coreDirectoryURL.path))
+            if announceResult {
+                self.presentSettingsFeedback(errorMessage: message)
+            }
         }
     }
 

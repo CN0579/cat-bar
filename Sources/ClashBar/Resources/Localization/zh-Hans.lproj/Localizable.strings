@@ -102,6 +102,7 @@
 "ui.section.proxy_ports" = "代理端口";
 "ui.section.other_actions" = "其他操作";
 "ui.section.maintenance" = "内核操作";
+"ui.section.core_installation" = "内核安装";
 
 "ui.rules.column.target_type" = "目标 / 类型";
 "ui.rules.column.policy" = "策略";
@@ -162,6 +163,11 @@
 "ui.settings.ports_hint" = "端口修改后点击“保存端口”应用到内核配置";
 "ui.settings.ports_auto_save_hint" = "端口修改后将自动保存到内核配置";
 "ui.settings.ports_auto_saving" = "保存中...";
+"ui.settings.core_status.detected" = "已检测到 mihomo，可直接启动内核，也可以在访达中管理该目录。";
+"ui.settings.core_status.missing" = "未检测到 mihomo。请将名为“mihomo”的可执行文件复制到该目录，然后重新启动内核。";
+"ui.settings.core_directory_path" = "内核目录";
+"ui.action.open_core_directory.help" = "在访达中打开当前内核目录";
+"ui.action.open_core_directory.help_missing" = "在访达中打开内核目录，并将名为“mihomo”的可执行文件复制进去";
 
 "ui.settings.display_mode.icon_and_speed" = "图标 + 速度";
 "ui.settings.display_mode.icon_only" = "仅图标";
@@ -216,6 +222,9 @@
 "app.settings.error.overlay_invalid_log_level" = "设置覆盖失败: log-level 非法值 %@";
 "app.settings.error.overlay_port_range" = "设置覆盖失败: %@ 端口必须在 0~65535";
 "app.settings.error.save_failed" = "%@ 保存失败: %@";
+"app.settings.error.open_core_directory_failed" = "打开内核目录失败：%@";
+"app.settings.saved.core_directory_opened" = "已在访达中打开内核目录";
+"app.settings.saved.core_directory_opened_missing" = "已在访达中打开内核目录，请将名为“mihomo”的可执行文件复制进去";
 "app.settings.overlay_success" = "已保留设置并覆盖当前配置";
 "app.launch_at_login.error.unsupported_environment" = "仅可在 .app 包内启用开机自启，请运行打包后的应用";
 "app.launch_at_login.error.requires_approval" = "需要在系统设置 > 通用 > 登录项中允许 ClashBar";

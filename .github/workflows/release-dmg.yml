@@ -203,21 +203,11 @@ jobs:
       matrix:
         include:
           - target_arch: arm64
-            dmg_suffix: apple-silicon
-            artifact_name: dmg-arm64
-            bundle_mihomo_binary: '1'
-          - target_arch: arm64
             dmg_suffix: apple-silicon-no-core
             artifact_name: dmg-arm64-no-core
-            bundle_mihomo_binary: '0'
-          - target_arch: x86_64
-            dmg_suffix: intel
-            artifact_name: dmg-x86_64
-            bundle_mihomo_binary: '1'
           - target_arch: x86_64
             dmg_suffix: intel-no-core
             artifact_name: dmg-x86_64-no-core
-            bundle_mihomo_binary: '0'
     runs-on: macos-15
     permissions:
       contents: read
@@ -251,8 +241,8 @@ jobs:
           REPOSITORY_SLUG="${{ github.repository }}" \
           SPARKLE_PUBLIC_ED_KEY="${{ vars.SPARKLE_PUBLIC_ED_KEY }}" \
           SPARKLE_FEED_BASE_URL="https://github.com/${{ github.repository }}/releases/latest/download" \
-          PREPARE_MIHOMO_BINARY="${{ matrix.bundle_mihomo_binary }}" \
-          BUNDLE_MIHOMO_BINARY="${{ matrix.bundle_mihomo_binary }}" \
+          PREPARE_MIHOMO_BINARY="0" \
+          BUNDLE_MIHOMO_BINARY="0" \
           TARGET_ARCH="${{ matrix.target_arch }}" \
           ./Scripts/build.sh app
 
@@ -342,7 +332,7 @@ jobs:
           tag_name: ${{ needs.prepare-version.outputs.tag }}
           name: ClashBar ${{ needs.prepare-version.outputs.version }}
           body_path: release.md
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: false
           files: |
             dist/*.dmg

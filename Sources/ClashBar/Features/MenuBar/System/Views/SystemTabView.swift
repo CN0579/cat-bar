@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // swiftlint:disable:next type_name
@@ -242,6 +243,51 @@ extension MenuBarRootView {
         }
     }
 
+    func settingsStatusCard(message: String, caption: String, path: String, color: Color, symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: T.space4) {
+            HStack(spacing: T.space6) {
+                Image(systemName: symbol)
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(color)
+
+                Text(message)
+                    .font(.app(size: T.FontSize.caption, weight: .medium))
+                    .foregroundStyle(nativePrimaryLabel)
+                    .lineLimit(3)
+
+                Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: T.space2) {
+                Text(caption)
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .foregroundStyle(nativeTertiaryLabel)
+                    .textCase(.uppercase)
+
+                Text(path)
+                    .font(.app(size: T.FontSize.caption, weight: .regular))
+                    .foregroundStyle(nativeSecondaryLabel)
+                    .textSelection(.enabled)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
+        }
+        .menuRowPadding(vertical: T.space4)
+        .background {
+            RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
+                .fill(nativeControlFill)
+                .overlay {
+                    RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
+                        .stroke(color.opacity(0.26), lineWidth: T.stroke)
+                }
+                .shadow(
+                    color: Color(nsColor: .shadowColor).opacity(T.Shadow.standard.opacity),
+                    radius: T.Shadow.standard.radius,
+                    x: T.Shadow.standard.x,
+                    y: T.Shadow.standard.y)
+        }
+    }
+
     func statusBarModeLabel(_ mode: StatusBarDisplayMode) -> String {
         switch mode {
         case .iconAndSpeed:
@@ -274,6 +320,28 @@ extension MenuBarRootView {
 
     var maintenanceActionEnabled: Bool {
         SystemTabViewModel.maintenanceActionEnabled(session: appSession)
+    }
+
+    var coreDirectoryStatusText: String {
+        self.appSession.hasDetectedCoreBinary
+            ? tr("ui.settings.core_status.detected")
+            : tr("ui.settings.core_status.missing")
+    }
+
+    var coreDirectoryStatusColor: Color {
+        self.appSession.hasDetectedCoreBinary
+            ? self.nativePositive.opacity(T.Opacity.solid)
+            : self.nativeWarning.opacity(T.Opacity.solid)
+    }
+
+    var coreDirectoryStatusSymbol: String {
+        self.appSession.hasDetectedCoreBinary ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+    }
+
+    var openCoreDirectoryHelp: String {
+        self.appSession.hasDetectedCoreBinary
+            ? tr("ui.action.open_core_directory.help")
+            : tr("ui.action.open_core_directory.help_missing")
     }
 
     var settingsFeedbackState: (message: String, color: Color, symbol: String)? {
@@ -534,6 +602,34 @@ extension MenuBarRootView {
                 .menuRowPadding(vertical: T.space4)
             }
 
+            if showsLocalOnlyItems {
+                VStack(spacing: 0) {
+                    self.settingsCardHeader(
+                        tr("ui.section.core_installation"),
+                        symbol: "shippingbox")
+
+                    VStack(alignment: .leading, spacing: T.space6) {
+                        self.settingsStatusCard(
+                            message: self.coreDirectoryStatusText,
+                            caption: tr("ui.settings.core_directory_path"),
+                            path: self.appSession.coreDirectoryPath,
+                            color: self.coreDirectoryStatusColor,
+                            symbol: self.coreDirectoryStatusSymbol)
+
+                        Button {
+                            appSession.showCoreDirectoryInFinder(announceResult: true)
+                        } label: {
+                            Label(tr("ui.action.open_core_directory"), systemImage: "folder")
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        }
+                        .appBorderedButtonStyle()
+                        .controlSize(.small)
+                        .help(self.openCoreDirectoryHelp)
+                    }
+                    .menuRowPadding(vertical: T.space4)
+                }
+            }
+
             VStack(spacing: 0) {
                 self.settingsCardHeader(
                     tr("ui.section.other_actions"),
@@ -563,22 +659,17 @@ extension MenuBarRootView {
                             }
                         }
                     }
-
-                    HStack(spacing: T.space6) {
-                        if showsLocalOnlyItems {
-                            Button {
-                                appSession.showCoreDirectoryInFinder()
-                            } label: {
-                                Label(tr("ui.action.open_core_directory"), systemImage: "folder")
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                            .appBorderedButtonStyle()
-                            .controlSize(.small)
-                        }
-                    }
                 }
                 .menuRowPadding(vertical: T.space4)
             }
+        }
+        .onAppear {
+            guard !self.appSession.isRemoteTarget else { return }
+            self.appSession.refreshDetectedCoreStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            guard !self.appSession.isRemoteTarget else { return }
+            self.appSession.refreshDetectedCoreStatus()
         }
         .overlay(alignment: .top) {
             if let feedback = settingsFeedbackState {
