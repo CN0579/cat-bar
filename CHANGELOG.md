@@ -1,3 +1,25 @@
+## v0.4.0
+
+![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.4.0-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+
+> 本次更新包含 **3 项新增功能**、**0 项优化改进** 和 **1 项问题修复**，详情如下。
+
+### 📝 更新日志 (Changelog)
+
+**✨ 新增功能 (New Features)**
+
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **menu-bar**：move local network mode toggles into settings
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **remote**：allow switching to offline sources and unify status colors
+- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **core**：default releases to no-core packaging
+
+**🚀 优化改进 (Improvements)**
+
+- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **暂无内容**：当前版本未包含单独归类的优化项。
+
+**🐞 修复问题 (Bug Fixes)**
+
+- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **settings**：avoid spurious proxy port autosaves
+
 ## v0.3.1
 
 ![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.3.1-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
