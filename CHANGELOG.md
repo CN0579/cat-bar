@@ -1,3 +1,25 @@
+## v0.5.0
+
+> ● Read CHANGELOG.md
+  └ L1:40 (40 lines read)
+
+v0.5.0 优化了批量延迟测试的去重与分组逻辑，使代理测速结果更准确，同时简化了发布流程并升级了 Actions 运行环境，提升整体稳定性与维护效率。
+
+### 变更统计
+
+- 新增功能：1 项
+- 优化改进：2 项
+- 问题修复：0 项
+
+### 按模块归纳
+
+- `actions`
+  - 优化：force JavaScript actions to run on Node 24
+- `release`
+  - 新增：simplify changelog generation and add Copilot summaries
+- `proxy`
+  - 优化：refactor batch latency testing with deduplication and per-group completion
+
 ## v0.4.0
 
 ![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.4.0-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
