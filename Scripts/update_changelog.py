@@ -234,9 +234,25 @@ def build_summary_prompt(version: str, entries: list[CommitEntry]) -> str:
         "1. 只输出一句话，不要标题，不要列表。\n"
         "2. 重点说明这次更新给用户带来的结果。\n"
         "3. 不要虚构未出现的能力，不要提及 Git commit、scope 或统计数字。\n"
-        "4. 语气克制、简洁，适合放在 GitHub Release 顶部。\n\n"
+        "4. 语气克制、简洁，适合放在 GitHub Release 顶部。\n"
+        "5. 不要提及版本号，用「本次更新」作为主语开头。\n\n"
         f"{stats}\n\n{grouped_changes}\n"
     )
+
+
+TOOL_LOG_PATTERN = re.compile(
+    r"^\s*[●○◆◇▶▷→⟶⏵\-\*]\s+(?:Read|Write|Search|View|Execute|Open|Fetch|Load)\s+.+$"
+    r"|^\s*[└├│─┌┐┘┤┬┴┼╠╣╔╗╚╝]\s*.*$"
+    r"|^\s*L\d+:\d+\s*\(.*\)$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+def _sanitize_summary_output(text: str) -> str:
+    """Remove tool operation logs that leak into external command stdout."""
+    cleaned = TOOL_LOG_PATTERN.sub("", text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def build_summary_with_optional_command(version: str, entries: list[CommitEntry]) -> str:
@@ -266,7 +282,7 @@ def build_summary_with_optional_command(version: str, entries: list[CommitEntry]
         )
         return build_summary(entries)
 
-    summary = completed.stdout.strip()
+    summary = _sanitize_summary_output(completed.stdout)
     summary = re.sub(r"^```(?:markdown|md)?\s*", "", summary)
     summary = re.sub(r"\s*```$", "", summary).strip()
     if not summary:
@@ -315,15 +331,46 @@ def render_grouped_changes(entries: list[CommitEntry]) -> str:
     return "\n".join(lines)
 
 
+CATEGORY_EMOJI_HEADERS = {
+    "feature": "### ✨ 新增功能",
+    "improvement": "### 🚀 优化改进",
+    "fix": "### 🐞 问题修复",
+}
+
+
+def render_by_category(entries: list[CommitEntry]) -> str:
+    """Render entries grouped by category with emoji headers, omitting empty categories."""
+    categories: dict[str, list[str]] = {
+        "feature": [],
+        "improvement": [],
+        "fix": [],
+    }
+
+    for entry in entries:
+        scope_prefix = f"**{entry.scope}**：" if entry.scope else ""
+        categories[entry.category].append(f"- {scope_prefix}{entry.description}")
+
+    lines: list[str] = []
+    for cat in ("feature", "improvement", "fix"):
+        items = dedupe_items(categories[cat])
+        if not items:
+            continue
+        if lines:
+            lines.append("")
+        lines.append(CATEGORY_EMOJI_HEADERS[cat])
+        lines.append("")
+        lines.extend(items)
+
+    return "\n".join(lines)
+
+
 def render_section(version: str, entries: list[CommitEntry]) -> str:
     section_parts = [
         f"## v{version}",
         "",
         build_summary_with_optional_command(version, entries),
         "",
-        render_stats(entries),
-        "",
-        render_grouped_changes(entries),
+        render_by_category(entries),
     ]
     return "\n".join(section_parts).strip() + "\n"
 

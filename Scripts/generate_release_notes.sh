@@ -58,7 +58,7 @@ cat >"$output_path" <<EOF
 
 ${changelog_section}
 
-### 下载地址
+### 📥 下载地址
 
 - 当前发布仅提供无内核安装包。
 - 首次启动后，可在 ClashBar 设置页打开内核目录并放入 \`mihomo\`。

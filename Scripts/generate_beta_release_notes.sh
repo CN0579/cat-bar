@@ -33,7 +33,7 @@ cat >"$output_path" <<EOF
 - 提交：\`${commit_sha}\` ${commit_subject}
 - 提交时间：${commit_date}
 
-### 下载地址
+### 📥 下载地址
 
 - 当前 Beta 仅提供无内核安装包。
 - 首次启动后，可在 ClashBar 设置页打开内核目录并放入 \`mihomo\`。
