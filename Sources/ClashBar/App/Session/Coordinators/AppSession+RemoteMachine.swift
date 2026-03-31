@@ -40,6 +40,7 @@ extension AppSession {
         self.resetTrafficPresentation()
         self.clearAllLogs()
         self.proxyGroups = []
+        self.proxyGroupIndex = [:]
         self.clearMeasuredProxyDelays()
         self.proxyNodeTypes = [:]
         self.proxyNodeIDs = [:]

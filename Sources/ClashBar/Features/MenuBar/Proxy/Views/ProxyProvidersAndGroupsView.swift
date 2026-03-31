@@ -121,14 +121,8 @@ extension MenuBarRootView {
 
     func proxyGroupInlineRow(_ group: ProxyGroup) -> some View {
         let currentNode = group.now ?? tr("ui.common.na")
-        let delayText = appSession.delayText(
-            group: group.name,
-            node: currentNode,
-            fallbackToGroupHistory: true)
-        let delayValue = appSession.delayValue(
-            group: group.name,
-            node: currentNode,
-            fallbackToGroupHistory: true)
+        let delayText = appSession.groupDisplayDelayText(group)
+        let delayValue = appSession.groupDisplayDelayValue(group)
         let nodeCount = group.all.count
         let iconURL = self.proxyGroupIconURL(group)
         let hasLeadingIcon = iconURL != nil
@@ -173,7 +167,7 @@ extension MenuBarRootView {
 
                     self.providerActionButton(
                         .healthcheck,
-                        isLoading: appSession.groupLatencyLoading.contains(group.name))
+                        isLoading: appSession.isLatencyTesting(group: group))
                     {
                         await appSession.refreshGroupLatency(group)
                     }
@@ -198,7 +192,7 @@ extension MenuBarRootView {
             } trailing: {
                 self.providerActionButton(
                     .healthcheck,
-                    isLoading: appSession.groupLatencyLoading.contains(group.name))
+                    isLoading: appSession.isLatencyTesting(group: group))
                 {
                     await appSession.refreshGroupLatency(group)
                 }
@@ -215,7 +209,7 @@ extension MenuBarRootView {
                     delayText: appSession.delayText(group: group.name, node: node),
                     delayValue: appSession.delayValue(group: group.name, node: node),
                     delayColor: latencyColor(appSession.delayValue(group: group.name, node: node)),
-                    isTesting: appSession.nodeLatencyLoading.contains(node) || appSession.groupLatencyLoading.contains(group.name),
+                    isTesting: appSession.isLatencyTesting(group: group, nodeName: node),
                     selected: node == group.now,
                     action: {
                         dismiss()
