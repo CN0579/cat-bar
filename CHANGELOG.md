@@ -1,3 +1,13 @@
+## v0.5.2
+
+> 本次更新完成了品牌重命名、优化了退出流程以彻底消除界面卡顿，并同步升级了 CI 依赖。
+
+### 🚀 优化改进
+
+- **actions**：bump versions for core github actions
+- **branding**：rename ClashBar to CatBar across codebase
+- **lifecycle**：completely refactor app termination to resolve UI freezing
+
 ## v0.5.1
 
 > 本次更新优化了品牌视觉形象并重构了更新日志的生成方式，使项目呈现更加规范统一。
