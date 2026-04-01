@@ -112,6 +112,8 @@ extension AppSession {
 
         do {
             try await self.switchCoreModeUseCase().execute(mode: target)
+            // Force active connections to re-evaluate routing via the new proxy mode.
+            await self.closeAllConnections()
         } catch {
             // Intentional no-op: mode switch failures stay silent by product decision.
         }
@@ -164,6 +166,9 @@ extension AppSession {
 
             // Keep a core-side sync call so proxy toggle and runtime config stay aligned.
             try await self.patchRuntimeConfigUseCase().execute(body: ["mode": .string(currentMode.rawValue)])
+
+            // Force active connections to re-establish and route via the updated proxy layer.
+            await self.closeAllConnections()
 
             isSystemProxyEnabled = enabled
             self.clearSystemProxyOpenFailureHint()

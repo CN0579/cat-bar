@@ -44,6 +44,9 @@ extension AppSession {
 
             try await self.patchTunConfig(enable: enabled)
 
+            // Force active connections to re-establish and route via the new TUN interface natively.
+            await self.closeAllConnections()
+
             let config = try await fetchRuntimeConfigSnapshot()
             let actualState = config.tunEnabled ?? false
             isTunEnabled = actualState
@@ -182,6 +185,10 @@ extension AppSession {
     func applyTunRuntimeChange(enabled: Bool) async throws {
         guard self.isRemoteTarget || self.isRuntimeRunning else { return }
         try await self.patchTunConfig(enable: enabled)
+
+        // Force active connections to re-establish and route via the new TUN interface natively.
+        await self.closeAllConnections()
+
         try await self.verifyTunRuntimeState(expectedEnabled: enabled)
     }
 
