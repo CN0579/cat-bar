@@ -335,66 +335,12 @@ extension MenuBarRootView {
         return nativeSecondaryLabel
     }
 
-    var systemProxyQuickToggleRow: some View {
-        HStack(spacing: T.space6) {
-            self.systemProxyCompositeIcon
-            Text(self.systemProxyRowTitle)
-                .font(.app(size: T.FontSize.body, weight: .medium))
-                .foregroundStyle(nativePrimaryLabel)
-                .lineLimit(1)
-                .minimumScaleFactor(T.minimumScale)
-
-            if let detailText = self.systemProxyRowDetailText {
-                Text(detailText)
-                    .font(.app(size: T.FontSize.caption, weight: .medium))
-                    .foregroundStyle(self.systemProxyRowDetailColor)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .minimumScaleFactor(T.minimumScale)
-            }
-
-            Spacer(minLength: 0)
-            Toggle("", isOn: Binding(
-                get: { appSession.isSystemProxyEnabled },
-                set: { value in
-                    Task { await appSession.toggleSystemProxy(value) }
-                }))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .disabled(appSession.isProxySyncing)
-                .frame(width: 50, alignment: .trailing)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, T.space4)
-        .padding(.vertical, T.space2)
-    }
 
     var systemProxyInlineFailureText: String? {
         guard !self.appSession.isSystemProxyEnabled else { return nil }
         return self.appSession.systemProxyOpenFailureHint?.trimmedNonEmpty
     }
 
-    func quickToggleRow(
-        title: String,
-        symbol: String,
-        foreground: Color,
-        isDisabled: Bool,
-        isOn: Binding<Bool>) -> some View
-    {
-        self.quickRowContent(
-            title: title,
-            symbol: symbol,
-            foreground: foreground,
-            trailingWidth: 50)
-        {
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .disabled(isDisabled)
-        }
-    }
 
     func quickIcon(symbol: String, foreground: Color) -> some View {
         Image(systemName: symbol)
@@ -403,77 +349,4 @@ extension MenuBarRootView {
             .frame(width: 18, height: 18, alignment: .center)
     }
 
-    var systemProxyCompositeIcon: some View {
-        ZStack {
-            self.systemProxyCompositeIconLayer(
-                tint: self.systemProxyBackgroundActivityTint,
-                alignment: .leading)
-            self.systemProxyCompositeIconLayer(
-                tint: self.systemProxyHelperProcessTint,
-                alignment: .trailing)
-        }
-        .frame(width: 18, height: 18)
-        .help(self.systemProxyCompositeIconHelp)
-    }
-
-    func systemProxyCompositeIconLayer(tint: Color, alignment: Alignment) -> some View {
-        Image(systemName: "network")
-            .font(.app(size: T.FontSize.body, weight: .semibold))
-            .foregroundStyle(tint)
-            .frame(width: 18, height: 18)
-            .mask(alignment: alignment) {
-                Rectangle()
-                    .frame(width: 9)
-            }
-    }
-
-    var systemProxyBackgroundActivityTint: Color {
-        switch self.appSession.systemProxyBackgroundActivityAllowed {
-        case .some(true):
-            nativePositive.opacity(T.Opacity.solid)
-        case .some(false):
-            nativeCritical.opacity(T.Opacity.solid)
-        case .none:
-            nativeSecondaryLabel
-        }
-    }
-
-    var systemProxyHelperProcessTint: Color {
-        switch self.appSession.systemProxyHelperProcessRunning {
-        case .some(true):
-            nativePositive.opacity(T.Opacity.solid)
-        case .some(false):
-            nativeWarning.opacity(T.Opacity.solid)
-        case .none:
-            nativeSecondaryLabel
-        }
-    }
-
-    var systemProxyBackgroundActivityHelp: String {
-        let value = switch self.appSession.systemProxyBackgroundActivityAllowed {
-        case .some(true):
-            tr("ui.system_proxy.background_activity.allowed")
-        case .some(false):
-            tr("ui.system_proxy.background_activity.blocked")
-        case .none:
-            tr("ui.common.unknown")
-        }
-        return "\(tr("ui.system_proxy.background_activity")): \(value)"
-    }
-
-    var systemProxyHelperProcessHelp: String {
-        let value = switch self.appSession.systemProxyHelperProcessRunning {
-        case .some(true):
-            tr("ui.system_proxy.helper_process.running")
-        case .some(false):
-            tr("ui.system_proxy.helper_process.stopped")
-        case .none:
-            tr("ui.common.unknown")
-        }
-        return "\(tr("ui.system_proxy.helper_process")): \(value)"
-    }
-
-    var systemProxyCompositeIconHelp: String {
-        "\(self.systemProxyBackgroundActivityHelp)\n\(self.systemProxyHelperProcessHelp)"
-    }
 }

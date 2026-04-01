@@ -68,13 +68,7 @@ extension MenuBarRootView {
     {
         HStack(spacing: T.space8) {
             HStack(spacing: T.space6) {
-                self.systemProxyCompositeIcon
-
-                Text(self.systemProxyRowTitle)
-                    .font(.app(size: T.FontSize.body, weight: .medium))
-                    .foregroundStyle(nativePrimaryLabel)
-                    .lineLimit(1)
-                    .minimumScaleFactor(T.minimumScale)
+                self.settingsRowLabel(symbol: "network", title: self.systemProxyRowTitle)
 
                 if let detailText = self.systemProxyRowDetailText {
                     Text(detailText)
