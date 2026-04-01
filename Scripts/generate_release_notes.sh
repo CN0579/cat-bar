@@ -61,11 +61,11 @@ ${changelog_section}
 ### 📥 下载地址
 
 - 当前发布仅提供无内核安装包。
-- 首次启动后，可在 ClashBar 设置页打开内核目录并放入 \`mihomo\`。
+- 首次启动后，可在 CatBar 设置页打开内核目录并放入 \`mihomo\`。
 
 | 平台架构 | 无内核安装包 |
 | :--- | :--- |
-| Apple Silicon (M 系列) | [ClashBar-${version}-apple-silicon-no-core.dmg](${download_base}/ClashBar-${version}-apple-silicon-no-core.dmg) |
-| Intel (x86_64) | [ClashBar-${version}-intel-no-core.dmg](${download_base}/ClashBar-${version}-intel-no-core.dmg) |
+| Apple Silicon (arm64) | [CatBar-${version}-apple-silicon-no-core.dmg](${download_base}/CatBar-${version}-apple-silicon-no-core.dmg) |
+| Intel (x86_64) | [CatBar-${version}-intel-no-core.dmg](${download_base}/CatBar-${version}-intel-no-core.dmg) |
 
 EOF

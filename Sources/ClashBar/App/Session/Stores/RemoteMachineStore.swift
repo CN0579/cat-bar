@@ -34,8 +34,8 @@ final class RemoteMachineStore: ObservableObject {
         let task: Task<MachineConnectionStatus, Never>
     }
 
-    private static let storageKey = "clashbar.remote.machines"
-    private static let activeTargetKey = "clashbar.remote.active_target_id"
+    private static let storageKey = "catbar.remote.machines"
+    private static let activeTargetKey = "catbar.remote.active_target_id"
 
     private let defaults: UserDefaults
 

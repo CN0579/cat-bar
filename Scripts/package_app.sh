@@ -2,14 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="${APP_NAME:-ClashBar}"
-BUNDLE_ID="${BUNDLE_ID:-com.clashbar}"
+APP_NAME="${APP_NAME:-CatBar}"
+BUNDLE_ID="${BUNDLE_ID:-com.catbar}"
 APP_VERSION="${APP_VERSION:-0.1.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 TARGET_ARCH="${TARGET_ARCH:-}"
 RELEASE_OPTIMIZE_FOR_SIZE="${RELEASE_OPTIMIZE_FOR_SIZE:-1}"
 STRIP_BINARIES="${STRIP_BINARIES:-1}"
-REPOSITORY_SLUG="${REPOSITORY_SLUG:-QuentinHsu/ClashBar}"
+REPOSITORY_SLUG="${REPOSITORY_SLUG:-QuentinHsu/cat-bar}"
 SPARKLE_PUBLIC_ED_KEY="${SPARKLE_PUBLIC_ED_KEY:-}"
 SPARKLE_FEED_BASE_URL="${SPARKLE_FEED_BASE_URL:-https://github.com/${REPOSITORY_SLUG}/releases/latest/download}"
 SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-}"
@@ -20,7 +20,7 @@ REQUIRE_MIHOMO_BINARY="${REQUIRE_MIHOMO_BINARY:-1}"
 BUNDLE_MIHOMO_BINARY="${BUNDLE_MIHOMO_BINARY:-0}"
 
 APP="$ROOT/dist/${APP_NAME}.app"
-HELPER_LABEL="com.clashbar.helper"
+HELPER_LABEL="com.catbar.helper"
 HELPER_PLIST_SOURCE="$ROOT/Sources/ProxyHelper/LaunchDaemons/${HELPER_LABEL}.plist"
 
 cd "$ROOT"
@@ -35,19 +35,19 @@ fi
 swift build "${BUILD_ARGS[@]}"
 
 if [ -n "$TARGET_ARCH" ]; then
-  BIN_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/ClashBar"
-  RESOURCE_BUNDLE_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/ClashBar_ClashBar.bundle"
-  HELPER_BIN_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/ClashBarProxyHelper"
-  BIN_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/ClashBar"
-  RESOURCE_BUNDLE_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/ClashBar_ClashBar.bundle"
-  HELPER_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/ClashBarProxyHelper"
+  BIN_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/CatBar"
+  RESOURCE_BUNDLE_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/CatBar_CatBar.bundle"
+  HELPER_BIN_CANDIDATE="$ROOT/.build/${TARGET_ARCH}-apple-macosx/release/CatBarProxyHelper"
+  BIN_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/CatBar"
+  RESOURCE_BUNDLE_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/CatBar_CatBar.bundle"
+  HELPER_PATTERN="*/${TARGET_ARCH}-apple-macosx/release/CatBarProxyHelper"
 else
-  BIN_CANDIDATE="$ROOT/.build/release/ClashBar"
-  RESOURCE_BUNDLE_CANDIDATE="$ROOT/.build/release/ClashBar_ClashBar.bundle"
-  HELPER_BIN_CANDIDATE="$ROOT/.build/release/ClashBarProxyHelper"
-  BIN_PATTERN="*/release/ClashBar"
-  RESOURCE_BUNDLE_PATTERN="*/release/ClashBar_ClashBar.bundle"
-  HELPER_PATTERN="*/release/ClashBarProxyHelper"
+  BIN_CANDIDATE="$ROOT/.build/release/CatBar"
+  RESOURCE_BUNDLE_CANDIDATE="$ROOT/.build/release/CatBar_CatBar.bundle"
+  HELPER_BIN_CANDIDATE="$ROOT/.build/release/CatBarProxyHelper"
+  BIN_PATTERN="*/release/CatBar"
+  RESOURCE_BUNDLE_PATTERN="*/release/CatBar_CatBar.bundle"
+  HELPER_PATTERN="*/release/CatBarProxyHelper"
 fi
 
 resolve_build_artifact() {
@@ -127,7 +127,7 @@ strip_binary_if_enabled() {
 
 resolve_mihomo_install_path() {
   local filename="${1:-mihomo}"
-  local bundle_dir="$APP/Contents/Resources/ClashBar_ClashBar.bundle"
+  local bundle_dir="$APP/Contents/Resources/CatBar_CatBar.bundle"
   local resources_dir="$APP/Contents/Resources"
   local candidates=(
     "$bundle_dir/$filename"
@@ -167,8 +167,8 @@ remove_bundled_mihomo_candidates() {
     fi
   done < <(printf '%s\n' \
     "$(resolve_mihomo_install_path "$filename")" \
-    "$APP/Contents/Resources/ClashBar_ClashBar.bundle/bin/$filename" \
-    "$APP/Contents/Resources/ClashBar_ClashBar.bundle/Resources/bin/$filename" \
+    "$APP/Contents/Resources/CatBar_CatBar.bundle/bin/$filename" \
+    "$APP/Contents/Resources/CatBar_CatBar.bundle/Resources/bin/$filename" \
     "$APP/Contents/Resources/bin/$filename" \
     "$APP/Contents/Resources/Resources/bin/$filename" \
     "$APP/Contents/Resources/$filename" | awk '!seen[$0]++')
@@ -241,11 +241,11 @@ mkdir -p \
   "$APP/Contents/Library/HelperTools" \
   "$APP/Contents/Library/LaunchDaemons"
 
-cp "$BIN" "$APP/Contents/MacOS/ClashBar"
-chmod +x "$APP/Contents/MacOS/ClashBar"
+cp "$BIN" "$APP/Contents/MacOS/CatBar"
+chmod +x "$APP/Contents/MacOS/CatBar"
 
-rm -rf "$APP/Contents/Resources/ClashBar_ClashBar.bundle"
-cp -R "$RESOURCE_BUNDLE" "$APP/Contents/Resources/ClashBar_ClashBar.bundle"
+rm -rf "$APP/Contents/Resources/CatBar_CatBar.bundle"
+cp -R "$RESOURCE_BUNDLE" "$APP/Contents/Resources/CatBar_CatBar.bundle"
 
 rm -rf "$APP/Contents/Frameworks/Sparkle.framework"
 cp -R "$SPARKLE_FRAMEWORK" "$APP/Contents/Frameworks/Sparkle.framework"
@@ -284,9 +284,9 @@ cp "$HELPER_BIN" "$APP/Contents/Library/HelperTools/$HELPER_LABEL"
 chmod +x "$APP/Contents/Library/HelperTools/$HELPER_LABEL"
 cp "$HELPER_PLIST_SOURCE" "$APP/Contents/Library/LaunchDaemons/${HELPER_LABEL}.plist"
 
-print_artifact_size "Main binary before strip" "$APP/Contents/MacOS/ClashBar"
+print_artifact_size "Main binary before strip" "$APP/Contents/MacOS/CatBar"
 print_artifact_size "Helper binary before strip" "$APP/Contents/Library/HelperTools/$HELPER_LABEL"
-strip_binary_if_enabled "Main binary" "$APP/Contents/MacOS/ClashBar"
+strip_binary_if_enabled "Main binary" "$APP/Contents/MacOS/CatBar"
 strip_binary_if_enabled "Helper binary" "$APP/Contents/Library/HelperTools/$HELPER_LABEL"
 
 ICON_PLIST_ENTRY=""
@@ -318,14 +318,14 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleName</key><string>${APP_NAME}</string>
-<key>CFBundleDisplayName</key><string>${APP_NAME}</string>
-<key>CFBundleExecutable</key><string>ClashBar</string>
+<key>CFBundleDisplayName</key><string>CatBar</string>
+<key>CFBundleExecutable</key><string>CatBar</string>
 <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>${APP_VERSION}</string>
 <key>CFBundleVersion</key><string>${BUILD_NUMBER}</string>
 $ICON_PLIST_ENTRY
-<key>ClashBarBundlesMihomoCore</key>${BUNDLES_MIHOMO_CORE_PLIST_VALUE}
+<key>CatBarBundlesMihomoCore</key>${BUNDLES_MIHOMO_CORE_PLIST_VALUE}
 $SPARKLE_PLIST_ENTRIES
 <key>NSAppTransportSecurity</key>
 <dict>

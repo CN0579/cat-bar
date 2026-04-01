@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppLogSource: String, Codable, Equatable, CaseIterable, Identifiable {
-    case clashbar
+    case catbar
     case mihomo
 
     var id: String {
@@ -19,7 +19,7 @@ struct AppErrorLogEntry: Codable, Equatable, Identifiable {
     init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
-        source: AppLogSource = .clashbar,
+        source: AppLogSource = .catbar,
         level: String,
         message: String)
     {

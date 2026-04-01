@@ -125,8 +125,8 @@ struct LogEntryRowView: View, Equatable {
         let accent = Color(nsColor: .controlAccentColor)
 
         switch source {
-        case .clashbar:
-            return (L10n.t("ui.log_source.clashbar", language: language), secondary)
+        case .catbar:
+            return (L10n.t("ui.log_source.catbar", language: language), secondary)
         case .mihomo:
             return (L10n.t("ui.log_source.mihomo", language: language), accent.opacity(T.Opacity.solid))
         }
@@ -420,7 +420,7 @@ extension MenuBarRootView {
     func logSearchTextContent(for log: AppErrorLogEntry) -> String {
         let source: String = {
             switch log.source {
-            case .clashbar: return self.tr("ui.log_source.clashbar")
+            case .catbar: return self.tr("ui.log_source.catbar")
             case .mihomo: return self.tr("ui.log_source.mihomo")
             }
         }()
@@ -443,7 +443,7 @@ extension MenuBarRootView {
 
     func logSourceTitle(_ source: AppLogSource) -> String {
         switch source {
-        case .clashbar: self.tr("ui.log_source.clashbar")
+        case .catbar: self.tr("ui.log_source.catbar")
         case .mihomo: self.tr("ui.log_source.mihomo")
         }
     }

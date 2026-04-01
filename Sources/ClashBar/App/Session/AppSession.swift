@@ -355,19 +355,19 @@ final class AppSession: ObservableObject {
     var isLatestAppReleaseCheckInFlight = false
 
     let defaults = UserDefaults.standard
-    @AppStorage("clashbar.auto.start.core") private var autoStartCore: Bool = false
-    @AppStorage("clashbar.auto.core.network.recovery") private var autoCoreControlOnNetworkChange: Bool = true
-    @AppStorage("clashbar.statusbar.display.mode") private var statusBarDisplayModeRaw: String = StatusBarDisplayMode
+    @AppStorage("catbar.auto.start.core") private var autoStartCore: Bool = false
+    @AppStorage("catbar.auto.core.network.recovery") private var autoCoreControlOnNetworkChange: Bool = true
+    @AppStorage("catbar.statusbar.display.mode") private var statusBarDisplayModeRaw: String = StatusBarDisplayMode
         .iconOnly.rawValue
-    @AppStorage("clashbar.proxy.node.hide_unavailable") var hideUnavailableProxyNodes: Bool = false
-    let selectedConfigKey = "clashbar.config.selected.filename"
-    let legacySelectedConfigKey = "clashbar.config.selected"
-    let remoteConfigSourcesKey = "clashbar.config.remote.sources.v1"
-    let lastSuccessfulConfigPathKey = "clashbar.last.success.config.path"
-    let editableSettingsSnapshotKey = "clashbar.settings.editable.snapshot.v1"
-    let systemProxyEnabledOnQuitKey = "clashbar.system_proxy.enabled_on_quit"
-    let uiLanguageKey = "clashbar.ui.language"
-    let appearanceModeKey = "clashbar.ui.appearance.mode"
+    @AppStorage("catbar.proxy.node.hide_unavailable") var hideUnavailableProxyNodes: Bool = false
+    let selectedConfigKey = "catbar.config.selected.filename"
+    let legacySelectedConfigKey = "catbar.config.selected"
+    let remoteConfigSourcesKey = "catbar.config.remote.sources.v1"
+    let lastSuccessfulConfigPathKey = "catbar.last.success.config.path"
+    let editableSettingsSnapshotKey = "catbar.settings.editable.snapshot.v1"
+    let systemProxyEnabledOnQuitKey = "catbar.system_proxy.enabled_on_quit"
+    let uiLanguageKey = "catbar.ui.language"
+    let appearanceModeKey = "catbar.ui.appearance.mode"
     let maxLogEntries = 200
     let hiddenPanelMaxInMemoryLogEntries = 20
     let maxBufferedMihomoLogEntries = 40
@@ -390,9 +390,9 @@ final class AppSession: ObservableObject {
     var lowFrequencyIntervalNanoseconds: UInt64 = 20_000_000_000
     var currentConnectionsStreamIntervalMilliseconds: Int?
     var currentLogsStreamLevel: String?
-    var clashbarLogFileURL: URL?
+    var catbarLogFileURL: URL?
     var mihomoLogFileURL: URL?
-    var clashbarLogStore: AppLogStore?
+    var catbarLogStore: AppLogStore?
     var mihomoLogStore: AppLogStore?
     var didAttemptAutoStart = false
     var didCheckSystemProxyConsistencyOnLaunch = false
@@ -407,7 +407,7 @@ final class AppSession: ObservableObject {
     var remoteConfigSources: [String: String] = [:]
     var externalControllerWarningKeys: Set<String> = []
     let streamJSONDecoder = JSONDecoder()
-    let initialNoCoreSetupGuideShownKey = "clashbar.core.install.guide.shown.v1"
+    let initialNoCoreSetupGuideShownKey = "catbar.core.install.guide.shown.v1"
     let bundlesMihomoCore: Bool
     var didPresentInitialNoCoreSetupGuide = false
 
@@ -422,7 +422,7 @@ final class AppSession: ObservableObject {
         networkReachabilityMonitor: NetworkReachabilityMonitor = NetworkReachabilityMonitor(),
         clipboardRepository: any ClipboardRepository = PasteboardClipboardRepository(),
         remoteMachineStore: RemoteMachineStore = RemoteMachineStore(),
-        clashbarLogStore: AppLogStore? = nil,
+        catbarLogStore: AppLogStore? = nil,
         mihomoLogStore: AppLogStore? = nil,
         startBackgroundRefresh: Bool = true)
     {
@@ -435,7 +435,7 @@ final class AppSession: ObservableObject {
         self.networkReachabilityMonitor = networkReachabilityMonitor
         self.clipboardRepository = clipboardRepository
         self.remoteMachineStore = remoteMachineStore
-        self.clashbarLogStore = clashbarLogStore
+        self.catbarLogStore = catbarLogStore
         self.mihomoLogStore = mihomoLogStore
         let resolvedConfigManager = configManager ?? ConfigDirectoryManager(
             workingDirectoryManager: workingDirectoryManager)
@@ -477,15 +477,15 @@ final class AppSession: ObservableObject {
         }
         do {
             try self.workingDirectoryManager.bootstrapDirectories()
-            clashbarLogFileURL = self.workingDirectoryManager.logsDirectoryURL.appendingPathComponent(
-                "clashbar.log",
+            catbarLogFileURL = self.workingDirectoryManager.logsDirectoryURL.appendingPathComponent(
+                "catbar.log",
                 isDirectory: false)
             mihomoLogFileURL = self.workingDirectoryManager.logsDirectoryURL.appendingPathComponent(
                 "mihomo.log",
                 isDirectory: false)
 
-            if let clashbarLogFileURL, self.clashbarLogStore == nil {
-                self.clashbarLogStore = AppLogStore(logFileURL: clashbarLogFileURL)
+            if let catbarLogFileURL, self.catbarLogStore == nil {
+                self.catbarLogStore = AppLogStore(logFileURL: catbarLogFileURL)
             }
             if let mihomoLogFileURL, self.mihomoLogStore == nil {
                 self.mihomoLogStore = AppLogStore(logFileURL: mihomoLogFileURL)
@@ -555,7 +555,7 @@ final class AppSession: ObservableObject {
     }
 
     private static func resolveBundledMihomoCoreFlag() -> Bool {
-        guard let value = Bundle.main.object(forInfoDictionaryKey: "ClashBarBundlesMihomoCore") else {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: "CatBarBundlesMihomoCore") else {
             return true
         }
 

@@ -93,7 +93,7 @@ def main() -> int:
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = args.title
     ET.SubElement(channel, "link").text = args.release_notes_url
-    ET.SubElement(channel, "description").text = f"ClashBar {args.version} updates"
+    ET.SubElement(channel, "description").text = f"CatBar {args.version} updates"
     item = ET.SubElement(channel, "item")
     ET.SubElement(item, "title").text = args.title
     ET.SubElement(item, "pubDate").text = pub_date

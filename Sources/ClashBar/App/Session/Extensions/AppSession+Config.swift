@@ -11,7 +11,7 @@ extension AppSession {
     func seedBundledConfigIfNeeded() {
         let fileManager = FileManager.default
         let targetURL = workingDirectoryManager.configDirectoryURL
-            .appendingPathComponent("ClashBar.yaml", isDirectory: false)
+            .appendingPathComponent("CatBar.yaml", isDirectory: false)
 
         if fileManager.fileExists(atPath: targetURL.path) {
             return
@@ -27,7 +27,7 @@ extension AppSession {
         } catch {
             appendLog(
                 level: "error",
-                message: tr("log.config.import_local.failed", "ClashBar.yaml", error.localizedDescription))
+                message: tr("log.config.import_local.failed", "CatBar.yaml", error.localizedDescription))
         }
     }
 

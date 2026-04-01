@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="Sources/ClashBar/Resources/Assets.xcassets/BrandLogo.imageset/logo.png" width="300" alt="ClashBar Logo" style="border-radius: 68px;" />
+<img src="Sources/ClashBar/Resources/Assets.xcassets/BrandLogo.imageset/logo.png" width="300" alt="CatBar Logo" style="border-radius: 68px;" />
 
-# ClashBar
+# CatBar
 
 基于 `SwiftUI + AppKit` 构建的原生 macOS 菜单栏代理面板，专注轻量、稳定与可观测。
 
@@ -11,13 +11,13 @@
   <img alt="Swift" src="https://img.shields.io/badge/Swift-6.2-F05138?style=flat&logo=swift" />
   <img alt="Build" src="https://img.shields.io/badge/Build-SwiftPM-0A84FF?style=flat" />
   <img alt="i18n" src="https://img.shields.io/badge/i18n-zh--Hans%20%7C%20en-34C759?style=flat" />
-  <a href="https://github.com/QuentinHsu/ClashBar/releases" target="_blank" rel="noopener noreferrer">
-    <img alt="Version" src="https://img.shields.io/github/v/release/QuentinHsu/ClashBar?style=flat&logo=github" />
+  <a href="https://github.com/QuentinHsu/cat-bar/releases" target="_blank" rel="noopener noreferrer">
+    <img alt="Version" src="https://img.shields.io/github/v/release/QuentinHsu/cat-bar?style=flat&logo=github" />
   </a>
 </p>
 
 <p>
-  <img src="docs/static-resources/app-screenshot-dark.webp" alt="ClashBar App Screenshot" width="300" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+  <img src="docs/static-resources/app-screenshot-dark.webp" alt="CatBar App Screenshot" width="300" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
 </p>
 
 </div>
@@ -34,7 +34,7 @@
 
 如需实际启用内核能力，请自行准备兼容的 `mihomo` 可执行文件，并放入：
 
-`~/Library/Application Support/clashbar/core/`
+`~/Library/Application Support/catbar/core/`
 
 应用会从该目录读取本地核心。
 
@@ -42,7 +42,7 @@
 
 感谢所有参与贡献的开发者：
 
-[![Contributors](https://contrib.rocks/image?repo=QuentinHsu/ClashBar)](https://github.com/QuentinHsu/ClashBar/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=QuentinHsu/cat-bar)](https://github.com/QuentinHsu/cat-bar/graphs/contributors)
 
 ## 致谢
 
@@ -51,7 +51,7 @@
 
 ## Star 趋势
 
-[![Star History Chart](https://api.star-history.com/svg?repos=QuentinHsu/ClashBar&type=date&legend=top-left)](https://www.star-history.com/#QuentinHsu/ClashBar&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=QuentinHsu/cat-bar&type=date&legend=top-left)](https://www.star-history.com/#QuentinHsu/cat-bar&type=date&legend=top-left)
 
 ## 许可证
 

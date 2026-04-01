@@ -229,7 +229,7 @@ def build_summary_prompt(version: str, entries: list[CommitEntry]) -> str:
     grouped_changes = render_grouped_changes(entries)
     stats = render_stats(entries)
     return (
-        f"请为 ClashBar v{version} 生成一句中文发布摘要。\n"
+        f"请为 CatBar v{version} 生成一句中文发布摘要。\n"
         "要求：\n"
         "1. 只输出一句话，不要标题，不要列表。\n"
         "2. 重点说明这次更新给用户带来的结果。\n"

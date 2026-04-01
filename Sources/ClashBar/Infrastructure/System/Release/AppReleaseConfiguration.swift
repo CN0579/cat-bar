@@ -2,7 +2,7 @@ import Foundation
 
 enum AppReleaseConfiguration {
     static let repositoryOwner = "QuentinHsu"
-    static let repositoryName = "ClashBar"
+    static let repositoryName = "cat-bar"
 
     static var repositorySlug: String {
         "\(self.repositoryOwner)/\(self.repositoryName)"

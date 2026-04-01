@@ -10,7 +10,7 @@
 "ui.log_filter.warning" = "Warning";
 "ui.log_filter.error" = "Error";
 "ui.log_source.all" = "All Sources";
-"ui.log_source.clashbar" = "ClashBar";
+"ui.log_source.catbar" = "CatBar";
 "ui.log_source.mihomo" = "Mihomo";
 
 "ui.header.status.running" = "Running";
@@ -180,7 +180,7 @@
 "ui.footer.version" = "v%@";
 "ui.footer.version_update_help" = "Open release notes for v%@";
 "ui.footer.version_install_help" = "Install v%@ with the built-in updater";
-"ui.footer.version_check_help" = "Check for ClashBar updates";
+"ui.footer.version_check_help" = "Check for CatBar updates";
 "ui.footer.version_update_accessibility" = "Current version v%@. Update available v%@.";
 "ui.footer.core_upgrade.running" = "Updating...";
 "ui.footer.core_upgrade.success" = "Updated";
@@ -227,14 +227,14 @@
 "app.settings.saved.core_directory_opened_missing" = "Opened the core directory in Finder. Copy an executable named \"mihomo\" into it";
 "app.settings.overlay_success" = "Local settings preserved and applied over current config";
 "app.launch_at_login.error.unsupported_environment" = "Launch at login can only be enabled from the packaged .app build";
-"app.launch_at_login.error.requires_approval" = "Allow ClashBar in System Settings > General > Login Items";
+"app.launch_at_login.error.requires_approval" = "Allow CatBar in System Settings > General > Login Items";
 "app.launch_at_login.error.register_failed" = "Failed to enable launch at login: %@";
 "app.launch_at_login.error.unregister_failed" = "Failed to disable launch at login: %@";
 "app.system_proxy.error.invalid_host" = "Invalid proxy host";
 "app.system_proxy.error.invalid_port" = "Invalid proxy port";
 "app.system_proxy.error.helper_not_bundled" = "Privileged helper not found in app bundle. Use the packaged .app/.dmg build";
-"app.system_proxy.error.helper_install_location" = "Move ClashBar.app to /Applications and reopen it before enabling system proxy";
-"app.system_proxy.error.helper_needs_approval" = "Allow ClashBar background item in System Settings > General > Login Items, then try again";
+"app.system_proxy.error.helper_install_location" = "Move CatBar.app to /Applications and reopen it before enabling system proxy";
+"app.system_proxy.error.helper_needs_approval" = "Allow CatBar background item in System Settings > General > Login Items, then try again";
 "app.system_proxy.error.helper_not_registered" = "Privileged helper is not registered";
 "app.system_proxy.error.helper_not_registered_with_detail" = "Privileged helper is not registered: %@";
 "app.system_proxy.error.helper_start_timed_out" = "Privileged helper startup timed out";
@@ -249,7 +249,7 @@
 "app.system_proxy.alert.helper_start_timed_out" = "Helper startup timed out";
 "app.system_proxy.alert.helper_connection_failed" = "Helper connection failed";
 "app.system_proxy.alert.helper_operation_failed" = "System proxy operation failed";
-"app.system_proxy.alert.helper_install_location" = "Move ClashBar to /Applications first";
+"app.system_proxy.alert.helper_install_location" = "Move CatBar to /Applications first";
 "app.system_proxy.alert.helper_not_bundled" = "Helper missing from app bundle";
 "app.system_proxy.alert.helper_invalid_signature" = "Helper signature mismatch";
 "app.system_proxy.alert.unknown" = "System proxy operation failed";
@@ -291,9 +291,9 @@
 "app.core.alert.start_failed.title" = "Core Start Failed";
 "app.core.alert.restart_failed.title" = "Core Restart Failed";
 "app.core.alert.process_terminated.title" = "Core Terminated Unexpectedly";
-"app.core.error.binary_not_found" = "No mihomo core was found. Copy an executable named \"mihomo\" to %@, then start ClashBar Core again.";
+"app.core.error.binary_not_found" = "No mihomo core was found. Copy an executable named \"mihomo\" to %@, then start CatBar Core again.";
 "app.core.setup_required.title" = "Install Mihomo Core";
-"app.core.setup_required.message" = "This build does not bundle mihomo. Before first use, copy an executable named \"mihomo\" into:\n%@\n\nClashBar will load the core from that folder.";
+"app.core.setup_required.message" = "This build does not bundle mihomo. Before first use, copy an executable named \"mihomo\" into:\n%@\n\nCatBar will load the core from that folder.";
 
 "log.process.terminated" = "mihomo terminated with code %d";
 "log.working_dir_init_failed" = "Failed to initialize working directory: %@";

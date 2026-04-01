@@ -65,7 +65,7 @@ struct RemoteMachineManagerView: View {
     @EnvironmentObject private var appSession: AppSession
 
     private var language: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: "clashbar.ui.language") ?? "") ?? .zhHans
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: "catbar.ui.language") ?? "") ?? .zhHans
     }
 
     private var panelWidth: CGFloat {
@@ -788,7 +788,7 @@ private struct RemoteMachineEditorCard: View {
     @FocusState private var focusedField: Field?
 
     private var language: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: "clashbar.ui.language") ?? "") ?? .zhHans
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: "catbar.ui.language") ?? "") ?? .zhHans
     }
 
     private func tr(_ key: String) -> String {

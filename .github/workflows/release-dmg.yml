@@ -306,7 +306,7 @@ jobs:
             exit 1
           fi
 
-          dmg_name="ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg"
+          dmg_name="CatBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg"
 
           python3 Scripts/generate_sparkle_appcast.py \
             --dmg "dist/${dmg_name}" \
@@ -317,7 +317,7 @@ jobs:
             --version "${{ needs.prepare-version.outputs.version }}" \
             --build-version "${{ needs.prepare-version.outputs.build_number }}" \
             --minimum-system-version "13.0" \
-            --title "ClashBar ${{ needs.prepare-version.outputs.version }}" \
+            --title "CatBar ${{ needs.prepare-version.outputs.version }}" \
             --output "dist/appcast-${{ matrix.dmg_suffix }}.xml"
 
       - name: Upload dmg artifact
@@ -325,8 +325,8 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: |
-            dist/ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg
-            dist/ClashBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg.sha256
+            dist/CatBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg
+            dist/CatBar-${{ needs.prepare-version.outputs.version }}-${{ matrix.dmg_suffix }}.dmg.sha256
             dist/appcast-${{ matrix.dmg_suffix }}.xml
           if-no-files-found: error
 
@@ -363,7 +363,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare-version.outputs.tag }}
-          name: ClashBar ${{ needs.prepare-version.outputs.version }}
+          name: CatBar ${{ needs.prepare-version.outputs.version }}
           body_path: release.md
           generate_release_notes: false
           fail_on_unmatched_files: false

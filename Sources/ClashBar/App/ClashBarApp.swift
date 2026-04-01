@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 @main
-struct ClashBarApp: App {
-    @NSApplicationDelegateAdaptor(ClashBarAppDelegate.self) private var appDelegate
+struct CatBarApp: App {
+    @NSApplicationDelegateAdaptor(CatBarAppDelegate.self) private var appDelegate
 
     private var commandsViewModel: AppCommandsViewModel {
         AppCommandsViewModel(session: self.appDelegate.appSession)
@@ -111,7 +111,7 @@ struct ClashBarApp: App {
 }
 
 @MainActor
-final class ClashBarAppDelegate: NSObject, NSApplicationDelegate {
+final class CatBarAppDelegate: NSObject, NSApplicationDelegate {
     let container = DependencyContainer()
     private var statusItemController: StatusItemController?
 

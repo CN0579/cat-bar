@@ -33,12 +33,12 @@ private final class TimestampCacheBox: @unchecked Sendable {
 }
 
 enum ValueFormatter {
-    private static let timestampFormatterKey = "clashbar.formatter.timestamp"
+    private static let timestampFormatterKey = "catbar.formatter.timestamp"
     private static let timestampCache = TimestampCacheBox()
 
-    private static let iso8601WithFractionalKey = "clashbar.formatter.iso8601.fractional"
-    private static let iso8601BasicKey = "clashbar.formatter.iso8601.basic"
-    private static let timeFormatterKey = "clashbar.formatter.time"
+    private static let iso8601WithFractionalKey = "catbar.formatter.iso8601.fractional"
+    private static let iso8601BasicKey = "catbar.formatter.iso8601.basic"
+    private static let timeFormatterKey = "catbar.formatter.time"
 
     static func speed(_ value: Int64) -> String {
         let (formatted, unit) = speedComponents(value)

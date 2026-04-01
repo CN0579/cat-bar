@@ -19,7 +19,7 @@
 正式版默认通过 GitHub Actions 里的 `Release DMG` 工作流发布，推荐直接使用 `workflow_dispatch` 的 `auto` bump 模式。
 
 - 发布产物仅提供 `no-core` 安装包。
-- 首次启动后，可在设置页打开 `~/Library/Application Support/clashbar/core/`，并放入 `mihomo`。
+- 首次启动后，可在设置页打开 `~/Library/Application Support/catbar/core/`，并放入 `mihomo`。
 - 版本号 `X.Y.Z` 会基于上一个稳定 tag 和最近提交的 Conventional Commits 自动计算。
 - `CHANGELOG.md` 会在发布前根据上一个稳定 tag 之后的 commit 自动生成对应版本段落：默认按 scope 聚合、输出简洁统计与摘要，并先提交回当前分支。
 - 如需启用 GitHub Copilot 摘要，请在仓库 Secrets 中配置 `COPILOT_GITHUB_TOKEN`。该 token 需要包含 GitHub Copilot 的 `Copilot Requests` 权限；工作流检测到该 secret 后会自动安装 Copilot CLI，并通过 `CHANGELOG_SUMMARY_COMMAND` 为发布摘要生成一句面向用户结果的总结。

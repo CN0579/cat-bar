@@ -3,14 +3,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClashBar",
+    name: "CatBar",
     defaultLocalization: "zh-Hans",
     platforms: [
         .macOS(.v13),
     ],
     products: [
-        .executable(name: "ClashBar", targets: ["ClashBar"]),
-        .executable(name: "ClashBarProxyHelper", targets: ["ClashBarProxyHelper"]),
+        .executable(name: "CatBar", targets: ["CatBar"]),
+        .executable(name: "CatBarProxyHelper", targets: ["CatBarProxyHelper"]),
     ],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.8.1"),
@@ -20,7 +20,7 @@ let package = Package(
             name: "ProxyHelperShared",
             path: "Sources/ProxyHelperShared"),
         .executableTarget(
-            name: "ClashBar",
+            name: "CatBar",
             dependencies: [
                 "ProxyHelperShared",
                 .product(name: "Sparkle", package: "Sparkle"),
@@ -34,7 +34,7 @@ let package = Package(
                 .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
             ]),
         .executableTarget(
-            name: "ClashBarProxyHelper",
+            name: "CatBarProxyHelper",
             dependencies: ["ProxyHelperShared"],
             path: "Sources/ProxyHelper/Daemon"),
     ])

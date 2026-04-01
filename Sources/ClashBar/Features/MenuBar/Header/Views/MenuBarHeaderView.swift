@@ -37,7 +37,7 @@ extension MenuBarRootView {
                 .frame(width: self.headerLogoSize, height: self.headerLogoSize)
 
                 VStack(alignment: .leading, spacing: MenuBarLayoutTokens.space2) {
-                    Text("ClashBar")
+                    Text("CatBar")
                         .font(.app(size: MenuBarLayoutTokens.FontSize.title, weight: .semibold))
                         .foregroundStyle(nativePrimaryLabel)
 
