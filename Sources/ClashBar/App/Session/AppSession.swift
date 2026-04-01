@@ -288,7 +288,7 @@ final class AppSession: ObservableObject {
     }
 
     var isTunToggleEnabled: Bool {
-        (self.isRemoteTarget || self.isRuntimeRunning) && !self.isCoreActionProcessing && !self.isTunSyncing
+        !self.isCoreActionProcessing && !self.isTunSyncing
     }
 
     var autoStartCoreEnabled: Bool {

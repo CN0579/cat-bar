@@ -33,7 +33,15 @@ extension AppSession {
                 try await self.ensureTunPermissions(requestIfMissing: true)
             }
 
-            guard self.isRemoteTarget || self.isRuntimeRunning else { return }
+            guard self.isRemoteTarget || self.isRuntimeRunning else {
+                isTunEnabled = enabled
+                persistEditableSettingsSnapshot()
+                appendLog(
+                    level: "info",
+                    message: tr("log.tun.toggled", enabled ? tr("log.tun.enabled") : tr("log.tun.disabled")))
+                return
+            }
+
             try await self.patchTunConfig(enable: enabled)
 
             let config = try await fetchRuntimeConfigSnapshot()
