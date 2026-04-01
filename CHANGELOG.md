@@ -1,3 +1,26 @@
+## v0.6.0
+
+> 本次更新修复了代理布局、列表显示及设置自动保存等多项体验问题，并在核心重启期间以灰色状态栏图标明确反馈运行状态，同时统一了系统代理图标风格，使整体交互更加稳定流畅。
+
+### ✨ 新增功能
+
+- **ui**：gray out status bar icon and speed display during core restart
+
+### 🚀 优化改进
+
+- **github**：standardize app name to CatBar in bug template
+- **guide**：optimize beginner guide and add mihomo template
+- **ui**：unify system proxy icon style and remove dynamic colors
+- **readme**：replace broken star history API with starchart.cc
+
+### 🐞 问题修复
+
+- **settings**：prevent auto-save triggering without actual content modification
+- **proxy**：fix layout truncation and incorrect height measurement
+- **ui**：prevent bottom clipping and missing scroll on long lists
+- **proxy**：optimize helper recovery and offline proxy toggling
+- **proxy**：force connection drop on network or proxy mode switch
+
 ## v0.5.2
 
 > 本次更新完成了品牌重命名、优化了退出流程以彻底消除界面卡顿，并同步升级了 CI 依赖。
