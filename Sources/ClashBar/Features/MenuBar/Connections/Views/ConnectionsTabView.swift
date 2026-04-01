@@ -482,9 +482,8 @@ extension MenuBarRootView {
             if connections.isEmpty {
                 self.emptyCard(tr("ui.empty.connections"))
             } else {
-                let displayConnections = isMeasuring ? Array(connections.prefix(25)) : connections
                 MeasurementAwareVStack(alignment: .leading, spacing: 0, usesLazyStack: false) {
-                    SeparatedForEach(data: displayConnections, id: \.id, separator: nativeSeparator) { conn in
+                    SeparatedForEach(data: connections, id: \.id, separator: nativeSeparator) { conn in
                         self.connectionRow(conn)
                     }
                 }
