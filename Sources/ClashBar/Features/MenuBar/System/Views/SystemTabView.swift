@@ -158,6 +158,7 @@ extension MenuBarRootView {
         let editableText = Binding(
             get: { text.wrappedValue },
             set: { newValue in
+                guard text.wrappedValue != newValue else { return }
                 text.wrappedValue = newValue
                 appSession.scheduleProxyPortsAutoSaveIfNeeded()
             })

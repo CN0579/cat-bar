@@ -566,7 +566,7 @@ extension AppSession {
     }
 
     private func proxyPortFieldsDifferFromLastSync() -> Bool {
-        guard let synced = lastSyncedEditableSettings else { return true }
+        guard let synced = lastSyncedEditableSettings else { return false }
         return settingsPort != synced.port
             || settingsSocksPort != synced.socksPort
             || settingsMixedPort != synced.mixedPort
