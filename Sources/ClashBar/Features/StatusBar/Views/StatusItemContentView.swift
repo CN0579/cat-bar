@@ -62,7 +62,8 @@ final class StatusItemContentView: NSView {
             mode: .iconOnly,
             symbolName: "bolt.slash.circle",
             speedLines: nil,
-            isRunning: false)
+            isRunning: false,
+            isProcessing: false)
         switch display.mode {
         case .iconOnly:
             return self.statusItemHorizontalPadding * 2 + self.iconSize
@@ -121,6 +122,11 @@ final class StatusItemContentView: NSView {
         if speedTextChanged || modeChanged, display.mode != .iconOnly {
             self.speedImageView.image = self.makeSpeedTemplateImage(
                 upLine: self.cachedUpLine, downLine: self.cachedDownLine)
+        }
+
+        let targetAlpha: CGFloat = display.isProcessing ? 0.4 : 1.0
+        if self.alphaValue != targetAlpha {
+            self.alphaValue = targetAlpha
         }
 
         if modeChanged || iconVisibilityChanged {

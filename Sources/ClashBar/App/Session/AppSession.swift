@@ -108,7 +108,9 @@ final class AppSession: ObservableObject {
 
     @Published var errorLogs: [AppErrorLogEntry] = []
     @Published var startupErrorMessage: String?
-    @Published var coreActionState: CoreActionState = .idle
+    @Published var coreActionState: CoreActionState = .idle {
+        didSet { self.refreshMenuBarDisplaySnapshotIfNeeded() }
+    }
     @Published var coreUpgradeState: CoreUpgradeState = .idle
     @Published var providerRefreshStatus: ProviderRefreshStatus = .idle
     @Published var uiLanguage: AppLanguage = .zhHans
@@ -123,7 +125,8 @@ final class AppSession: ObservableObject {
         mode: .iconOnly,
         symbolName: "bolt.slash.circle",
         speedLines: nil,
-        isRunning: false)
+        isRunning: false,
+        isProcessing: false)
 
     @Published var settingsAllowLan: Bool = false
     @Published var settingsIPv6: Bool = false
@@ -149,6 +152,10 @@ final class AppSession: ObservableObject {
     var suppressSettingsPersistence = false
 
     var runtimeVisualStatus: RuntimeVisualStatus {
+        if self.coreActionState == .starting || self.coreActionState == .restarting {
+            return .starting
+        }
+        
         let normalized = self.statusText.lowercased()
         if normalized == "starting" { return .starting }
         if normalized == "failed" { return .failed }
@@ -236,25 +243,29 @@ final class AppSession: ObservableObject {
 
     private var computedMenuBarDisplay: MenuBarDisplay {
         let running = self.isRuntimeRunning
+        let processing = self.runtimeVisualStatus == .starting
         switch self.statusBarDisplayMode {
         case .iconOnly:
             return MenuBarDisplay(
                 mode: .iconOnly,
                 symbolName: self.menuBarSymbolName,
                 speedLines: nil,
-                isRunning: running)
+                isRunning: running,
+                isProcessing: processing)
         case .iconAndSpeed:
             return MenuBarDisplay(
                 mode: .iconAndSpeed,
                 symbolName: self.menuBarSymbolName,
                 speedLines: self.menuBarSpeedLines,
-                isRunning: running)
+                isRunning: running,
+                isProcessing: processing)
         case .speedOnly:
             return MenuBarDisplay(
                 mode: .speedOnly,
                 symbolName: nil,
                 speedLines: self.menuBarSpeedLines,
-                isRunning: running)
+                isRunning: running,
+                isProcessing: processing)
         }
     }
 
