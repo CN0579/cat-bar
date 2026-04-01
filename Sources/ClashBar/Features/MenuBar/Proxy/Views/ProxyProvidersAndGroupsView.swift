@@ -57,7 +57,7 @@ extension MenuBarRootView {
         // Use @State filteredProxyGroups which is updated via .onChange — avoids filtering on every render
         let groups = rootViewModel.filteredProxyGroups
 
-        return VStack(alignment: .leading, spacing: T.space6) {
+        return MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.nodesSectionHeader(
                 tr("ui.section.proxy_groups"),
                 count: "\(groups.count)")
@@ -109,9 +109,8 @@ extension MenuBarRootView {
             if groups.isEmpty {
                 emptyCard(tr("ui.empty.proxy_groups"))
             } else {
-                let displayGroups = isMeasuring ? Array(groups.prefix(25)) : groups
-                VStack(spacing: T.space2) {
-                    ForEach(displayGroups, id: \.name) { group in
+                MeasurementAwareVStack(spacing: T.space2, usesLazyStack: false) {
+                    ForEach(groups, id: \.name) { group in
                         self.proxyGroupInlineRow(group)
                     }
                 }

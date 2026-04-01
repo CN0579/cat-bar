@@ -105,7 +105,7 @@ extension MenuBarRootView {
     }
 
     func proxyTabBody(isMeasuring: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: T.space6) {
+        MeasurementAwareVStack(alignment: .leading, spacing: T.space6, usesLazyStack: false) {
             self.trafficOverview
             self.proxyQuickRows
             self.proxyGroupsSection(isMeasuring: isMeasuring)
