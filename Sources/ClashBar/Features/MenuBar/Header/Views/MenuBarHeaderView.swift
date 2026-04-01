@@ -80,7 +80,7 @@ extension MenuBarRootView {
                     .opacity(appSession.isCoreActionProcessing ? 0.6 : 1)
                 }
 
-                self.compactTopIcon("power", label: tr("ui.action.quit"), warning: true) {
+                self.compactTopIcon("power", label: tr("ui.action.quit"), warning: true, isLoading: appSession.isQuittingApp) {
                     await appSession.quitApp()
                 }
             }
