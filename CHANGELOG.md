@@ -1,3 +1,11 @@
+## v0.6.2
+
+> 本次更新修复了本地节点列表中保留条目被错误显示的问题。
+
+### 🐞 问题修复
+
+- **nodes**：filter reserved entries from local node list
+
 ## v0.6.1
 
 > ✗ Check recent commits and changelog (shell)
