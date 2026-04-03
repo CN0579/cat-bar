@@ -1,0 +1,84 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Debug CatBar",
+      "target": "CatBar",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug CatBar"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Release CatBar",
+      "target": "CatBar",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release CatBar"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Debug CatBarProxyHelper",
+      "target": "CatBarProxyHelper",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug CatBarProxyHelper"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Release CatBarProxyHelper",
+      "target": "CatBarProxyHelper",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release CatBarProxyHelper"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Debug CatBar",
+      "target": "CatBar",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug CatBar"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Release CatBar",
+      "target": "CatBar",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release CatBar"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Debug CatBarProxyHelper",
+      "target": "CatBarProxyHelper",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug CatBarProxyHelper"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:CatBar}",
+      "name": "Release CatBarProxyHelper",
+      "target": "CatBarProxyHelper",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release CatBarProxyHelper"
+    }
+  ]
+}

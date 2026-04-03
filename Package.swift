@@ -13,7 +13,7 @@ let package = Package(
         .executable(name: "CatBarProxyHelper", targets: ["CatBarProxyHelper"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.8.1"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.1"),
     ],
     targets: [
         .target(
@@ -25,13 +25,9 @@ let package = Package(
                 "ProxyHelperShared",
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
-            path: "Sources/ClashBar",
+            path: "Sources/CatBar",
             resources: [
                 .process("Resources"),
-            ],
-            linkerSettings: [
-                // App bundle packaging copies Sparkle.framework into Contents/Frameworks.
-                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
             ]),
         .executableTarget(
             name: "CatBarProxyHelper",

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="Sources/ClashBar/Resources/Assets.xcassets/BrandLogo.imageset/logo.png" width="300" alt="CatBar Logo" style="border-radius: 68px;" />
+<img src="Sources/CatBar/Resources/Assets.xcassets/BrandLogo.imageset/logo.png" width="300" alt="CatBar Logo" style="border-radius: 68px;" />
 
 # CatBar
 
