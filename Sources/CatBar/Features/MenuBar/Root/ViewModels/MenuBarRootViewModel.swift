@@ -18,7 +18,7 @@ final class MenuBarRootViewModel: ObservableObject {
         case .direct:
             modeFiltered = []
         case .rule:
-            modeFiltered = groups
+            modeFiltered = groups.filter { $0.name != "GLOBAL" }
         }
         let nextGroups = hideHiddenGroups ? modeFiltered.filter { $0.hidden != true } : modeFiltered
         guard nextGroups != self.filteredProxyGroups else { return }
