@@ -193,22 +193,20 @@ extension MenuBarRootView {
                 symbol: "point.3.connected.trianglepath.dotted",
                 count: "\(groups.count)")
             {
+                let sortIcon = sortGroupNodesByLatency ? ProviderAction.healthcheck.symbol : "list.number"
+                let sortLabelKey = sortGroupNodesByLatency
+                    ? "ui.action.sort_nodes_by_latency"
+                    : "ui.action.sort_nodes_default"
+
                 HStack(spacing: T.space6) {
                     self.compactTopIcon(
-                        sortGroupNodesByLatency ? "timer" : "list.number",
-                        label: tr(
-                            sortGroupNodesByLatency
-                                ? "ui.action.sort_nodes_default"
-                                : "ui.action.sort_nodes_by_latency"),
+                        sortIcon,
+                        label: tr(sortLabelKey),
                         toneOverride: nativeTeal)
                     {
                         sortGroupNodesByLatency.toggle()
                     }
-                    .help(
-                        tr(
-                            sortGroupNodesByLatency
-                                ? "ui.action.sort_nodes_default"
-                                : "ui.action.sort_nodes_by_latency"))
+                    .help(tr(sortLabelKey))
 
                     self.compactTopIcon(
                         hideHiddenProxyGroups ? "eye.slash" : "eye",
