@@ -1,3 +1,29 @@
+## v0.7.0
+
+> 本次更新优化了代理分组与节点管理的交互体验，支持批量延迟测试与核心更新入口，同时修复了规则模式下分组过滤异常、远程目标系统代理设置误显示等多处问题，整体运行更加稳定可靠。
+
+### ✨ 新增功能
+
+- **view**：enhance MenuBarNodeRow with metric action display and refactor proxy group handling
+- **nodes**：support batch latency tests in remote node popovers
+- **remote-machine**：add configurable web ui entry for remote sources
+- **view**：enhance TrafficSparklineView with improved path drawing and control point calculations
+- **view**：introduce NonActivatingTextField for improved focus handling in text fields
+- **system**：add core update entry to maintenance panel
+
+### 🚀 优化改进
+
+- **ui**：unify latency test button styling
+- **readme**：rewrite README with bilingual entry points
+
+### 🐞 问题修复
+
+- **viewmodel**：filter out GLOBAL entries in rule mode for proxy groups
+- **view**：remove unused icon handling in connections and proxy group views
+- **view**：simplify sorting icon and label handling in proxy groups section
+- **view**：dismiss popover on disappearance of AttachedPopoverMenu
+- **system**：hide system proxy settings for remote targets
+
 ## v0.6.2
 
 > 本次更新修复了本地节点列表中保留条目被错误显示的问题。
