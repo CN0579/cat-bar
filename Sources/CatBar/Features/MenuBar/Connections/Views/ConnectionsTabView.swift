@@ -65,10 +65,13 @@ extension MenuBarRootView {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            TextField(tr("ui.placeholder.filter_connection"), text: $connectionsViewModel.filterText)
-                .textFieldStyle(.roundedBorder)
-                .font(.app(size: MenuBarLayoutTokens.FontSize.body, weight: .regular))
-                .foregroundStyle(nativePrimaryLabel)
+            NonActivatingTextField(
+                placeholder: tr("ui.placeholder.filter_connection"),
+                text: $connectionsViewModel.filterText,
+                style: .roundedBorder,
+                font: NSFont.monospacedSystemFont(
+                    ofSize: MenuBarLayoutTokens.FontSize.body,
+                    weight: .regular))
         }
         .menuRowPadding(vertical: MenuBarLayoutTokens.space4)
     }

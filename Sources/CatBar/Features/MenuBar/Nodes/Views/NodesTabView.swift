@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // swiftlint:disable:next type_name
@@ -15,10 +16,11 @@ extension MenuBarRootView {
 
     private var nodesSearchBar: some View {
         HStack(spacing: T.space4) {
-            TextField(tr("ui.nodes.search_placeholder"), text: $nodesViewModel.searchText)
-                .font(.app(size: T.FontSize.body, weight: .regular))
-                .textFieldStyle(.plain)
-                .foregroundStyle(nativePrimaryLabel)
+            NonActivatingTextField(
+                placeholder: tr("ui.nodes.search_placeholder"),
+                text: $nodesViewModel.searchText,
+                style: .plain,
+                font: NSFont.monospacedSystemFont(ofSize: T.FontSize.body, weight: .regular))
 
             if !nodesViewModel.searchText.isEmpty {
                 Button {

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // swiftlint:disable:next type_name
@@ -84,10 +85,11 @@ extension MenuBarRootView {
                 self.fractionSummaryBadge(current: filteredCount, total: appSession.errorLogs.count)
             }
             self.logsSecondaryControlRow
-            TextField(tr("ui.placeholder.search_logs"), text: $logsViewModel.searchText)
-                .textFieldStyle(.roundedBorder)
-                .font(.app(size: T.FontSize.body, weight: .regular))
-                .foregroundStyle(nativePrimaryLabel)
+            NonActivatingTextField(
+                placeholder: tr("ui.placeholder.search_logs"),
+                text: $logsViewModel.searchText,
+                style: .roundedBorder,
+                font: NSFont.monospacedSystemFont(ofSize: T.FontSize.body, weight: .regular))
         }
         .menuRowPadding(vertical: T.space4)
     }
