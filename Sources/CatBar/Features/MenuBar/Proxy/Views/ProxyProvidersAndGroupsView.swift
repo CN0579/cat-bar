@@ -255,7 +255,6 @@ extension MenuBarRootView {
         let delayValue = appSession.groupDisplayDelayValue(group)
         let nodeCount = group.all.count
         let iconURL = self.proxyGroupIconURL(group)
-        let hasLeadingIcon = iconURL != nil
         let rowHorizontalPadding = T.space4
         let rowVerticalPadding: CGFloat = T.space1
 
@@ -263,12 +262,8 @@ extension MenuBarRootView {
             GeometryReader { geo in
                 let columns = self.proxyGroupMainColumnWidths(
                     totalWidth: geo.size.width,
-                    hasLeadingIcon: hasLeadingIcon)
+                    hasLeadingIcon: false)
                 HStack(spacing: T.space1) {
-                    if let iconURL {
-                        self.proxyGroupLeadingIcon(iconURL)
-                    }
-
                     Text(group.name)
                         .font(.app(size: T.FontSize.body, weight: .semibold))
                         .foregroundStyle(nativePrimaryLabel)

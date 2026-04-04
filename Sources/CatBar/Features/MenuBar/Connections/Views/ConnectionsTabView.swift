@@ -75,10 +75,6 @@ extension MenuBarRootView {
 
     private var connectionsSourceChips: some View {
         HStack(spacing: MenuBarLayoutTokens.space2) {
-            Image(systemName: "point.3.connected.trianglepath.dotted")
-                .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
-                .foregroundStyle(nativeTertiaryLabel)
-
             self.logFilterToggleButton(
                 title: tr("ui.network.source.local"),
                 selected: remoteMachineStore.activeTarget.isLocal,
