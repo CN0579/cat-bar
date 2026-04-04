@@ -71,6 +71,7 @@ extension MenuBarRootView {
     private func nodesProviderBlock(name: String, detail: ProviderDetail?) -> some View {
         let nodeCount = detail?.proxies?.count ?? 0
         let isUpdating = appSession.providerUpdating.contains(name)
+        let isTestingAllNodes = nodesViewModel.providerTestingInProgress.contains(name)
         let updatedText = ValueFormatter.dateTimeFromISO(detail?.updatedAt)
         let expireSeconds = detail?.subscriptionInfo?.expire
         let expireText = ValueFormatter.daysUntilExpiryShort(from: expireSeconds, language: language)
@@ -84,6 +85,9 @@ extension MenuBarRootView {
             let used = upload + download
             return min(max(Double(used) / Double(total), 0), 1)
         }()
+        let filteredNodes = nodesViewModel.filteredProviderNodes(
+            detail?.proxies ?? [],
+            searchText: nodesViewModel.searchText)
         let updatedTimeWidth: CGFloat = 118
 
         return AttachedPopoverMenu { isHovered in
@@ -138,10 +142,15 @@ extension MenuBarRootView {
             self.popoverHeader(name: name, count: nodeCount) {
                 EmptyView()
             } trailing: {
-                self.providerActionButton(.refresh, isLoading: isUpdating) {
-                    await appSession.updateProxyProvider(name: name)
+                self.providerActionButton(.healthcheck, isLoading: isTestingAllNodes) {
+                    await self.testProviderNodesLatency(
+                        providerName: name,
+                        nodes: filteredNodes,
+                        testUrl: detail?.testUrl,
+                        timeout: detail?.timeout)
                 }
                 .frame(width: 18, alignment: .center)
+                .disabled(filteredNodes.isEmpty)
             }
 
             if hasSubscription {
@@ -203,7 +212,11 @@ extension MenuBarRootView {
                 .padding(.bottom, T.space2)
             }
 
-            self.nodesProviderExpandedContent(detail: detail)
+            self.nodesProviderExpandedContent(
+                nodes: filteredNodes,
+                searchText: nodesViewModel.searchText,
+                testUrl: detail?.testUrl,
+                timeout: detail?.timeout)
         }
         .contextMenu {
             Button(tr("ui.action.refresh")) {
@@ -228,13 +241,15 @@ extension MenuBarRootView {
         return (nameWidth, countWidth, updatedTimeWidth)
     }
 
-    private func nodesProviderExpandedContent(detail: ProviderDetail?) -> some View {
-        let allNodes = detail?.proxies ?? []
-        let filtered = nodesViewModel.filteredProviderNodes(allNodes, searchText: nodesViewModel.searchText)
-
-        if filtered.isEmpty {
+    private func nodesProviderExpandedContent(
+        nodes: [ProviderProxyNode],
+        searchText: String,
+        testUrl: String?,
+        timeout: Int?) -> some View
+    {
+        if nodes.isEmpty {
             return AnyView(
-                Text(nodesViewModel.searchText.isEmpty ? tr("ui.common.na") : tr("ui.nodes.no_match"))
+                Text(searchText.isEmpty ? tr("ui.common.na") : tr("ui.nodes.no_match"))
                     .font(.app(size: T.FontSize.caption, weight: .regular))
                     .foregroundStyle(nativeSecondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -245,11 +260,11 @@ extension MenuBarRootView {
 
         return AnyView(
             VStack(spacing: 0) {
-                ForEach(filtered, id: \.stableIdentity) { node in
+                ForEach(nodes, id: \.stableIdentity) { node in
                     self.nodesProviderNodeRow(
                         node: node,
-                        testUrl: detail?.testUrl,
-                        timeout: detail?.timeout)
+                        testUrl: testUrl,
+                        timeout: timeout)
                 }
             }
         )
@@ -332,6 +347,23 @@ extension MenuBarRootView {
             nodeName: nodeName,
             testURL: testUrl,
             timeout: timeout)
+    }
+
+    private func testProviderNodesLatency(
+        providerName: String,
+        nodes: [ProviderProxyNode],
+        testUrl: String?,
+        timeout: Int?) async
+    {
+        guard !nodes.isEmpty else { return }
+        guard !nodesViewModel.providerTestingInProgress.contains(providerName) else { return }
+
+        nodesViewModel.providerTestingInProgress.insert(providerName)
+        defer { nodesViewModel.providerTestingInProgress.remove(providerName) }
+
+        for node in nodes {
+            await self.testNodeLatency(nodeName: node.name, testUrl: testUrl, timeout: timeout)
+        }
     }
 
     private var nodesProvidersRefreshButton: some View {

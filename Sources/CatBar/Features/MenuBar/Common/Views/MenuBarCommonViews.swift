@@ -180,6 +180,7 @@ struct MenuBarNodeRow: View {
             Button(action: onMetricAction) {
                 Image(systemName: "bolt.horizontal")
                     .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color(nsColor: .systemTeal).opacity(T.Opacity.solid))
                     .frame(
                         width: iconOnly ? self.trailingActionWidth : 14,

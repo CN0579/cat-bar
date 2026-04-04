@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class NodesTabViewModel: ObservableObject {
     @Published var nodeTestingInProgress: Set<String> = []
+    @Published var providerTestingInProgress: Set<String> = []
     @Published var searchText: String = ""
 
     private static let reservedLocalNodeMarkers: Set<String> = [
