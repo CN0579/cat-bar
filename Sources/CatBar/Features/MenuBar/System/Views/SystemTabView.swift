@@ -403,21 +403,23 @@ extension MenuBarRootView {
                     .menuRowPadding(vertical: T.space4)
                 }
 
-                self.settingsToggleRow(
-                    tr("ui.quick.system_proxy"),
-                    symbol: "network",
-                    isOn: Binding(
-                        get: { appSession.isSystemProxyEnabled },
-                        set: { value in
-                            Task { await appSession.toggleSystemProxy(value) }
-                        }),
-                    isDisabled: appSession.isProxySyncing)
+                if !isRemote {
+                    self.settingsToggleRow(
+                        tr("ui.quick.system_proxy"),
+                        symbol: "network",
+                        isOn: Binding(
+                            get: { appSession.isSystemProxyEnabled },
+                            set: { value in
+                                Task { await appSession.toggleSystemProxy(value) }
+                            }),
+                        isDisabled: appSession.isProxySyncing)
 
-                if let proxyHint = appSession.systemProxyOpenFailureHint?.trimmedNonEmpty {
-                    self.settingsInlineHintRow(
-                        text: "\(tr("app.system_proxy.alert.title")): \(proxyHint)",
-                        color: self.nativeCritical.opacity(T.Opacity.solid),
-                        symbol: "exclamationmark.triangle.fill")
+                    if let proxyHint = appSession.systemProxyOpenFailureHint?.trimmedNonEmpty {
+                        self.settingsInlineHintRow(
+                            text: "\(tr("app.system_proxy.alert.title")): \(proxyHint)",
+                            color: self.nativeCritical.opacity(T.Opacity.solid),
+                            symbol: "exclamationmark.triangle.fill")
+                    }
                 }
 
                 self.settingsToggleRow(
