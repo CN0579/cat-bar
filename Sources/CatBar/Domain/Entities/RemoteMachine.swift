@@ -7,6 +7,17 @@ struct RemoteMachine: Identifiable, Codable, Equatable, Hashable {
     var port: Int
     var secret: String?
     var useHTTPS: Bool
+    var showsWebDashboardButton: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case host
+        case port
+        case secret
+        case useHTTPS
+        case showsWebDashboardButton
+    }
 
     var controllerAddress: String {
         if self.useHTTPS {
@@ -16,7 +27,30 @@ struct RemoteMachine: Identifiable, Codable, Equatable, Hashable {
     }
 
     var displayAddress: String {
-        "\(self.host):\(self.port)"
+        return "\(self.host):\(self.port)"
+    }
+
+    var webDashboardURL: URL? {
+        var components = URLComponents()
+        components.scheme = self.useHTTPS ? "https" : "http"
+        components.host = self.host
+        components.port = self.port
+        components.path = "/ui/"
+
+        let trimmedSecret = self.secret?.trimmingCharacters(in: .whitespacesAndNewlines)
+        var queryItems = [
+            URLQueryItem(name: "host", value: self.host),
+            URLQueryItem(name: "hostname", value: self.host),
+            URLQueryItem(name: "port", value: String(self.port)),
+        ]
+
+        if let trimmedSecret, !trimmedSecret.isEmpty {
+            queryItems.append(URLQueryItem(name: "secret", value: trimmedSecret))
+        }
+
+        components.queryItems = queryItems
+        components.fragment = "/proxies"
+        return components.url
     }
 
     init(
@@ -25,7 +59,8 @@ struct RemoteMachine: Identifiable, Codable, Equatable, Hashable {
         host: String,
         port: Int = 9090,
         secret: String? = nil,
-        useHTTPS: Bool = false)
+        useHTTPS: Bool = false,
+        showsWebDashboardButton: Bool = false)
     {
         self.id = id
         self.name = name
@@ -33,6 +68,19 @@ struct RemoteMachine: Identifiable, Codable, Equatable, Hashable {
         self.port = port
         self.secret = secret
         self.useHTTPS = useHTTPS
+        self.showsWebDashboardButton = showsWebDashboardButton
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.host = try container.decode(String.self, forKey: .host)
+        self.port = try container.decode(Int.self, forKey: .port)
+        self.secret = try container.decodeIfPresent(String.self, forKey: .secret)
+        self.useHTTPS = try container.decode(Bool.self, forKey: .useHTTPS)
+        self.showsWebDashboardButton =
+            try container.decodeIfPresent(Bool.self, forKey: .showsWebDashboardButton) ?? false
     }
 }
 

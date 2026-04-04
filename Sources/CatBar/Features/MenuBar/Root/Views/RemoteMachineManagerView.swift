@@ -569,6 +569,7 @@ private struct RemoteMachineEditorCard: View {
     @State private var port: String = "9090"
     @State private var secret: String = ""
     @State private var useHTTPS = false
+    @State private var showsWebDashboardButton = false
     @FocusState private var focusedField: Field?
 
     private var language: AppLanguage {
@@ -582,8 +583,18 @@ private struct RemoteMachineEditorCard: View {
     private var isValid: Bool {
         !self.name.trimmingCharacters(in: .whitespaces).isEmpty &&
             !self.host.trimmingCharacters(in: .whitespaces).isEmpty &&
+            !self.hostContainsProtocolPrefix &&
             (Int(self.port) ?? 0) > 0 &&
             (Int(self.port) ?? 0) <= 65535
+    }
+
+    private var trimmedHost: String {
+        self.host.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hostContainsProtocolPrefix: Bool {
+        let lowercased = self.trimmedHost.lowercased()
+        return lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://")
     }
 
     private var connectionPreview: String {
@@ -620,13 +631,19 @@ private struct RemoteMachineEditorCard: View {
                 self.separator
                 self.formTextRow(
                     title: self.tr("ui.machine.field.host"),
-                    placeholder: self.tr("ui.machine.field.host"),
+                    placeholder: self.tr("ui.machine.field.host_placeholder"),
                     text: self.$host,
                     field: .host)
+                if self.hostContainsProtocolPrefix {
+                    self.separator
+                    self.validationMessageRow(text: self.tr("ui.machine.error.host_protocol"))
+                }
                 self.separator
                 self.portProtocolRow
                 self.separator
                 self.secretRow
+                self.separator
+                self.webUIButtonRow
             }
             .background(self.formSurface)
 
@@ -646,6 +663,7 @@ private struct RemoteMachineEditorCard: View {
                 self.port = "\(machine.port)"
                 self.secret = machine.secret ?? ""
                 self.useHTTPS = machine.useHTTPS
+                self.showsWebDashboardButton = machine.showsWebDashboardButton
             } else {
                 self.focusedField = .name
             }
@@ -668,6 +686,24 @@ private struct RemoteMachineEditorCard: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.app(size: 13, weight: .regular))
                 .focused(self.$focusedField, equals: field)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    private func validationMessageRow(text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.app(size: 12, weight: .semibold))
+                .foregroundStyle(.red)
+                .frame(width: 14, alignment: .center)
+
+            Text(text)
+                .font(.app(size: 12, weight: .medium))
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -708,6 +744,24 @@ private struct RemoteMachineEditorCard: View {
                 .textFieldStyle(.roundedBorder)
                 .font(.app(size: 13, weight: .regular))
                 .focused(self.$focusedField, equals: .secret)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    private var webUIButtonRow: some View {
+        HStack(spacing: 10) {
+            Text(self.tr("ui.machine.field.show_web_ui_button"))
+                .font(.app(size: 12, weight: .semibold))
+                .foregroundStyle(self.secondaryTextColor)
+                .frame(width: 56, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            Toggle("", isOn: self.$showsWebDashboardButton)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -769,9 +823,11 @@ private struct RemoteMachineEditorCard: View {
 
     private func save() {
         let trimmedName = self.name.trimmingCharacters(in: .whitespaces)
-        let trimmedHost = self.host.trimmingCharacters(in: .whitespaces)
+        let trimmedHost = self.trimmedHost
         let portValue = Int(self.port) ?? 9090
         let trimmedSecret = self.secret.trimmingCharacters(in: .whitespaces)
+
+        guard !self.hostContainsProtocolPrefix else { return }
 
         if let existing = self.machine {
             var updated = existing
@@ -780,6 +836,7 @@ private struct RemoteMachineEditorCard: View {
             updated.port = portValue
             updated.secret = trimmedSecret.isEmpty ? nil : trimmedSecret
             updated.useHTTPS = self.useHTTPS
+            updated.showsWebDashboardButton = self.showsWebDashboardButton
             self.store.updateMachine(updated)
         } else {
             self.store.addMachine(
@@ -788,7 +845,8 @@ private struct RemoteMachineEditorCard: View {
                     host: trimmedHost,
                     port: portValue,
                     secret: trimmedSecret.isEmpty ? nil : trimmedSecret,
-                    useHTTPS: self.useHTTPS))
+                    useHTTPS: self.useHTTPS,
+                    showsWebDashboardButton: self.showsWebDashboardButton))
         }
 
         self.onSave()

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 extension MenuBarRootView {
@@ -43,6 +44,9 @@ extension MenuBarRootView {
 
                     HStack(spacing: MenuBarLayoutTokens.space6) {
                         self.headerConnectionControl
+                        if self.shouldShowHeaderRemoteWebUIButton {
+                            self.headerRemoteWebUIButton
+                        }
                         if appSession.isExternalControllerWildcardIPv4 {
                             self.headerControllerWarningIcon
                         }
@@ -176,6 +180,31 @@ extension MenuBarRootView {
             .foregroundStyle(nativeWarning)
             .help("external-controller is 0.0.0.0 and can be accessed from your LAN.")
             .accessibilityLabel("Warning: external-controller is bound to 0.0.0.0")
+    }
+
+    var activeRemoteWebDashboardURL: URL? {
+        self.remoteMachineStore.activeTarget.remoteMachine?.webDashboardURL
+    }
+
+    var shouldShowHeaderRemoteWebUIButton: Bool {
+        guard let machine = self.remoteMachineStore.activeTarget.remoteMachine else { return false }
+        return machine.showsWebDashboardButton && machine.webDashboardURL != nil
+    }
+
+    var headerRemoteWebUIButton: some View {
+        self.compactAsyncIconButton(
+            symbol: "safari",
+            label: tr("ui.action.open_web_ui"),
+            tint: nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid),
+            baseTint: nativeTertiaryLabel,
+            size: 16,
+            fontSize: MenuBarLayoutTokens.FontSize.caption,
+            hierarchicalSymbol: true)
+        {
+            guard let url = self.activeRemoteWebDashboardURL else { return }
+            NSWorkspace.shared.open(url)
+        }
+        .help(tr("ui.action.open_web_ui"))
     }
 
     func headerPopoverSection(_ title: String) -> some View {

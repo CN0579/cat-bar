@@ -63,8 +63,11 @@
 "ui.machine.empty" = "No remote machines";
 "ui.machine.field.name" = "Name";
 "ui.machine.field.host" = "Host";
+"ui.machine.field.host_placeholder" = "Example: 10.0.0.1 or controller.example.com";
 "ui.machine.field.port" = "Port";
 "ui.machine.field.secret" = "Secret";
+"ui.machine.field.show_web_ui_button" = "Web UI";
+"ui.machine.error.host_protocol" = "Host must not include http:// or https://.";
 "ui.machine.remote_readonly" = "Remote, read-only";
 "ui.machine.return_local" = "Return to Local Core";
 "ui.machine.active" = "Active";
