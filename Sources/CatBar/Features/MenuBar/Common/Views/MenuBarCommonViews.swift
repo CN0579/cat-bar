@@ -593,7 +593,7 @@ extension MenuBarRootView {
     }
 
     var isFooterCoreUpgradeEnabled: Bool {
-        self.appSession.isRuntimeRunning && !self.appSession.isCoreUpgradeInFlight
+        self.appSession.isCoreUpgradeAvailable && !self.appSession.isCoreUpgradeInFlight
     }
 
     var footerCoreUpgradeButtonTitle: String {
@@ -651,7 +651,7 @@ extension MenuBarRootView {
     }
 
     var footerCoreUpgradeButtonHelp: String {
-        if !self.appSession.isRuntimeRunning {
+        if !self.appSession.isCoreUpgradeAvailable {
             return tr("ui.footer.core_upgrade.help.disabled")
         }
 

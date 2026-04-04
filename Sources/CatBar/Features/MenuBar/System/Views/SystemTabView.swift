@@ -152,11 +152,54 @@ extension MenuBarRootView {
         .opacity(self.maintenanceActionEnabled ? 1 : 0.62)
     }
 
-    func settingsFeedbackBanner(text: String, color: Color, symbol: String) -> some View {
+    func maintenanceCoreUpgradeButton() -> some View {
+        Button {
+            Task { await self.appSession.upgradeCore() }
+        } label: {
+            HStack(spacing: T.space6) {
+                Group {
+                    if self.appSession.isCoreUpgradeInFlight {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else if let symbol = self.footerCoreUpgradeButtonSymbolName {
+                        Image(systemName: symbol)
+                            .foregroundStyle(self.footerCoreUpgradeButtonTint)
+                    }
+                }
+                .frame(width: 14, alignment: .center)
+
+                Text(self.footerCoreUpgradeButtonTitle)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(nativePrimaryLabel)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .appBorderedButtonStyle()
+        .controlSize(.small)
+        .disabled(!self.isFooterCoreUpgradeEnabled)
+        .opacity(self.isFooterCoreUpgradeEnabled ? 1 : 0.62)
+        .help(self.footerCoreUpgradeButtonHelp)
+    }
+
+    func settingsFeedbackBanner(
+        text: String,
+        color: Color,
+        symbol: String? = nil,
+        isLoading: Bool = false) -> some View
+    {
         HStack(spacing: T.space6) {
-            Image(systemName: symbol)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .foregroundStyle(color)
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if let symbol {
+                    Image(systemName: symbol)
+                        .font(.app(size: T.FontSize.caption, weight: .semibold))
+                        .foregroundStyle(color)
+                }
+            }
+            .frame(width: 14, alignment: .center)
 
             Text(text)
                 .font(.app(size: T.FontSize.caption, weight: .medium))
@@ -243,6 +286,47 @@ extension MenuBarRootView {
             nativePositive.opacity(T.Opacity.solid)
         }
         return (feedback.message, color, feedback.symbol)
+    }
+
+    var maintenanceCoreUpgradeFeedbackState: (
+        message: String,
+        color: Color,
+        symbol: String?,
+        isLoading: Bool
+    )? {
+        switch self.appSession.coreUpgradeState {
+        case .idle:
+            return nil
+        case .running:
+            return (
+                tr("ui.footer.core_upgrade.help.running"),
+                self.nativeAccent.opacity(T.Opacity.solid),
+                nil,
+                true)
+        case .succeeded:
+            return (
+                tr("ui.footer.core_upgrade.help.success"),
+                self.nativePositive.opacity(T.Opacity.solid),
+                "checkmark.circle.fill",
+                false)
+        case let .alreadyLatest(version):
+            let message = if let version, !version.isEmpty {
+                tr("ui.footer.core_upgrade.help.latest_version", version)
+            } else {
+                tr("ui.footer.core_upgrade.help.latest")
+            }
+            return (
+                message,
+                self.nativePositive.opacity(T.Opacity.solid),
+                "checkmark.circle",
+                false)
+        case let .failed(message):
+            return (
+                tr("ui.footer.core_upgrade.help.failed", message),
+                self.nativeCritical.opacity(T.Opacity.solid),
+                "exclamationmark.triangle.fill",
+                false)
+        }
     }
 
     func editableCoreSettingBinding(_ setting: AppSession.EditableCoreSetting) -> Binding<Bool> {
@@ -561,6 +645,16 @@ extension MenuBarRootView {
                     symbol: "wrench.and.screwdriver")
 
                 VStack(alignment: .leading, spacing: T.space4) {
+                    self.maintenanceCoreUpgradeButton()
+
+                    if let feedback = self.maintenanceCoreUpgradeFeedbackState {
+                        self.settingsFeedbackBanner(
+                            text: feedback.message,
+                            color: feedback.color,
+                            symbol: feedback.symbol,
+                            isLoading: feedback.isLoading)
+                    }
+
                     HStack(spacing: T.space6) {
                         ForEach(maintenanceActions, id: \.titleKey) { item in
                             self.maintenanceActionButton(tr(item.titleKey), symbol: item.symbol) {

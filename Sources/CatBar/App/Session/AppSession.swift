@@ -261,6 +261,13 @@ final class AppSession: ObservableObject {
         (self.isRemoteTarget || self.isRuntimeRunning) && !self.isCoreActionProcessing && !self.isTunSyncing
     }
 
+    var isCoreUpgradeAvailable: Bool {
+        if self.isRemoteTarget {
+            return self.apiStatus == .healthy || self.apiStatus == .degraded
+        }
+        return self.isRuntimeRunning
+    }
+
     var autoStartCoreEnabled: Bool {
         get { self.autoStartCore }
         set { self.autoStartCore = newValue }

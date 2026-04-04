@@ -46,7 +46,7 @@
 "ui.action.enable_tun" = "Enable TUN Mode";
 "ui.action.disable_tun" = "Disable TUN Mode";
 "ui.action.update_geo" = "Update GEO Data";
-"ui.action.upgrade_core" = "Upgrade Core";
+"ui.action.upgrade_core" = "Update Core";
 "ui.action.upgrade_ui" = "Upgrade UI";
 "ui.action.upgrade_geo" = "Upgrade GEO Assets";
 "ui.action.restart_core_api" = "Restart Core via API";
@@ -183,7 +183,7 @@
 "ui.footer.core_upgrade.latest" = "Up to Date";
 "ui.footer.core_upgrade.failed" = "Update Failed";
 "ui.footer.core_upgrade.help" = "Check for and upgrade the mihomo core";
-"ui.footer.core_upgrade.help.disabled" = "The core must be running to upgrade";
+"ui.footer.core_upgrade.help.disabled" = "The core must be reachable to upgrade";
 "ui.footer.core_upgrade.help.running" = "Checking for and upgrading the mihomo core";
 "ui.footer.core_upgrade.help.success" = "The core upgrade request finished";
 "ui.footer.core_upgrade.help.latest" = "The core is already on the latest version";

@@ -46,7 +46,7 @@
 "ui.action.enable_tun" = "开启 TUN 模式";
 "ui.action.disable_tun" = "关闭 TUN 模式";
 "ui.action.update_geo" = "更新 GEO 数据";
-"ui.action.upgrade_core" = "升级 Core";
+"ui.action.upgrade_core" = "更新内核";
 "ui.action.upgrade_ui" = "升级 UI";
 "ui.action.upgrade_geo" = "升级 GEO 资源";
 "ui.action.restart_core_api" = "API 重启 Core";
@@ -183,7 +183,7 @@
 "ui.footer.core_upgrade.latest" = "已是最新";
 "ui.footer.core_upgrade.failed" = "更新失败";
 "ui.footer.core_upgrade.help" = "检查并更新 mihomo 内核";
-"ui.footer.core_upgrade.help.disabled" = "内核运行中才可更新";
+"ui.footer.core_upgrade.help.disabled" = "内核可连接时才可更新";
 "ui.footer.core_upgrade.help.running" = "正在检查并更新 mihomo 内核";
 "ui.footer.core_upgrade.help.success" = "内核更新请求已完成";
 "ui.footer.core_upgrade.help.latest" = "当前已是最新版本";
