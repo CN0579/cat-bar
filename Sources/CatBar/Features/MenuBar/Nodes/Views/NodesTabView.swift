@@ -271,7 +271,8 @@ extension MenuBarRootView {
             typeText: nodeType,
             delayText: delayText,
             delayColor: delayColor,
-            isTesting: isTesting)
+            isTesting: isTesting,
+            metricActionLabel: tr("ui.action.test_latency"))
         {
             await self.testNodeLatency(nodeName: node.name, testUrl: testUrl, timeout: timeout)
         }
@@ -315,7 +316,8 @@ extension MenuBarRootView {
             typeText: node.type,
             delayText: delayText,
             delayColor: delayColor,
-            isTesting: isTesting)
+            isTesting: isTesting,
+            metricActionLabel: tr("ui.action.test_latency"))
         {
             await self.testNodeLatency(nodeName: node.name, testUrl: nil, timeout: nil)
         }
@@ -358,65 +360,22 @@ private struct NodesNodeRow: View {
     let delayText: String
     let delayColor: Color
     let isTesting: Bool
+    let metricActionLabel: String
     let onTest: () async -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        HStack(spacing: T.space4) {
-            Text(self.name)
-                .font(.app(size: T.FontSize.body, weight: .medium))
-                .foregroundStyle(Color(nsColor: .labelColor))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .minimumScaleFactor(T.minimumScale)
-
-            Spacer(minLength: 0)
-
-            if let typeText = self.typeText {
-                Text(typeText)
-                    .font(.app(size: T.FontSize.caption, weight: .medium))
-                    .foregroundStyle(Color(nsColor: .secondaryLabelColor))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .padding(.horizontal, T.space4)
-                    .padding(.vertical, T.space1)
-                    .background(
-                        RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
-                            .fill(Color(nsColor: .quaternaryLabelColor).opacity(0.1)))
-            }
-
-            Group {
-                if self.isTesting {
-                    ProgressView()
-                        .controlSize(.mini)
-                } else {
-                    Text(self.delayText)
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(self.delayColor)
-                        .lineLimit(1)
-                }
-            }
-            .frame(width: 50, alignment: .trailing)
-
-            Button {
+        MenuBarNodeRow(
+            title: self.name,
+            typeText: self.typeText,
+            metricText: self.delayText,
+            metricColor: self.delayColor,
+            isMetricLoading: self.isTesting,
+            variant: .plain,
+            metricActionDisplay: .alwaysVisible,
+            metricActionLabel: self.metricActionLabel,
+            onPrimaryAction: nil,
+            onMetricAction: {
                 Task { await self.onTest() }
-            } label: {
-                Image(systemName: "bolt.horizontal")
-                    .font(.app(size: T.FontSize.caption, weight: .semibold))
-                    .foregroundStyle(
-                        self.isHovered
-                            ? Color(nsColor: .systemTeal).opacity(T.Opacity.solid)
-                            : Color(nsColor: .secondaryLabelColor))
-                    .frame(width: T.rowLeadingIcon, height: T.rowLeadingIcon)
-            }
-            .buttonStyle(.borderless)
-            .disabled(self.isTesting)
-            .onHover { self.isHovered = $0 }
-            .help("Test Latency")
-        }
-        .frame(height: T.compactRowHeight)
-        .padding(.horizontal, T.space6)
-        .padding(.vertical, T.space1)
+            })
     }
 }

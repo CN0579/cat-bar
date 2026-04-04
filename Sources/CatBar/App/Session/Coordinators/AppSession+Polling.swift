@@ -330,6 +330,22 @@ extension AppSession {
         _ response: ProxyGroupsResponse,
         proxyProviders: [String: ProviderDetail] = [:])
     {
+        if !proxyProviders.isEmpty {
+            let filteredProxyProviders = proxyProviders.filter { key, detail in
+                self.shouldIncludeProxyProvider(named: key, detail: detail)
+            }
+
+            let previousProxyProviders = self.proxyProvidersDetail
+            var nextProxyProviders: [String: ProviderDetail] = [:]
+            nextProxyProviders.reserveCapacity(filteredProxyProviders.count)
+            for (name, detail) in filteredProxyProviders {
+                nextProxyProviders[name] = self.mergedProviderDetailPreservingNodes(
+                    previous: previousProxyProviders[name],
+                    incoming: detail)
+            }
+            self.proxyProvidersDetail = nextProxyProviders
+        }
+
         let presentation = self.makeBuildProxyGroupsPresentationUseCase().execute(
             response: response,
             proxyProviders: proxyProviders,

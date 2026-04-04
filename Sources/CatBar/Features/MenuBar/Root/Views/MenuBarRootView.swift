@@ -102,6 +102,8 @@ struct MenuBarRootView: View {
     @State var connectionsControlHeight: CGFloat = 0
     @State var currentTabContentHeight: CGFloat = 0
     @State var tabContentHeights: [RootTab: CGFloat] = [:]
+    @State var tabSwitchHeightOverride: CGFloat?
+    @State var pendingHeightMeasurementTab: RootTab?
     @AppStorage("catbar.proxy.group.hide_hidden") var hideHiddenProxyGroups: Bool = true
     @AppStorage("catbar.proxy.group.sort_nodes_by_latency") var sortGroupNodesByLatency: Bool = false
 
@@ -123,6 +125,7 @@ struct MenuBarRootView: View {
 
     func setCurrentTabWithoutAnimation(_ tab: RootTab) {
         guard self.rootViewModel.currentTab != tab else { return }
+        self.prepareTabHeightTransition(to: tab)
 
         var transaction = Transaction(animation: nil)
         transaction.disablesAnimations = true
@@ -140,6 +143,8 @@ struct MenuBarRootView: View {
         .onDisappear {
             self.proxyCommandCopyResetTask?.cancel()
             self.proxyCommandCopyResetTask = nil
+            self.tabSwitchHeightOverride = nil
+            self.pendingHeightMeasurementTab = nil
         }
     }
 
@@ -349,5 +354,23 @@ struct MenuBarRootView: View {
     func refreshRulesDerivedDataIfVisible() {
         guard self.rootViewModel.currentTab == .rules else { return }
         self.refreshVisibleRules()
+    }
+
+    private func prepareTabHeightTransition(to tab: RootTab) {
+        guard self.tabUsesDynamicHeight(tab) else {
+            self.tabSwitchHeightOverride = nil
+            self.pendingHeightMeasurementTab = nil
+            return
+        }
+
+        let cachedHeight = self.tabContentHeights[tab] ?? 0
+        guard cachedHeight <= 0 else {
+            self.tabSwitchHeightOverride = nil
+            self.pendingHeightMeasurementTab = nil
+            return
+        }
+
+        self.tabSwitchHeightOverride = max(1, self.resolvedPanelHeight)
+        self.pendingHeightMeasurementTab = tab
     }
 }

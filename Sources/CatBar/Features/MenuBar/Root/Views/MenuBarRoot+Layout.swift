@@ -1,6 +1,12 @@
 import SwiftUI
 
 extension MenuBarRootView {
+    private var activeTabSwitchHeightOverride: CGFloat? {
+        guard self.pendingHeightMeasurementTab == self.rootViewModel.currentTab else { return nil }
+        guard let override = self.tabSwitchHeightOverride, override > 0 else { return nil }
+        return min(override, popoverLayoutModel.maxPanelHeight)
+    }
+
     private var preferredStaticTabScrollAreaHeight: CGFloat? {
         switch self.rootViewModel.currentTab {
         case .connections:
@@ -31,17 +37,23 @@ extension MenuBarRootView {
     }
 
     private var unresolvedTargetPanelHeight: CGFloat {
+        let unresolved: CGFloat
         if let cachedCurrentTabContentHeight {
-            return min(
+            unresolved = min(
                 self.fixedSectionHeight + cachedCurrentTabContentHeight,
                 popoverLayoutModel.maxPanelHeight)
+        } else {
+            let minimumPanelHeight = min(popoverLayoutModel.minPanelHeight, popoverLayoutModel.maxPanelHeight)
+            let preferredStaticHeight = self.preferredStaticTabScrollAreaHeight.map { self.fixedSectionHeight + $0 } ?? 0
+            unresolved = min(
+                popoverLayoutModel.maxPanelHeight,
+                max(minimumPanelHeight, max(self.fixedSectionHeight + 1, preferredStaticHeight)))
         }
 
-        let minimumPanelHeight = min(popoverLayoutModel.minPanelHeight, popoverLayoutModel.maxPanelHeight)
-        let preferredStaticHeight = self.preferredStaticTabScrollAreaHeight.map { self.fixedSectionHeight + $0 } ?? 0
-        return min(
-            popoverLayoutModel.maxPanelHeight,
-            max(minimumPanelHeight, max(self.fixedSectionHeight + 1, preferredStaticHeight)))
+        if let activeTabSwitchHeightOverride {
+            return max(unresolved, activeTabSwitchHeightOverride)
+        }
+        return unresolved
     }
 
     private var fallbackTabScrollAreaHeight: CGFloat {
@@ -100,6 +112,10 @@ extension MenuBarRootView {
 
         self.currentTabContentHeight = normalized
         self.tabContentHeights[tab] = normalized
+        if self.pendingHeightMeasurementTab == tab {
+            self.pendingHeightMeasurementTab = nil
+            self.tabSwitchHeightOverride = nil
+        }
     }
 
     func publishPreferredPanelHeight() {

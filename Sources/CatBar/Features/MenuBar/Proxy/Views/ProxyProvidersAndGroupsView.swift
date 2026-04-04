@@ -190,7 +190,6 @@ extension MenuBarRootView {
         return VStack(alignment: .leading, spacing: T.space6) {
             self.nodesSectionHeader(
                 tr("ui.section.proxy_groups"),
-                symbol: "point.3.connected.trianglepath.dotted",
                 count: "\(groups.count)")
             {
                 let sortIcon = sortGroupNodesByLatency ? ProviderAction.healthcheck.symbol : "list.number"
@@ -252,7 +251,6 @@ extension MenuBarRootView {
         let delayText = appSession.groupDisplayDelayText(group)
         let delayValue = appSession.groupDisplayDelayValue(group)
         let nodeCount = group.all.count
-        let iconURL = self.proxyGroupIconURL(group)
         let rowHorizontalPadding = T.space4
         let rowVerticalPadding: CGFloat = T.space1
 
@@ -309,9 +307,7 @@ extension MenuBarRootView {
             .background(nativeHoverRowBackground(isHovered))
         } content: { dismiss in
             self.popoverHeader(name: group.name, count: nodeCount) {
-                if let iconURL {
-                    self.proxyGroupLeadingIcon(iconURL)
-                }
+                EmptyView()
             } trailing: {
                 self.providerActionButton(
                     .healthcheck,
@@ -326,24 +322,26 @@ extension MenuBarRootView {
                 ? sortedGroupNodes(group)
                 : defaultGroupNodes(group)
             self.popoverNodesList(nodes) { node in
-                ProxyGroupPopoverNodeItem(
+                MenuBarNodeRow(
                     title: node,
                     typeText: appSession.proxyNodeTypes[node].trimmedNonEmpty,
-                    delayText: appSession.delayText(group: group.name, node: node),
-                    delayValue: appSession.delayValue(group: group.name, node: node),
-                    delayColor: latencyColor(appSession.delayValue(group: group.name, node: node)),
-                    isTesting: appSession.isLatencyTesting(group: group, nodeName: node),
-                    selected: node == group.now)
-                {
-                    dismiss()
-                    Task { await appSession.switchProxy(group: group.name, target: node) }
-                } testAction: {
-                    Task {
-                        await appSession.testSingleNodeLatencyWithLoading(
-                            nodeName: node,
-                            groupName: group.name)
-                    }
-                }
+                    metricText: appSession.delayText(group: group.name, node: node),
+                    metricColor: latencyColor(appSession.delayValue(group: group.name, node: node)),
+                    isMetricLoading: appSession.isLatencyTesting(group: group, nodeName: node),
+                    variant: .selectable(selected: node == group.now),
+                    metricActionDisplay: .replacesMetricOnHover,
+                    metricActionLabel: tr("ui.action.test_latency"),
+                    onPrimaryAction: {
+                        dismiss()
+                        Task { await appSession.switchProxy(group: group.name, target: node) }
+                    },
+                    onMetricAction: {
+                        Task {
+                            await appSession.testSingleNodeLatencyWithLoading(
+                                nodeName: node,
+                                groupName: group.name)
+                        }
+                    })
             }
         }
     }
@@ -362,30 +360,6 @@ extension MenuBarRootView {
         let delay = floor(available * 0.17)
         let current = max(0, available - name - delay)
         return (name, current, delay)
-    }
-
-    func proxyGroupLeadingIcon(_ iconURL: URL) -> some View {
-        AsyncImage(url: iconURL) { phase in
-            if case let .success(image) = phase {
-                image
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(
-                        maxWidth: T.rowLeadingIcon,
-                        maxHeight: T.rowLeadingIcon)
-            }
-        }
-        .frame(
-            width: T.rowLeadingIcon,
-            height: T.rowLeadingIcon,
-            alignment: .center)
-    }
-
-    func proxyGroupIconURL(_ group: ProxyGroup) -> URL? {
-        guard let icon = group.icon else { return nil }
-        return URL(string: icon)
     }
 
     func nodesSectionHeader(
@@ -484,112 +458,5 @@ extension MenuBarRootView {
                 }
             }
         }
-    }
-}
-
-private struct ProxyGroupPopoverNodeItem: View {
-    let title: String
-    let typeText: String?
-    let delayText: String
-    let delayValue: Int?
-    let delayColor: Color
-    let isTesting: Bool
-    let selected: Bool
-    let action: () -> Void
-    var testAction: (() -> Void)? = nil
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: self.action) {
-            HStack(spacing: T.space1) {
-                Image(systemName: self.selected ? "checkmark.circle.fill" : "circle")
-                    .font(.app(size: T.FontSize.caption, weight: .semibold))
-                    .foregroundStyle(self
-                        .selected ? Color(nsColor: .controlAccentColor) : Color(nsColor: .tertiaryLabelColor))
-                    .frame(width: 11, alignment: .center)
-
-                Text(self.title)
-                    .font(.app(size: T.FontSize.body, weight: self.selected ? .semibold : .medium))
-                    .foregroundStyle(self.selected ? Color.primary : Color.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .minimumScaleFactor(T.minimumScale)
-
-                Spacer(minLength: 0)
-
-                if let typeText = self.typeText {
-                    Text(typeText)
-                        .font(.app(size: T.FontSize.caption, weight: .medium))
-                        .foregroundStyle(self.selected ? Color.primary.opacity(0.72) : Color.secondary.opacity(0.82))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .padding(.horizontal, T.space4)
-                        .padding(.vertical, T.space1)
-                        .background(
-                            RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
-                                .fill(Color(nsColor: .quaternaryLabelColor).opacity(self.selected ? 0.18 : 0.1)))
-                }
-
-                Group {
-                    if self.isTesting {
-                        LatencyLoadingIndicator()
-                    } else if self.isHovered, let testAction = self.testAction {
-                        Button(action: testAction) {
-                            Image(systemName: "bolt.horizontal")
-                                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                                .foregroundStyle(Color(nsColor: .systemTeal).opacity(T.Opacity.solid))
-                        }
-                        .buttonStyle(.plain)
-                        .frame(height: 14)
-                    } else {
-                        self.delayMetricView
-                    }
-                }
-                .frame(width: 56, alignment: .trailing)
-            }
-            .frame(height: T.compactRowHeight)
-            .padding(.horizontal, T.space4)
-            .padding(.vertical, T.space1)
-            .background(
-                RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
-                    .fill(self.rowBackground))
-        }
-        .buttonStyle(.plain)
-        .onHover { self.isHovered = $0 }
-    }
-
-    var rowBackground: Color {
-        if self.selected {
-            return Color(nsColor: .controlAccentColor).opacity(T.Opacity.tint)
-        }
-        if self.isHovered {
-            return Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
-        }
-        return .clear
-    }
-
-    @ViewBuilder
-    var delayMetricView: some View {
-        if self.delayValue != nil {
-            Text(self.delayText)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .foregroundStyle(self.delayColor.opacity(self.selected ? 1 : 0.94))
-                .lineLimit(1)
-        } else {
-            Text(self.delayText)
-                .font(.app(size: T.FontSize.caption, weight: .regular))
-                .foregroundStyle(self.delayColor.opacity(self.selected ? 1 : 0.85))
-                .lineLimit(1)
-                .minimumScaleFactor(T.minimumScale)
-        }
-    }
-}
-
-private struct LatencyLoadingIndicator: View {
-    var body: some View {
-        ProgressView()
-            .controlSize(.mini)
-            .frame(width: 30, height: 14, alignment: .center)
     }
 }

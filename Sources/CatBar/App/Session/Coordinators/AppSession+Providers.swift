@@ -102,7 +102,7 @@ extension AppSession {
             })
     }
 
-    private func mergedProviderDetailPreservingNodes(
+    func mergedProviderDetailPreservingNodes(
         previous: ProviderDetail?,
         incoming: ProviderDetail) -> ProviderDetail
     {
@@ -118,7 +118,7 @@ extension AppSession {
         return incoming.with(proxies: previous?.proxies ?? fallbackNodes)
     }
 
-    private func shouldIncludeProxyProvider(named key: String, detail: ProviderDetail) -> Bool {
+    func shouldIncludeProxyProvider(named key: String, detail: ProviderDetail) -> Bool {
         let resolvedName = detail.name.trimmedNonEmpty ?? key
         if resolvedName.caseInsensitiveCompare("default") == .orderedSame {
             return false
