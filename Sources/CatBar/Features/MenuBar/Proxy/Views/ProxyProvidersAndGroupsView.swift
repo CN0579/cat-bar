@@ -154,21 +154,34 @@ extension MenuBarRootView {
         }
     }
 
+    @ViewBuilder
     func providerActionButton(
         _ kind: ProviderAction,
         isLoading: Bool = false,
         action: @escaping () async -> Void) -> some View
     {
-        let tone = kind == .healthcheck ? nativeTeal : nativeInfo
-        return self.compactAsyncIconButton(
-            symbol: kind.symbol,
-            label: tr(kind.labelKey),
-            tint: tone.opacity(T.Opacity.solid),
-            isLoading: isLoading,
-            size: T.rowLeadingIcon,
-            fontSize: T.FontSize.caption,
-            hierarchicalSymbol: true,
-            action: action)
+        if kind == .healthcheck {
+            LatencyTestIconButton(
+                label: tr(kind.labelKey),
+                tint: nativeTeal.opacity(T.Opacity.solid),
+                baseTint: nativeSecondaryLabel,
+                isLoading: isLoading,
+                size: T.rowLeadingIcon,
+                fontSize: T.FontSize.caption)
+            {
+                Task { await action() }
+            }
+        } else {
+            self.compactAsyncIconButton(
+                symbol: kind.symbol,
+                label: tr(kind.labelKey),
+                tint: nativeInfo.opacity(T.Opacity.solid),
+                isLoading: isLoading,
+                size: T.rowLeadingIcon,
+                fontSize: T.FontSize.caption,
+                hierarchicalSymbol: true,
+                action: action)
+        }
     }
 
     @ViewBuilder
@@ -331,6 +344,8 @@ extension MenuBarRootView {
                     variant: .selectable(selected: node == group.now),
                     metricActionDisplay: .replacesMetricOnHover,
                     metricActionLabel: tr("ui.action.test_latency"),
+                    metricActionTint: nativeTeal.opacity(T.Opacity.solid),
+                    metricActionBaseTint: nativeSecondaryLabel,
                     onPrimaryAction: {
                         dismiss()
                         Task { await appSession.switchProxy(group: group.name, target: node) }

@@ -289,7 +289,9 @@ extension MenuBarRootView {
             delayText: delayText,
             delayColor: delayColor,
             isTesting: isTesting,
-            metricActionLabel: tr("ui.action.test_latency"))
+            metricActionLabel: tr("ui.action.test_latency"),
+            metricActionTint: nativeTeal.opacity(T.Opacity.solid),
+            metricActionBaseTint: nativeSecondaryLabel)
         {
             await self.testNodeLatency(nodeName: node.name, testUrl: testUrl, timeout: timeout)
         }
@@ -334,7 +336,9 @@ extension MenuBarRootView {
             delayText: delayText,
             delayColor: delayColor,
             isTesting: isTesting,
-            metricActionLabel: tr("ui.action.test_latency"))
+            metricActionLabel: tr("ui.action.test_latency"),
+            metricActionTint: nativeTeal.opacity(T.Opacity.solid),
+            metricActionBaseTint: nativeSecondaryLabel)
         {
             await self.testNodeLatency(nodeName: node.name, testUrl: nil, timeout: nil)
         }
@@ -395,6 +399,8 @@ private struct NodesNodeRow: View {
     let delayColor: Color
     let isTesting: Bool
     let metricActionLabel: String
+    let metricActionTint: Color
+    let metricActionBaseTint: Color
     let onTest: () async -> Void
 
     var body: some View {
@@ -407,6 +413,8 @@ private struct NodesNodeRow: View {
             variant: .plain,
             metricActionDisplay: .alwaysVisible,
             metricActionLabel: self.metricActionLabel,
+            metricActionTint: self.metricActionTint,
+            metricActionBaseTint: self.metricActionBaseTint,
             onPrimaryAction: nil,
             onMetricAction: {
                 Task { await self.onTest() }

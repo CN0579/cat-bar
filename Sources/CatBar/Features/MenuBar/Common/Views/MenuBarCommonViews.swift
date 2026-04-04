@@ -94,6 +94,8 @@ struct MenuBarNodeRow: View {
     let variant: MenuBarNodeRowVariant
     let metricActionDisplay: MenuBarNodeMetricActionDisplay
     let metricActionLabel: String?
+    let metricActionTint: Color
+    let metricActionBaseTint: Color
     let onPrimaryAction: (() -> Void)?
     let onMetricAction: (() -> Void)?
 
@@ -103,6 +105,34 @@ struct MenuBarNodeRow: View {
     private let trailingActionWidth: CGFloat = MenuBarLayoutTokens.rowLeadingIcon
     private let selectionIndicatorWidth: CGFloat = 11
     private let typeColumnWidth: CGFloat = 68
+
+    init(
+        title: String,
+        typeText: String?,
+        metricText: String,
+        metricColor: Color,
+        isMetricLoading: Bool,
+        variant: MenuBarNodeRowVariant,
+        metricActionDisplay: MenuBarNodeMetricActionDisplay,
+        metricActionLabel: String?,
+        metricActionTint: Color = Color(nsColor: .systemTeal).opacity(T.Opacity.solid),
+        metricActionBaseTint: Color = Color(nsColor: .secondaryLabelColor),
+        onPrimaryAction: (() -> Void)?,
+        onMetricAction: (() -> Void)?)
+    {
+        self.title = title
+        self.typeText = typeText
+        self.metricText = metricText
+        self.metricColor = metricColor
+        self.isMetricLoading = isMetricLoading
+        self.variant = variant
+        self.metricActionDisplay = metricActionDisplay
+        self.metricActionLabel = metricActionLabel
+        self.metricActionTint = metricActionTint
+        self.metricActionBaseTint = metricActionBaseTint
+        self.onPrimaryAction = onPrimaryAction
+        self.onMetricAction = onMetricAction
+    }
 
     var body: some View {
         HStack(spacing: MenuBarLayoutTokens.space4) {
@@ -177,18 +207,12 @@ struct MenuBarNodeRow: View {
     @ViewBuilder
     private func metricActionButton(iconOnly: Bool) -> some View {
         if let onMetricAction {
-            Button(action: onMetricAction) {
-                Image(systemName: "bolt.horizontal")
-                    .font(.app(size: T.FontSize.caption, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color(nsColor: .systemTeal).opacity(T.Opacity.solid))
-                    .frame(
-                        width: iconOnly ? self.trailingActionWidth : 14,
-                        height: 14,
-                        alignment: .center)
-            }
-            .buttonStyle(.plain)
-            .help(self.metricActionLabel ?? "")
+            LatencyTestIconButton(
+                label: self.metricActionLabel ?? "",
+                tint: self.metricActionTint,
+                baseTint: self.metricActionBaseTint,
+                size: iconOnly ? self.trailingActionWidth : 14,
+                action: onMetricAction)
         } else if iconOnly {
             Color.clear
         } else {
@@ -282,6 +306,57 @@ private struct MenuBarNodeRowLoadingIndicator: View {
         ProgressView()
             .controlSize(.mini)
             .frame(width: 30, height: 14, alignment: .center)
+    }
+}
+
+struct LatencyTestIconButton: View {
+    let label: String
+    let tint: Color
+    let baseTint: Color
+    let isLoading: Bool
+    let size: CGFloat
+    let fontSize: CGFloat
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    init(
+        label: String,
+        tint: Color,
+        baseTint: Color,
+        isLoading: Bool = false,
+        size: CGFloat = MenuBarLayoutTokens.rowLeadingIcon,
+        fontSize: CGFloat = T.FontSize.caption,
+        action: @escaping () -> Void)
+    {
+        self.label = label
+        self.tint = tint
+        self.baseTint = baseTint
+        self.isLoading = isLoading
+        self.size = size
+        self.fontSize = fontSize
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: self.action) {
+            ZStack {
+                Image(systemName: "bolt.horizontal")
+                    .font(.app(size: self.fontSize, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(self.isHovered ? self.tint : self.baseTint)
+                    .opacity(self.isLoading ? 0 : 1)
+
+                ProgressView()
+                    .controlSize(.mini)
+                    .opacity(self.isLoading ? 1 : 0)
+            }
+            .frame(width: self.size, height: self.size, alignment: .center)
+        }
+        .buttonStyle(.borderless)
+        .disabled(self.isLoading)
+        .onHover { self.isHovered = $0 }
+        .help(self.label)
     }
 }
 
