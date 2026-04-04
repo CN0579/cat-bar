@@ -84,83 +84,55 @@ extension MenuBarRootView {
             let used = upload + download
             return min(max(Double(used) / Double(total), 0), 1)
         }()
+        let updatedTimeWidth: CGFloat = 118
 
         return AttachedPopoverMenu { isHovered in
-            VStack(alignment: .leading, spacing: hasSubscription ? T.space4 : 0) {
-                HStack(alignment: .center, spacing: T.space6) {
-                    Text(name)
-                        .font(.app(size: T.FontSize.body, weight: .semibold))
-                        .foregroundStyle(nativePrimaryLabel)
-                        .lineLimit(1)
-                        .layoutPriority(1)
+            GeometryReader { geo in
+                let columns = self.nodesProviderMainColumnWidths(
+                    totalWidth: geo.size.width,
+                    updatedTimeWidth: updatedTimeWidth)
 
-                    Text("\(nodeCount)")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeSecondaryLabel)
-                        .padding(.horizontal, T.space4)
-                        .padding(.vertical, T.space1)
-                        .background(nativeBadgeCapsule())
+                HStack(spacing: T.space1) {
+                    HStack(alignment: .center, spacing: T.space4) {
+                        Text(name)
+                            .font(.app(size: T.FontSize.body, weight: .semibold))
+                            .foregroundStyle(nativePrimaryLabel)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .minimumScaleFactor(T.minimumScale)
+                            .frame(width: columns.name, alignment: .leading)
 
-                    Text(updatedText)
-                        .font(.app(size: T.FontSize.caption, weight: .regular))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .layoutPriority(2)
+                        Text("\(nodeCount)")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeSecondaryLabel)
+                            .padding(.horizontal, T.space4)
+                            .padding(.vertical, T.space1)
+                            .background(nativeBadgeCapsule())
+                            .frame(width: columns.count, alignment: .leading)
 
-                    Spacer(minLength: T.space4)
+                        Text(updatedText)
+                            .font(.app(size: T.FontSize.caption, weight: .regular))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .lineLimit(1)
+                            .minimumScaleFactor(T.minimumScale)
+                            .frame(width: columns.updatedAt, alignment: .trailing)
 
-                    self.providerActionButton(.refresh, isLoading: isUpdating) {
-                        await appSession.updateProxyProvider(name: name)
-                    }
-                    .frame(width: 18, alignment: .center)
-
-                    Image(systemName: "chevron.right")
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(nativeTertiaryLabel)
-                        .frame(width: T.space8, alignment: .trailing)
-                }
-
-                if hasSubscription {
-                    VStack(alignment: .leading, spacing: T.space2) {
-                        HStack(spacing: 0) {
-                            Text(expireText)
-                                .font(.app(size: T.FontSize.caption, weight: .regular))
-                                .foregroundStyle(expireColor)
-
-                            Spacer(minLength: T.space4)
-
-                            if let upload, let download, let total {
-                                let used = upload + download
-                                let quotaText =
-                                    "\(ValueFormatter.bytesCompactNoSpace(used)) / " +
-                                    "\(ValueFormatter.bytesCompactNoSpace(total))"
-                                Text(quotaText)
-                                    .font(.app(size: T.FontSize.caption, weight: .regular))
-                                    .foregroundStyle(nativeSecondaryLabel)
-                                    .lineLimit(1)
-                            }
+                        self.providerActionButton(.refresh, isLoading: isUpdating) {
+                            await appSession.updateProxyProvider(name: name)
                         }
+                        .frame(width: 18, alignment: .center)
 
-                        if let usedRatio {
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(nativeControlFill.opacity(T.Opacity.solid))
-                                    Capsule()
-                                        .fill(
-                                            (usedRatio >= 0.9
-                                                ? nativeCritical
-                                                : usedRatio >= 0.75 ? nativeWarning : nativeAccent
-                                            ).opacity(T.Opacity.solid))
-                                        .frame(width: geo.size.width * usedRatio)
-                                }
-                            }
-                            .frame(height: T.space6)
-                        }
+                        Image(systemName: "chevron.right")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .frame(width: T.space8, alignment: .trailing)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 }
             }
+            .frame(height: T.compactRowHeight)
             .padding(.horizontal, T.space4)
-            .padding(.vertical, T.space6)
+            .padding(.vertical, T.space1)
             .background(nativeHoverRowBackground(isHovered))
         } content: { _ in
             self.popoverHeader(name: name, count: nodeCount) {
@@ -173,7 +145,25 @@ extension MenuBarRootView {
             }
 
             if hasSubscription {
-                VStack(alignment: .leading, spacing: T.space2) {
+                VStack(alignment: .leading, spacing: T.space4) {
+                    HStack(spacing: T.space4) {
+                        Text(updatedText)
+                            .font(.app(size: T.FontSize.caption, weight: .regular))
+                            .foregroundStyle(nativeTertiaryLabel)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+
+                        if let detail, let vehicleType = detail.vehicleType?.trimmedNonEmpty {
+                            Text(vehicleType)
+                                .font(.app(size: T.FontSize.caption, weight: .medium))
+                                .foregroundStyle(nativeSecondaryLabel)
+                                .padding(.horizontal, T.space4)
+                                .padding(.vertical, T.space1)
+                                .background(nativeBadgeCapsule())
+                        }
+                    }
+
                     HStack(spacing: T.space4) {
                         Text(expireText)
                             .font(.app(size: T.FontSize.caption, weight: .regular))
@@ -220,6 +210,22 @@ extension MenuBarRootView {
                 Task { await appSession.updateProxyProvider(name: name) }
             }
         }
+    }
+
+    private func nodesProviderMainColumnWidths(
+        totalWidth: CGFloat,
+        updatedTimeWidth: CGFloat) -> (name: CGFloat, count: CGFloat, updatedAt: CGFloat)
+    {
+        let actionWidth: CGFloat = 18
+        let chevronWidth: CGFloat = T.space8
+        let spacingCount: CGFloat = 4
+        let spacing = T.space1 * spacingCount
+        let countWidth: CGFloat = 42
+        let available = max(
+            0,
+            totalWidth - countWidth - updatedTimeWidth - actionWidth - chevronWidth - spacing)
+        let nameWidth = max(0, available)
+        return (nameWidth, countWidth, updatedTimeWidth)
     }
 
     private func nodesProviderExpandedContent(detail: ProviderDetail?) -> some View {

@@ -66,6 +66,7 @@ struct AttachedPopoverMenu<Label: View, Content: View>: View {
         .onDisappear {
             self.popoverOpenTask?.cancel()
             self.popoverOpenTask = nil
+            self.dismissPopover()
         }
         .background(
             SideAttachedPopoverHost(
