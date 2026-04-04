@@ -1,4 +1,4 @@
-English | [简体中文](README.zh-CN.md)
+[English](README.md) | 简体中文
 
 <div align="center">
 
@@ -6,7 +6,7 @@ English | [简体中文](README.zh-CN.md)
 
 # CatBar
 
-Menu bar control panel for `mihomo` on macOS, bringing together proxies, rules, connections, logs, and core management in one place.
+专为 macOS 打造的 `mihomo` 菜单栏控制面板，聚合节点、规则、连接、日志与核心管理能力。
 
 <p>
   <img alt="Platform" src="https://img.shields.io/badge/macOS-13%2B-111111?style=flat&logo=apple" />
@@ -26,35 +26,35 @@ Menu bar control panel for `mihomo` on macOS, bringing together proxies, rules, 
 
 ---
 
-## Overview
+## 项目说明
 
-This repository is forked from [Sitoi/ClashBar](https://github.com/Sitoi/ClashBar) and is actively extended and maintained with custom improvements.
+本仓库 fork 自原仓库 [Sitoi/ClashBar](https://github.com/Sitoi/ClashBar)，并在此基础上继续进行二次开发与定制维护。
 
-## Release Notes
+## 发布说明
 
-This repository currently publishes the `no-core` edition only. It does not bundle any Clash / mihomo core binary and ships the app panel plus related management features only.
+本仓库当前只发布 `no-core` 版本，不内置任何 Clash / mihomo 核心二进制，只提供应用面板与相关管理功能。
 
-To enable core functionality, place a compatible `mihomo` executable at:
+如需实际启用内核能力，请自行准备兼容的 `mihomo` 可执行文件，并放入：
 
 `~/Library/Application Support/catbar/core/`
 
-CatBar will load the local core from that directory.
+应用会从该目录读取本地核心。
 
-## Contributors
+## 贡献者
 
-Thanks to everyone who has contributed to the project:
+感谢所有参与贡献的开发者：
 
 [![Contributors](https://contrib.rocks/image?repo=QuentinHsu/cat-bar)](https://github.com/QuentinHsu/cat-bar/graphs/contributors)
 
-## Acknowledgements
+## 致谢
 
-- Special thanks to [Sitoi](https://github.com/Sitoi), the original author of [Sitoi/ClashBar](https://github.com/Sitoi/ClashBar), which provided the foundation for this project.
-- Special thanks as well to [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) for the stable and reliable core capabilities.
+- 特别感谢原作者 [Sitoi](https://github.com/Sitoi) 及其开源的 [Sitoi/ClashBar](https://github.com/Sitoi/ClashBar) 仓库，为本仓库奠定了坚实的基础。
+- 也特别感谢 [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo) 提供稳定可靠的 Core 能力。
 
-## Star History
+## Star 趋势
 
 [![Star History Chart](https://starchart.cc/QuentinHsu/cat-bar.svg?variant=adaptive)](https://starchart.cc/QuentinHsu/cat-bar)
 
-## License
+## 许可证
 
 [GPL-3.0](LICENSE)
