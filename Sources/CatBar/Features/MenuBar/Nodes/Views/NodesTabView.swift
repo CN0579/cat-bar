@@ -308,6 +308,8 @@ extension MenuBarRootView {
         let filtered = nodesViewModel.buildPresentedLocalNodes(
             proxyNodeIDs: appSession.proxyNodeIDs,
             proxyNodeTypes: appSession.proxyNodeTypes,
+            providerNodeNames: appSession.providerNodeNames,
+            providerNodeIDs: appSession.providerNodeIDs,
             proxyProvidersDetail: appSession.proxyProvidersDetail,
             matcher: searchMatcher)
 

@@ -535,6 +535,16 @@ final class AppSession: ObservableObject {
         set { self.proxyGroupPresentationState.proxyNodeIDs = newValue }
     }
 
+    var providerNodeNames: Set<String> {
+        get { self.proxyGroupPresentationState.providerNodeNames }
+        set { self.proxyGroupPresentationState.providerNodeNames = newValue }
+    }
+
+    var providerNodeIDs: Set<String> {
+        get { self.proxyGroupPresentationState.providerNodeIDs }
+        set { self.proxyGroupPresentationState.providerNodeIDs = newValue }
+    }
+
     var groupLatencyLoading: Set<String> {
         get { self.proxyLatencyPresentationState.groupLatencyLoading }
         set { self.proxyLatencyPresentationState.groupLatencyLoading = newValue }

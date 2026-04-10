@@ -5,6 +5,8 @@ struct ProxyGroupsPresentation {
     let history: [String: Int]
     let nodeTypes: [String: String]
     let nodeIDs: [String: String]
+    let providerNodeNames: Set<String>
+    let providerNodeIDs: Set<String>
 }
 
 struct BuildProxyGroupsPresentationUseCase {
@@ -60,6 +62,8 @@ struct BuildProxyGroupsPresentationUseCase {
         var history: [String: Int] = [:]
         var nodeTypes: [String: String] = [:]
         var nodeIDs: [String: String] = [:]
+        var providerNodeNames: Set<String> = []
+        var providerNodeIDs: Set<String> = []
         for proxy in response.proxies.values {
             let trimmedID = proxy.id?.trimmedNonEmpty
             if let trimmedID {
@@ -68,11 +72,23 @@ struct BuildProxyGroupsPresentationUseCase {
             if proxy.all.isEmpty, let type = proxy.type.trimmedNonEmpty {
                 nodeTypes[proxy.name] = type
             }
+            if proxy.all.isEmpty, proxy.providerName != nil {
+                providerNodeNames.insert(proxy.name)
+                if let trimmedID {
+                    providerNodeIDs.insert(trimmedID)
+                }
+            }
             if let latest = proxy.latestDelay {
                 history[trimmedID ?? proxy.name] = latest
             }
         }
 
-        return ProxyGroupsPresentation(groups: groups, history: history, nodeTypes: nodeTypes, nodeIDs: nodeIDs)
+        return ProxyGroupsPresentation(
+            groups: groups,
+            history: history,
+            nodeTypes: nodeTypes,
+            nodeIDs: nodeIDs,
+            providerNodeNames: providerNodeNames,
+            providerNodeIDs: providerNodeIDs)
     }
 }

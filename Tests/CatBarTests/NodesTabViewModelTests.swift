@@ -34,6 +34,8 @@ final class NodesTabViewModelTests: XCTestCase {
                 "Zulu": "vmess",
                 "Alpha": "ss",
             ],
+            providerNodeNames: [],
+            providerNodeIDs: [],
             proxyProvidersDetail: providers)
 
         XCTAssertEqual(result.map(\.name), ["Alpha", "Zulu"])
@@ -74,10 +76,31 @@ final class NodesTabViewModelTests: XCTestCase {
                 "Tokyo Relay": "vmess",
                 "Osaka Direct": "ss",
             ],
+            providerNodeNames: [],
+            providerNodeIDs: [],
             proxyProvidersDetail: [:],
             matcher: subject.searchMatcher(for: "  relay "))
 
         XCTAssertEqual(result.map(\.name), ["Tokyo Relay"])
+    }
+
+    func testBuildLocalNodesExcludesProviderBackedNodesWithoutProviderDetails() {
+        let subject = NodesTabViewModel()
+
+        let result = subject.buildLocalNodes(
+            proxyNodeIDs: [
+                "Remote Node": "remote-id",
+                "Local Node": "local-id",
+            ],
+            proxyNodeTypes: [
+                "Remote Node": "vmess",
+                "Local Node": "ss",
+            ],
+            providerNodeNames: ["Remote Node"],
+            providerNodeIDs: ["remote-id"],
+            proxyProvidersDetail: [:])
+
+        XCTAssertEqual(result.map(\.name), ["Local Node"])
     }
 
     func testSearchMatcherTreatsWhitespaceOnlyKeywordAsEmpty() {

@@ -309,6 +309,8 @@ extension AppSession {
         self.proxyHistoryLatestDelay = presentation.history
         self.proxyNodeTypes = presentation.nodeTypes
         self.proxyNodeIDs = presentation.nodeIDs
+        self.providerNodeNames = presentation.providerNodeNames
+        self.providerNodeIDs = presentation.providerNodeIDs
     }
 
     func normalizedHealthcheckURL(_ value: String?) -> String? {

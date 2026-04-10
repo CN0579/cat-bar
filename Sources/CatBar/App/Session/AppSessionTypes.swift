@@ -246,6 +246,8 @@ struct ProxyGroupPresentationState {
     var proxyHistoryLatestDelay: [String: Int] = [:]
     var proxyNodeTypes: [String: String] = [:]
     var proxyNodeIDs: [String: String] = [:]
+    var providerNodeNames: Set<String> = []
+    var providerNodeIDs: Set<String> = []
 
     mutating func rebuildGroupIndex() {
         self.proxyGroupIndex = Dictionary(
@@ -263,6 +265,8 @@ struct ProxyGroupPresentationState {
         self.proxyHistoryLatestDelay.removeAll(keepingCapacity: keepingCapacity)
         self.proxyNodeTypes.removeAll(keepingCapacity: keepingCapacity)
         self.proxyNodeIDs.removeAll(keepingCapacity: keepingCapacity)
+        self.providerNodeNames.removeAll(keepingCapacity: keepingCapacity)
+        self.providerNodeIDs.removeAll(keepingCapacity: keepingCapacity)
     }
 }
 

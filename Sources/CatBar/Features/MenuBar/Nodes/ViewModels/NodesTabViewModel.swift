@@ -40,11 +40,15 @@ final class NodesTabViewModel: ObservableObject {
     func buildLocalNodes(
         proxyNodeIDs: [String: String],
         proxyNodeTypes: [String: String],
+        providerNodeNames: Set<String>,
+        providerNodeIDs: Set<String>,
         proxyProvidersDetail: [String: ProviderDetail]) -> [LocalNode]
     {
         self.buildPresentedLocalNodes(
             proxyNodeIDs: proxyNodeIDs,
             proxyNodeTypes: proxyNodeTypes,
+            providerNodeNames: providerNodeNames,
+            providerNodeIDs: providerNodeIDs,
             proxyProvidersDetail: proxyProvidersDetail,
             matcher: nil)
     }
@@ -52,17 +56,19 @@ final class NodesTabViewModel: ObservableObject {
     func buildPresentedLocalNodes(
         proxyNodeIDs: [String: String],
         proxyNodeTypes: [String: String],
+        providerNodeNames: Set<String>,
+        providerNodeIDs: Set<String>,
         proxyProvidersDetail: [String: ProviderDetail],
         matcher: SearchMatcher?) -> [LocalNode]
     {
-        var providerNodeNames: Set<String> = []
-        var providerNodeIDs: Set<String> = []
+        var resolvedProviderNodeNames = providerNodeNames
+        var resolvedProviderNodeIDs = providerNodeIDs
         for (_, detail) in proxyProvidersDetail {
             if let proxies = detail.proxies {
                 for proxy in proxies {
-                    providerNodeNames.insert(proxy.name)
+                    resolvedProviderNodeNames.insert(proxy.name)
                     if let id = proxy.id?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty {
-                        providerNodeIDs.insert(id)
+                        resolvedProviderNodeIDs.insert(id)
                     }
                 }
             }
@@ -77,8 +83,8 @@ final class NodesTabViewModel: ObservableObject {
                 name: name,
                 type: type,
                 id: nodeID,
-                providerNodeNames: providerNodeNames,
-                providerNodeIDs: providerNodeIDs)
+                providerNodeNames: resolvedProviderNodeNames,
+                providerNodeIDs: resolvedProviderNodeIDs)
             else {
                 continue
             }
