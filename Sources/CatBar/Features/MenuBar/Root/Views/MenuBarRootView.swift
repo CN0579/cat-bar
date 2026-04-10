@@ -76,6 +76,7 @@ struct MenuBarRootView: View {
     @EnvironmentObject var remoteMachineStore: RemoteMachineStore
     @EnvironmentObject var popoverLayoutModel: PopoverLayoutModel
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.openSourceManagerWindow) var openSourceManagerWindow
 
     @StateObject var rootViewModel = MenuBarRootViewModel()
     @StateObject var nodesViewModel = NodesTabViewModel()
@@ -86,7 +87,6 @@ struct MenuBarRootView: View {
 
     @State var switchingMode: CoreMode?
     @State var isSwitchingMachine = false
-    @State var showRemoteMachineManager = false
     @State var copiedProxyCommandTarget: ProxyCommandCopyTarget?
     @State var proxyCommandCopyResetTask: Task<Void, Never>?
     @State var hoveredProviderName: String?

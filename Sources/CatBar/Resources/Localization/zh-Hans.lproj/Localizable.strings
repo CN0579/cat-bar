@@ -56,11 +56,11 @@
 "ui.mode.direct" = "直连";
 
 "ui.machine.local" = "本地";
-"ui.machine.manage" = "管理远程机器";
-"ui.machine.add" = "添加机器";
-"ui.machine.edit" = "编辑机器";
+"ui.machine.manage" = "管理来源";
+"ui.machine.add" = "添加来源";
+"ui.machine.edit" = "编辑来源";
 "ui.machine.save" = "保存";
-"ui.machine.empty" = "暂无远程机器";
+"ui.machine.empty" = "暂无远程来源";
 "ui.machine.field.name" = "名称";
 "ui.machine.field.host" = "主机地址";
 "ui.machine.field.host_placeholder" = "示例：10.0.0.1 或 controller.example.com";
@@ -74,6 +74,13 @@
 "ui.machine.local_label" = "本地";
 "ui.machine.remote_label" = "远程";
 "ui.machine.status_unreachable" = "无法连接";
+"ui.machine.current_source" = "当前来源";
+"ui.machine.available_sources" = "可用来源";
+"ui.machine.summary_hint" = "本地与远程来源统一在这里维护，切换入口仍保留在主面板顶部。";
+"ui.machine.summary" = "%d 个远程来源，合计 %d 个可切换来源";
+"ui.machine.editor_hint" = "紧凑编辑来源地址、密钥与展示行为";
+"ui.machine.status_unknown" = "未检测";
+"ui.machine.status_checking" = "检测中";
 
 "ui.section.proxy_control" = "代理控制";
 "ui.section.local_app_settings" = "应用设置 (本地)";

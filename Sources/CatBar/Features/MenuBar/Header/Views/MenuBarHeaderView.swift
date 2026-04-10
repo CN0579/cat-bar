@@ -87,18 +87,6 @@ extension MenuBarRootView {
             }
         }
         .padding(.vertical, MenuBarLayoutTokens.space8)
-        .sheet(isPresented: $showRemoteMachineManager) {
-            RemoteMachineManagerView(
-                store: remoteMachineStore,
-                localControllerDisplay: appSession.localExternalControllerDisplay)
-            { target in
-                isSwitchingMachine = true
-                Task { @MainActor in
-                    await appSession.switchToMachineTarget(target)
-                    isSwitchingMachine = false
-                }
-            }
-        }
     }
 
     var headerConnectionControl: some View {
@@ -168,7 +156,7 @@ extension MenuBarRootView {
                 AttachedPopoverMenuDivider()
                 AttachedPopoverMenuItem(title: tr("ui.machine.manage")) {
                     dismiss()
-                    showRemoteMachineManager = true
+                    openSourceManagerWindow()
                 }
             })
             .disabled(isSwitchingMachine)

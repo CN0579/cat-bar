@@ -77,23 +77,46 @@ struct RemoteMachineListView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             self.machineCards
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             self.primaryActionButton(title: self.tr("ui.machine.add"), systemImage: "plus", action: self.onAdd)
         }
     }
 
     private var machineCards: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                self.localCard
-                ForEach(self.store.machines) { machine in
-                    self.remoteCard(machine)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(self.tr("ui.machine.available_sources"))
+                .font(.app(size: 10, weight: .bold))
+                .foregroundStyle(self.palette.tertiaryTextColor)
+                .textCase(.uppercase)
+                .padding(.horizontal, 2)
+
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    self.localCard
+
+                    if self.store.machines.isEmpty {
+                        self.emptyState
+                    } else {
+                        ForEach(self.store.machines) { machine in
+                            self.remoteCard(machine)
+                        }
+                    }
                 }
+                .padding(.vertical, 1)
             }
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
+    }
+
+    private var emptyState: some View {
+        Text(self.tr("ui.machine.empty"))
+            .font(.app(size: 12, weight: .medium))
+            .foregroundStyle(self.palette.secondaryTextColor)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .background(self.cardBackground(selected: false, hovered: false))
     }
 
     private var localCard: some View {
@@ -104,33 +127,40 @@ struct RemoteMachineListView: View {
             guard !isActive else { return }
             self.onSelectTarget(.local)
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: 10) {
                 self.iconTile(symbol: "desktopcomputer", tint: .blue)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(self.tr("ui.machine.local"))
-                        .font(.app(size: 14, weight: .semibold))
-                        .foregroundStyle(self.palette.primaryTextColor)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(self.tr("ui.machine.local"))
+                            .font(.app(size: 13, weight: .semibold))
+                            .foregroundStyle(self.palette.primaryTextColor)
+
+                        if isActive {
+                            self.stateBadge(text: self.tr("ui.machine.active"), tint: .green)
+                        }
+                    }
+
                     Text(self.localControllerDisplay)
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(self.palette.secondaryTextColor)
                         .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isActive ? Color.green : self.palette.tertiaryTextColor)
-                    .opacity(isActive ? 1 : 0)
+                Image(systemName: "arrow.left.circle.fill")
+                    .font(.app(size: 12, weight: .bold))
+                    .foregroundStyle(isActive ? self.palette.tertiaryTextColor : self.palette.accentTint)
+                    .opacity(isActive ? 0.5 : 1)
             }
             .padding(self.palette.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(self.cardBackground(selected: isActive, hovered: hovered))
             .contentShape(RoundedRectangle(cornerRadius: self.palette.cardCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(isActive)
+        .background(self.cardBackground(selected: isActive, hovered: hovered))
         .onHover { self.hoveringLocalCard = $0 }
     }
 
@@ -140,27 +170,32 @@ struct RemoteMachineListView: View {
         let isSwitchEnabled = status.isConnected && !isActive
         let hovered = self.hoveredMachineID == machine.id
 
-        return HStack(spacing: 10) {
+        return HStack(spacing: 8) {
             Button {
                 guard isSwitchEnabled else { return }
                 self.onSelectTarget(.remote(machine))
             } label: {
-                HStack(spacing: 14) {
+                HStack(spacing: 10) {
                     self.iconTile(symbol: "network", tint: self.statusTint(status, active: isActive))
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(machine.name)
-                            .font(.app(size: 14, weight: .semibold))
-                            .foregroundStyle(self.palette.primaryTextColor)
-                            .lineLimit(1)
-
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
-                            self.statusDot(status)
-                            Text(machine.displayAddress)
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .foregroundStyle(self.palette.secondaryTextColor)
+                            Text(machine.name)
+                                .font(.app(size: 13, weight: .semibold))
+                                .foregroundStyle(self.palette.primaryTextColor)
                                 .lineLimit(1)
+
+                            if isActive {
+                                self.stateBadge(text: self.tr("ui.machine.active"), tint: .green)
+                            } else {
+                                self.statusBadge(status)
+                            }
                         }
+
+                        Text(machine.displayAddress)
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(self.palette.secondaryTextColor)
+                            .lineLimit(1)
                     }
 
                     Spacer(minLength: 0)
@@ -173,7 +208,7 @@ struct RemoteMachineListView: View {
 
             if isActive {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .bold))
+                    .font(.app(size: 12, weight: .bold))
                     .foregroundStyle(.green)
                     .frame(width: self.palette.trailingActionAreaWidth, alignment: .trailing)
             } else {
@@ -207,9 +242,9 @@ struct RemoteMachineListView: View {
     private func primaryActionButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.app(size: 14, weight: .medium))
+                .font(.app(size: 13, weight: .semibold))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, 9)
                 .contentShape(RoundedRectangle(cornerRadius: self.palette.cardCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -219,20 +254,50 @@ struct RemoteMachineListView: View {
                 .fill(self.palette.accentTint))
         .overlay {
             RoundedRectangle(cornerRadius: self.palette.cardCornerRadius, style: .continuous)
-                .stroke(self.palette.accentTint.opacity(0.65), lineWidth: MenuBarLayoutTokens.stroke)
+                .stroke(self.palette.accentTint.opacity(0.64), lineWidth: MenuBarLayoutTokens.stroke)
         }
-        .shadow(color: Color.black.opacity(self.palette.isDarkAppearance ? 0.20 : 0.10), radius: 10, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(self.palette.isDarkAppearance ? 0.15 : 0.08), radius: 8, x: 0, y: 3)
     }
 
     private func iconTile(symbol: String, tint: Color) -> some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(tint.opacity(self.palette.isDarkAppearance ? 0.16 : 0.10))
-            .frame(width: 44, height: 44)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(tint.opacity(self.palette.isDarkAppearance ? 0.14 : 0.09))
+            .frame(width: 34, height: 34)
             .overlay {
                 Image(systemName: symbol)
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(tint)
             }
+    }
+
+    private func stateBadge(text: String, tint: Color) -> some View {
+        Text(text)
+            .font(.app(size: 9, weight: .bold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(tint.opacity(self.palette.isDarkAppearance ? 0.16 : 0.10), in: Capsule())
+    }
+
+    private func statusBadge(_ status: MachineConnectionStatus) -> some View {
+        HStack(spacing: 5) {
+            if case .checking = status {
+                ProgressView()
+                    .controlSize(.mini)
+            } else {
+                Circle()
+                    .fill(self.statusTint(status, active: false))
+                    .frame(width: 5, height: 5)
+            }
+
+            Text(self.statusText(status))
+                .font(.app(size: 9, weight: .bold))
+                .foregroundStyle(self.statusTint(status, active: false))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(self.statusTint(status, active: false).opacity(self.palette.isDarkAppearance ? 0.14 : 0.08), in: Capsule())
     }
 
     private func inlineActionButton(
@@ -243,7 +308,7 @@ struct RemoteMachineListView: View {
     {
         let hoveredAction = HoveredRowAction(machineID: machineID, action: rowAction)
         let isHovered = self.hoveredRowAction == hoveredAction
-        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
         let tint = self.actionButtonTint(for: rowAction, hovered: isHovered, emphasized: emphasized)
         let fill = self.actionButtonFill(for: rowAction, hovered: isHovered, emphasized: emphasized)
         let border = self.actionButtonBorder(for: rowAction, hovered: isHovered, emphasized: emphasized)
@@ -251,10 +316,10 @@ struct RemoteMachineListView: View {
 
         return Button(action: action) {
             Image(systemName: rowAction.symbol)
-                .font(.app(size: MenuBarLayoutTokens.FontSize.caption, weight: .semibold))
+                .font(.app(size: 10, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
+                .frame(width: 24, height: 24)
                 .background(shape.fill(fill))
                 .overlay {
                     shape.stroke(border, lineWidth: MenuBarLayoutTokens.stroke)
@@ -278,7 +343,7 @@ struct RemoteMachineListView: View {
         editAction: @escaping () -> Void,
         deleteAction: @escaping () -> Void) -> some View
     {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             self.inlineActionButton(machineID: machineID, rowAction: .edit, emphasized: emphasized, action: editAction)
             self.inlineActionButton(machineID: machineID, rowAction: .delete, emphasized: emphasized, action: deleteAction)
         }
@@ -301,10 +366,10 @@ struct RemoteMachineListView: View {
         }
 
         if emphasized {
-            return Color.black.opacity(self.palette.isDarkAppearance ? 0.18 : 0.06)
+            return Color.black.opacity(self.palette.isDarkAppearance ? 0.18 : 0.05)
         }
 
-        return Color.black.opacity(self.palette.isDarkAppearance ? 0.12 : 0.035)
+        return Color.black.opacity(self.palette.isDarkAppearance ? 0.12 : 0.03)
     }
 
     private func actionButtonBorder(for rowAction: RowAction, hovered: Bool, emphasized: Bool) -> Color {
@@ -314,7 +379,7 @@ struct RemoteMachineListView: View {
                 : self.palette.accentTint.opacity(self.palette.isDarkAppearance ? 0.48 : 0.28)
         }
 
-        return self.palette.borderColor.opacity(emphasized ? 1 : (self.palette.isDarkAppearance ? 0.94 : 0.78))
+        return self.palette.borderColor.opacity(emphasized ? 1 : (self.palette.isDarkAppearance ? 0.9 : 0.78))
     }
 
     private func cardBackground(selected: Bool, hovered: Bool) -> some View {
@@ -324,19 +389,19 @@ struct RemoteMachineListView: View {
                 RoundedRectangle(cornerRadius: self.palette.cardCornerRadius, style: .continuous)
                     .stroke(self.palette.borderColor, lineWidth: MenuBarLayoutTokens.stroke)
             }
-            .shadow(color: Color.black.opacity(self.palette.isDarkAppearance ? 0.12 : 0.06), radius: 14, x: 0, y: 3)
+            .shadow(color: Color.black.opacity(self.palette.isDarkAppearance ? 0.10 : 0.04), radius: 9, x: 0, y: 2)
     }
 
-    private func statusDot(_ status: MachineConnectionStatus) -> some View {
-        Group {
-            if case .checking = status {
-                ProgressView()
-                    .controlSize(.mini)
-            } else {
-                Circle()
-                    .fill(self.statusTint(status, active: false))
-                    .frame(width: 6, height: 6)
-            }
+    private func statusText(_ status: MachineConnectionStatus) -> String {
+        switch status {
+        case .unknown:
+            self.tr("ui.machine.status_unknown")
+        case .checking:
+            self.tr("ui.machine.status_checking")
+        case let .connected(version):
+            version
+        case let .failed(reason):
+            reason
         }
     }
 
@@ -413,14 +478,14 @@ struct RemoteMachineEditorCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(self.name.trimmingCharacters(in: .whitespaces).isEmpty ? self.tr("ui.machine.field.name") : self.name)
                     .font(.app(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(self.palette.primaryTextColor)
 
                 Text(self.connectionPreview)
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(self.palette.secondaryTextColor)
                     .lineLimit(1)
             }
@@ -429,7 +494,7 @@ struct RemoteMachineEditorCard: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 RemoteMachineEditorActionButton(
                     title: self.tr("ui.action.cancel"),
                     palette: self.palette,
@@ -463,14 +528,14 @@ struct RemoteMachineEditorCard: View {
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.name"), palette: self.palette) {
                 TextField(self.tr("ui.machine.field.name"), text: self.$name)
                     .textFieldStyle(.roundedBorder)
-                    .font(.app(size: 13, weight: .regular))
+                    .font(.app(size: 12, weight: .regular))
                     .focused(self.$focusedField, equals: .name)
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.host"), palette: self.palette) {
                 TextField(self.tr("ui.machine.field.host_placeholder"), text: self.$host)
                     .textFieldStyle(.roundedBorder)
-                    .font(.app(size: 13, weight: .regular))
+                    .font(.app(size: 12, weight: .regular))
                     .focused(self.$focusedField, equals: .host)
             }
             if self.hostContainsProtocolPrefix {
@@ -479,11 +544,11 @@ struct RemoteMachineEditorCard: View {
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.port"), palette: self.palette) {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     TextField(self.tr("ui.machine.field.port"), text: self.$port)
                         .textFieldStyle(.roundedBorder)
-                        .font(.app(size: 13, weight: .regular))
-                        .frame(width: 92)
+                        .font(.app(size: 12, weight: .regular))
+                        .frame(width: 84)
                         .focused(self.$focusedField, equals: .port)
 
                     Spacer(minLength: 0)
@@ -491,25 +556,22 @@ struct RemoteMachineEditorCard: View {
                     Toggle("HTTPS", isOn: self.$useHTTPS)
                         .toggleStyle(.switch)
                         .controlSize(.small)
-                        .font(.app(size: 12, weight: .medium))
+                        .font(.app(size: 11, weight: .medium))
                 }
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.secret"), palette: self.palette) {
                 SecureField(self.tr("ui.machine.field.secret"), text: self.$secret)
                     .textFieldStyle(.roundedBorder)
-                    .font(.app(size: 13, weight: .regular))
+                    .font(.app(size: 12, weight: .regular))
                     .focused(self.$focusedField, equals: .secret)
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.show_web_ui_button"), palette: self.palette) {
-                HStack(spacing: 10) {
-                    Spacer(minLength: 0)
-                    Toggle("", isOn: self.$showsWebDashboardButton)
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                }
+                Toggle("", isOn: self.$showsWebDashboardButton)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
             }
         }
         .background(self.formSurface)
@@ -522,13 +584,13 @@ struct RemoteMachineEditorCard: View {
     }
 
     private var formSurface: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(self.palette.cardFill)
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(self.palette.borderColor, lineWidth: MenuBarLayoutTokens.stroke)
             }
-            .shadow(color: Color.black.opacity(0.05), radius: 14, x: 0, y: 3)
+            .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 2)
     }
 
     private func save() {
@@ -571,14 +633,14 @@ private struct RemoteMachineEditorLabeledRow<Content: View>: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(self.title)
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(size: 11, weight: .semibold))
                 .foregroundStyle(self.palette.secondaryTextColor)
-                .frame(width: 56, alignment: .leading)
+                .frame(width: 66, alignment: .leading)
 
             self.content()
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 }
 
@@ -586,21 +648,20 @@ private struct RemoteMachineEditorValidationRow: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(size: 11, weight: .semibold))
                 .foregroundStyle(.red)
-                .frame(width: 14, alignment: .center)
 
             Text(self.text)
-                .font(.app(size: 12, weight: .medium))
+                .font(.app(size: 11, weight: .medium))
                 .foregroundStyle(.red)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 }
 
@@ -618,18 +679,18 @@ private struct RemoteMachineEditorActionButton: View {
     var body: some View {
         Button(action: self.action) {
             Text(self.title)
-                .font(.app(size: 14, weight: .medium))
+                .font(.app(size: 13, weight: .semibold))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.vertical, 9)
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
         .foregroundStyle(self.foregroundColor)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(self.backgroundColor))
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(self.borderColor, lineWidth: MenuBarLayoutTokens.stroke)
         }
     }

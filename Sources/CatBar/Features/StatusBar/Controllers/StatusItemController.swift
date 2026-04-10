@@ -22,6 +22,7 @@ private final class FloatingPanel: NSPanel {
 private struct StatusItemPopoverRootView: View {
     @ObservedObject var appSession: AppSession
     @ObservedObject var popoverLayoutModel: PopoverLayoutModel
+    let openSourceManagerWindow: () -> Void
 
     var body: some View {
         MenuBarRootView()
@@ -29,6 +30,7 @@ private struct StatusItemPopoverRootView: View {
             .environmentObject(self.appSession.connectionsStore)
             .environmentObject(self.appSession.remoteMachineStore)
             .environmentObject(self.popoverLayoutModel)
+            .environment(\.openSourceManagerWindow, OpenSourceManagerWindowAction(handler: self.openSourceManagerWindow))
     }
 }
 
@@ -56,6 +58,7 @@ final class StatusItemController: NSObject {
     private var screenParametersObserver: Any?
     private var lockedPanelOriginX: CGFloat?
     private var popoverHostingController: NSHostingController<StatusItemPopoverRootView>?
+    private lazy var sourceManagerWindowController = SourceManagerWindowController(appSession: self.appSession)
     private var panelStabilizationTask: Task<Void, Never>?
 
     private let iconOnlyRefreshInterval: TimeInterval = 0.12
@@ -172,7 +175,16 @@ final class StatusItemController: NSObject {
     private var popoverRootView: StatusItemPopoverRootView {
         StatusItemPopoverRootView(
             appSession: self.appSession,
-            popoverLayoutModel: self.popoverLayoutModel)
+            popoverLayoutModel: self.popoverLayoutModel,
+            openSourceManagerWindow: { [weak self] in
+                self?.presentSourceManagerWindow()
+            })
+    }
+
+    private func presentSourceManagerWindow() {
+        let preferredScreen = self.panel.screen ?? self.statusItem.button?.window?.screen ?? NSScreen.main
+        self.closePopover(nil)
+        self.sourceManagerWindowController.present(preferredScreen: preferredScreen)
     }
 
     private func configureStatusItem() {

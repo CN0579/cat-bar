@@ -18,9 +18,9 @@ struct RemoteMachineManagerView: View {
     @ObservedObject var store: RemoteMachineStore
     let localControllerDisplay: String
     let onSwitchTarget: (MachineTarget) -> Void
+    let onClose: () -> Void
 
     @State private var editorMode: EditorMode?
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     private var language: AppLanguage {
@@ -28,15 +28,15 @@ struct RemoteMachineManagerView: View {
     }
 
     private var panelWidth: CGFloat {
-        MenuBarLayoutTokens.panelWidth
+        436
     }
 
     private var panelHeight: CGFloat {
-        500
+        552
     }
 
     private var outerPadding: CGFloat {
-        16
+        14
     }
 
     private var isDarkAppearance: Bool {
@@ -44,7 +44,7 @@ struct RemoteMachineManagerView: View {
     }
 
     private var panelBackground: Color {
-        Color(nsColor: .windowBackgroundColor)
+        Color(nsColor: .windowBackgroundColor).opacity(self.isDarkAppearance ? 0.96 : 0.985)
     }
 
     private var primaryTextColor: Color {
@@ -63,7 +63,7 @@ struct RemoteMachineManagerView: View {
 
     private var borderColor: Color {
         Color(nsColor: .separatorColor)
-            .opacity(self.isDarkAppearance ? 0.22 : 0.10)
+            .opacity(self.isDarkAppearance ? 0.28 : 0.12)
     }
 
     private var separatorColor: Color {
@@ -73,16 +73,16 @@ struct RemoteMachineManagerView: View {
 
     private var cardFill: Color {
         if self.isDarkAppearance {
-            return Color.white.opacity(0.05)
+            return Color.white.opacity(0.045)
         }
-        return Color.white.opacity(0.42)
+        return Color.white.opacity(0.72)
     }
 
     private var cardHoverFill: Color {
         if self.isDarkAppearance {
-            return Color.white.opacity(0.10)
+            return Color.white.opacity(0.085)
         }
-        return Color.white.opacity(0.62)
+        return Color.white.opacity(0.88)
     }
 
     private var cardSelectedFill: Color {
@@ -95,9 +95,9 @@ struct RemoteMachineManagerView: View {
 
     private var managerPalette: RemoteMachineManagerPalette {
         .init(
-            cardPadding: 12,
-            cardCornerRadius: 12,
-            trailingActionAreaWidth: 66,
+            cardPadding: 10,
+            cardCornerRadius: 10,
+            trailingActionAreaWidth: 58,
             primaryTextColor: self.primaryTextColor,
             secondaryTextColor: self.secondaryTextColor,
             tertiaryTextColor: self.tertiaryTextColor,
@@ -147,8 +147,14 @@ struct RemoteMachineManagerView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(width: self.panelWidth, height: self.panelHeight, alignment: .topLeading)
+        .background(
+            AppMaterialSurface(
+                cornerRadius: 14,
+                fallbackStyle: .material(.regularMaterial),
+                stroke: self.separatorColor)
+        )
         .background(self.panelBackground)
-        .clipShape(RoundedRectangle(cornerRadius: MenuBarLayoutTokens.panelCornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .animation(.snappy(duration: 0.18), value: self.isEditing)
         .onAppear {
             self.store.startPeriodicConnectivityChecks()
@@ -161,12 +167,12 @@ struct RemoteMachineManagerView: View {
     private var headerBar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(self.accentTint.opacity(self.isDarkAppearance ? 0.22 : 0.14))
-                    .frame(width: 28, height: 28)
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(self.accentTint.opacity(self.isDarkAppearance ? 0.18 : 0.12))
+                    .frame(width: 30, height: 30)
                     .overlay {
-                        Image(systemName: "network")
-                            .font(.app(size: MenuBarLayoutTokens.FontSize.body, weight: .semibold))
+                        Image(systemName: self.isEditing ? "square.and.pencil" : "point.3.connected.trianglepath.dotted")
+                            .font(.app(size: 12, weight: .semibold))
                             .foregroundStyle(self.accentTint)
                     }
 
@@ -181,7 +187,7 @@ struct RemoteMachineManagerView: View {
                 if self.isEditing {
                     self.editorMode = nil
                 } else {
-                    self.dismiss()
+                    self.onClose()
                 }
             } label: {
                 Image(systemName: self.isEditing ? "chevron.left" : "xmark")
@@ -195,7 +201,7 @@ struct RemoteMachineManagerView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, self.outerPadding)
-        .padding(.vertical, 12)
+        .padding(.vertical, 11)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(self.separatorColor)
@@ -210,7 +216,7 @@ struct RemoteMachineManagerView: View {
             palette: self.managerPalette,
             onSelectTarget: { target in
                 self.onSwitchTarget(target)
-                self.dismiss()
+                self.onClose()
             },
             onAdd: {
                 self.editorMode = .add
