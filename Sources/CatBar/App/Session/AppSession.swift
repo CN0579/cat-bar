@@ -175,7 +175,7 @@ final class AppSession: ObservableObject {
     }
 
     func presentedProxyGroup(named name: String) -> ProxyGroup? {
-        self.proxyGroupPresentationState.proxyGroupIndex[name]
+        self.proxyGroupPresentationState.group(named: name)
     }
 
     func clearPresentedProxyLatencyState() {

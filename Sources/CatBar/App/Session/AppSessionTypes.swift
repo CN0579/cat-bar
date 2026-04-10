@@ -260,7 +260,7 @@ struct ProxyGroupPresentationState {
             self.rebuildGroupIndex()
         }
     }
-    var proxyGroupIndex: [String: ProxyGroup] = [:]
+    private(set) var proxyGroupIndicesByName: [String: Int] = [:]
     var proxyHistoryLatestDelay: [String: Int] = [:]
     var proxyNodeTypes: [String: String] = [:]
     var proxyNodeIDs: [String: String] = [:]
@@ -268,18 +268,32 @@ struct ProxyGroupPresentationState {
     var providerNodeIDs: Set<String> = []
 
     mutating func rebuildGroupIndex() {
-        self.proxyGroupIndex = Dictionary(
-            self.proxyGroups.map { ($0.name, $0) },
-            uniquingKeysWith: { _, latest in latest })
+        var nextIndicesByName: [String: Int] = [:]
+        nextIndicesByName.reserveCapacity(self.proxyGroups.count)
+
+        for (index, group) in self.proxyGroups.enumerated() {
+            nextIndicesByName[group.name] = index
+        }
+
+        self.proxyGroupIndicesByName = nextIndicesByName
+    }
+
+    func group(named name: String) -> ProxyGroup? {
+        guard let index = self.proxyGroupIndicesByName[name],
+              self.proxyGroups.indices.contains(index)
+        else {
+            return nil
+        }
+        return self.proxyGroups[index]
     }
 
     mutating func clearResolvedGroupIndex(keepingCapacity: Bool) {
-        self.proxyGroupIndex.removeAll(keepingCapacity: keepingCapacity)
+        self.proxyGroupIndicesByName.removeAll(keepingCapacity: keepingCapacity)
     }
 
     mutating func clear(keepingCapacity: Bool) {
         self.proxyGroups.removeAll(keepingCapacity: keepingCapacity)
-        self.proxyGroupIndex.removeAll(keepingCapacity: keepingCapacity)
+        self.proxyGroupIndicesByName.removeAll(keepingCapacity: keepingCapacity)
         self.proxyHistoryLatestDelay.removeAll(keepingCapacity: keepingCapacity)
         self.proxyNodeTypes.removeAll(keepingCapacity: keepingCapacity)
         self.proxyNodeIDs.removeAll(keepingCapacity: keepingCapacity)
