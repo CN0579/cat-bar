@@ -4,26 +4,18 @@ import SwiftUI
 
 @MainActor
 final class AppSession: ObservableObject {
-    @Published var statusText: String = "Stopped" {
-        didSet { self.refreshMenuBarDisplaySnapshotIfNeeded() }
+    private var resolveAppLaunchAutoStartUseCase: ResolveAppLaunchAutoStartUseCase {
+        ResolveAppLaunchAutoStartUseCase()
     }
 
-    @Published var version: String = "-"
-    @Published var controller: String = "127.0.0.1:9090"
-    @Published var externalControllerDisplay: String = "127.0.0.1:9090"
+    var shouldRestartStreamUseCase: ShouldRestartStreamUseCase {
+        ShouldRestartStreamUseCase()
+    }
+
+    @Published private var coreRuntimePresentationState = CoreRuntimePresentationState()
     var localExternalControllerDisplay: String = "127.0.0.1:9090"
-    @Published var controllerUIURL: String = "http://127.0.0.1:9090/ui"
-    @Published var controllerSecret: String?
 
-    @Published var traffic = TrafficSnapshot(up: 0, down: 0) {
-        didSet { self.refreshMenuBarDisplaySnapshotIfNeeded() }
-    }
-
-    @Published var memory = MemorySnapshot(inuse: 0)
-    @Published var displayUpTotal: Int64 = 0
-    @Published var displayDownTotal: Int64 = 0
-    @Published var trafficHistoryUp: [Int64] = []
-    @Published var trafficHistoryDown: [Int64] = []
+    @Published private var runtimeMetricsPresentationState = RuntimeMetricsPresentationState()
 
     var connectionsCount: Int {
         self.connectionsStore.connectionsCount
@@ -36,128 +28,36 @@ final class AppSession: ObservableObject {
     let connectionsStore = ConnectionsStore()
     var appUpdater: (any AppUpdating)?
 
-    @Published var currentMode: CoreMode = .rule
-    @Published var logLevel: String = "info"
-    @Published var port: Int?
-    @Published var socksPort: Int?
-    @Published var redirPort: Int?
-    @Published var tproxyPort: Int?
-    @Published var mixedPort: Int = 7890
+    @Published private var configPresentationState = ConfigPresentationState()
+    @Published private var proxyGroupPresentationState = ProxyGroupPresentationState()
+    @Published private var proxyLatencyPresentationState = ProxyLatencyPresentationState()
+    @Published private var providerPresentationState = ProviderPresentationState()
+    @Published private var systemProxyPresentationState = SystemProxyPresentationState()
 
-    @Published var mihomoBinaryPath: String = "-"
-    @Published var selectedConfigName: String = "-"
-    @Published var configDirectoryPath: String = "-"
-    @Published var availableConfigFileNames: [String] = []
-    @Published var remoteConfigMenuStates: [String: RemoteConfigMenuState] = [:]
-
-    @Published var proxyGroups: [ProxyGroup] = []
-    @Published var groupLatencyLoading: Set<String> = []
-    @Published var nodeLatencyLoading: Set<String> = []
-    @Published var groupLatencyPendingDelayKeys: [String: Set<String>] = [:]
-    var groupLoadingRefCount = RefCountedPresence<String>()
-    var pendingDelayKeyRefCount = NestedRefCountedPresence<String, String>()
-    var nodeLoadingRefCount = RefCountedPresence<String>()
-    var proxyGroupIndex: [String: ProxyGroup] = [:]
-    @Published var groupLatencies: [String: [String: Int]] = [:]
-    @Published var liveProxyLatestDelay: [String: Int] = [:]
-    @Published var proxyHistoryLatestDelay: [String: Int] = [:]
-    @Published var proxyNodeTypes: [String: String] = [:]
-    @Published var proxyNodeIDs: [String: String] = [:]
-
-    @Published var providerProxyCount: Int = 0
-    @Published var providerRuleCount: Int = 0
-    @Published var rulesCount: Int = 0
-    @Published var proxyProvidersDetail: [String: ProviderDetail] = [:] {
-        didSet {
-            self.sortedProxyProviderNames = self.proxyProvidersDetail.keys.sorted {
-                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
-            }
-        }
-    }
-
-    private(set) var sortedProxyProviderNames: [String] = []
-    @Published var providerUpdating: Set<String> = []
-    @Published var isProxyProvidersRefreshing: Bool = false
-    @Published var ruleProviders: [String: ProviderDetail] = [:]
-    @Published var ruleItems: [RuleItem] = []
-    @Published var isRuleProvidersRefreshing: Bool = false
-
-    @Published var isSystemProxyEnabled: Bool = false
-    @Published var systemProxyEnableIntentInFlight: Bool = false
-    @Published var systemProxyHelperFailureReason: SystemProxyHelperFailureReason?
-    @Published var systemProxyHelperFailureMessage: String?
-    @Published var systemProxyBackgroundActivityAllowed: Bool?
-    @Published var systemProxyHelperProcessRunning: Bool?
-    @Published var systemProxyActiveDisplay: String?
-    @Published var systemProxyOpenFailureHint: String?
-
-    @Published var isProxySyncing: Bool = false
-    @Published var isTunEnabled: Bool = false
-    @Published var isTunSyncing: Bool = false
-
-    @Published var apiStatus: APIHealth = .unknown {
-        didSet { self.refreshMenuBarDisplaySnapshotIfNeeded() }
-    }
-
-    @Published var errorLogs: [AppErrorLogEntry] = []
-    @Published var startupErrorMessage: String?
-    @Published var coreActionState: CoreActionState = .idle
-    @Published var coreUpgradeState: CoreUpgradeState = .idle
-    @Published var providerRefreshStatus: ProviderRefreshStatus = .idle
-    @Published var uiLanguage: AppLanguage = .zhHans
-    @Published var appearanceMode: AppAppearanceMode = .system
-    @Published var isPanelPresented: Bool = false
-    @Published var isQuittingApp: Bool = false
-    @Published var activeMenuTab: RootTab = .proxy
-    @Published var launchAtLoginEnabled: Bool = false
-    @Published var launchAtLoginErrorMessage: String?
-    @Published var latestAppReleaseInfo: AppReleaseInfo?
+    @Published private var logPresentationState = LogPresentationState()
+    @Published private var coreControlPresentationState = CoreControlPresentationState()
+    @Published private var interfacePresentationState = InterfacePresentationState()
+    @Published private var launchAtLoginPresentationState = LaunchAtLoginPresentationState()
+    @Published private var appReleasePresentationState = AppReleasePresentationState()
+    private var lifecycleCoordinationState = LifecycleCoordinationState()
     @Published private(set) var menuBarDisplaySnapshot = MenuBarDisplay(
         mode: .iconOnly,
         symbolName: "bolt.slash.circle",
         speedLines: nil,
         isRunning: false)
 
-    @Published var settingsAllowLan: Bool = false
-    @Published var settingsIPv6: Bool = false
-    @Published var settingsTCPConcurrent: Bool = false
-    @Published var settingsLogLevel: String = ConfigLogLevel.info.rawValue
-    @Published var settingsPort: String = "0"
-    @Published var settingsSocksPort: String = "0"
-    @Published var settingsMixedPort: String = "7890"
-    @Published var settingsRedirPort: String = "0"
-    @Published var settingsTProxyPort: String = "0"
-
-    @Published var settingsSyncingKey: String?
+    @Published private var settingsPresentationState = SettingsPresentationState()
     var isCoreSettingSyncing: Bool {
-        self.settingsSyncingKey != nil
+        self.settingsPresentationState.isCoreSettingSyncing
     }
 
-    @Published var settingsErrorMessage: String?
-    @Published var settingsSavedMessage: String?
-    var lastSyncedEditableSettings: EditableSettingsSnapshot?
-    var preserveLocalSettingsOnNextSync = false
-    var pendingConfigSwitchOverlaySettings: EditableSettingsSnapshot?
-    var pendingAppLaunchOverlaySettings: EditableSettingsSnapshot?
-    var suppressSettingsPersistence = false
+    private let menuBarDisplayResolver = MenuBarDisplayResolver()
 
     var runtimeVisualStatus: RuntimeVisualStatus {
-        let normalized = self.statusText.lowercased()
-        if normalized == "starting" { return .starting }
-        if normalized == "failed" { return .failed }
-
-        let running = self.coreRepository.isRunning || normalized == "running"
-        if running {
-            switch self.apiStatus {
-            case .healthy:
-                return .runningHealthy
-            case .failed:
-                return .failed
-            case .degraded, .unknown:
-                return .runningDegraded
-            }
-        }
-        return .stopped
+        self.menuBarDisplayResolver.resolveRuntimeVisualStatus(
+            statusText: self.statusText,
+            apiStatus: self.apiStatus,
+            coreIsRunning: self.coreRepository.isRunning)
     }
 
     var runtimeStatusText: String {
@@ -178,22 +78,13 @@ final class AppSession: ObservableObject {
 
     // DRY: unify "running" checks across AppSession and extensions.
     var isRuntimeRunning: Bool {
-        self.coreRepository.isRunning || self.statusText.caseInsensitiveCompare("running") == .orderedSame
+        self.menuBarDisplayResolver.resolveIsRuntimeRunning(
+            statusText: self.statusText,
+            coreIsRunning: self.coreRepository.isRunning)
     }
 
     var menuBarSymbolName: String {
-        switch self.runtimeVisualStatus {
-        case .runningHealthy:
-            "bolt.horizontal.circle.fill"
-        case .runningDegraded:
-            "bolt.horizontal.circle"
-        case .starting:
-            "clock.arrow.circlepath"
-        case .failed:
-            "exclamationmark.triangle.fill"
-        case .stopped:
-            "bolt.slash.circle"
-        }
+        self.menuBarDisplayResolver.resolveSymbolName(for: self.runtimeVisualStatus)
     }
 
     var statusBarDisplayMode: StatusBarDisplayMode {
@@ -210,35 +101,15 @@ final class AppSession: ObservableObject {
     }
 
     var menuBarSpeedLines: MenuBarSpeedLines {
-        guard self.isRuntimeRunning else { return .zero }
-
-        let up = ValueFormatter.speed(max(0, self.traffic.up)).replacingOccurrences(of: " ", with: "")
-        let down = ValueFormatter.speed(max(0, self.traffic.down)).replacingOccurrences(of: " ", with: "")
-        return MenuBarSpeedLines(up: "\(up)↑", down: "\(down)↓")
+        self.menuBarDisplayResolver.resolveSpeedLines(traffic: self.traffic, isRuntimeRunning: self.isRuntimeRunning)
     }
 
     private var computedMenuBarDisplay: MenuBarDisplay {
-        let running = self.isRuntimeRunning
-        switch self.statusBarDisplayMode {
-        case .iconOnly:
-            return MenuBarDisplay(
-                mode: .iconOnly,
-                symbolName: self.menuBarSymbolName,
-                speedLines: nil,
-                isRunning: running)
-        case .iconAndSpeed:
-            return MenuBarDisplay(
-                mode: .iconAndSpeed,
-                symbolName: self.menuBarSymbolName,
-                speedLines: self.menuBarSpeedLines,
-                isRunning: running)
-        case .speedOnly:
-            return MenuBarDisplay(
-                mode: .speedOnly,
-                symbolName: nil,
-                speedLines: self.menuBarSpeedLines,
-                isRunning: running)
-        }
+        self.menuBarDisplayResolver.resolveDisplay(
+            mode: self.statusBarDisplayMode,
+            runtimeVisualStatus: self.runtimeVisualStatus,
+            isRuntimeRunning: self.isRuntimeRunning,
+            traffic: self.traffic)
     }
 
 
@@ -249,12 +120,703 @@ final class AppSession: ObservableObject {
         self.menuBarDisplaySnapshot = next
     }
 
+    func syncConfigPresentationState(path: String, availableFileNames: [String]) {
+        self.configPresentationState.syncConfigDirectory(
+            path: path,
+            availableFileNames: availableFileNames)
+    }
+
+    func clearPresentedLogs(keepingCapacity: Bool) {
+        self.logPresentationState.clear(keepingCapacity: keepingCapacity)
+    }
+
+    func clearPresentedTrafficHistory(historyMaxPoints: Int) {
+        self.runtimeMetricsPresentationState.clearTrafficHistory(historyMaxPoints: historyMaxPoints)
+    }
+
+    func appendPresentedTrafficHistory(up: Int64, down: Int64, historyMaxPoints: Int) {
+        self.runtimeMetricsPresentationState.appendTrafficHistory(
+            up: up,
+            down: down,
+            historyMaxPoints: historyMaxPoints)
+    }
+
+    func updatePresentedTrafficTotals(from snapshot: TrafficSnapshot, now: Date) {
+        self.runtimeMetricsPresentationState.updateTrafficTotals(from: snapshot, now: now)
+    }
+
+    func applyPresentedRuntimeConfigSnapshot(
+        _ config: ConfigSnapshot,
+        normalizeMode: (String?) -> CoreMode?)
+    {
+        self.coreRuntimePresentationState.applyRuntimeConfigSnapshot(
+            config,
+            normalizeMode: normalizeMode)
+    }
+
+    func trimPresentedLogs(to maxEntries: Int) {
+        self.logPresentationState.trim(to: maxEntries)
+    }
+
+    func prependPresentedLogs(_ entries: [AppErrorLogEntry], limit: Int) {
+        self.logPresentationState.prepend(entries, limit: limit)
+    }
+
+    func rebuildPresentedProxyGroupIndex() {
+        self.proxyGroupPresentationState.rebuildGroupIndex()
+    }
+
+    func clearPresentedProxyGroupIndex(keepingCapacity: Bool = false) {
+        self.proxyGroupPresentationState.clearResolvedGroupIndex(keepingCapacity: keepingCapacity)
+    }
+
+    func clearPresentedProxyGroups(keepingCapacity: Bool = false) {
+        self.proxyGroupPresentationState.clear(keepingCapacity: keepingCapacity)
+    }
+
+    func presentedProxyGroup(named name: String) -> ProxyGroup? {
+        self.proxyGroupPresentationState.proxyGroupIndex[name]
+    }
+
+    func clearPresentedProxyLatencyState() {
+        self.proxyLatencyPresentationState.clearMeasuredDelays()
+    }
+
+    func ensurePresentedGroupLatencyBucket(_ groupName: String) {
+        self.proxyLatencyPresentationState.ensureGroupLatencyBucket(groupName)
+    }
+
+    func setPresentedGroupLatency(groupName: String, delayKey: String, delay: Int) {
+        self.proxyLatencyPresentationState.setGroupLatency(groupName: groupName, delayKey: delayKey, delay: delay)
+    }
+
+    func replacePresentedGroupLatencies(_ delays: [String: Int], for groupName: String) {
+        self.proxyLatencyPresentationState.replaceGroupLatencies(delays, for: groupName)
+    }
+
+    func recordPresentedLiveProxyDelay(key: String, delay: Int) {
+        self.proxyLatencyPresentationState.recordMeasuredProxyDelay(key: key, delay: delay)
+    }
+
+    func beginPresentedGroupLatencyLoading(_ groupName: String) {
+        self.proxyLatencyPresentationState.beginGroupLatencyLoading(groupName)
+    }
+
+    func endPresentedGroupLatencyLoading(_ groupName: String) {
+        self.proxyLatencyPresentationState.endGroupLatencyLoading(groupName)
+    }
+
+    func beginPresentedGroupLatencyPending(groupName: String, delayKey: String) {
+        self.proxyLatencyPresentationState.beginGroupLatencyPending(groupName: groupName, delayKey: delayKey)
+    }
+
+    func endPresentedGroupLatencyPending(groupName: String, delayKey: String) {
+        self.proxyLatencyPresentationState.endGroupLatencyPending(groupName: groupName, delayKey: delayKey)
+    }
+
+    func beginPresentedNodeLatencyLoading(_ nodeName: String) {
+        self.proxyLatencyPresentationState.beginNodeLatencyLoading(nodeName)
+    }
+
+    func endPresentedNodeLatencyLoading(_ nodeName: String) {
+        self.proxyLatencyPresentationState.endNodeLatencyLoading(nodeName)
+    }
+
+    func currentPresentedEditableSettingsSnapshot() -> EditableSettingsSnapshot {
+        self.settingsPresentationState.currentEditableSettingsSnapshot()
+    }
+
+    func applyPresentedEditableSettingsSnapshot(_ snapshot: EditableSettingsSnapshot) {
+        self.settingsPresentationState.applyEditableSettingsSnapshot(snapshot)
+    }
+
+    func syncPresentedEditableSettings(from previous: EditableSettingsSnapshot, to incoming: EditableSettingsSnapshot) {
+        self.settingsPresentationState.syncEditableFields(from: previous, to: incoming)
+    }
+
+    func insertPresentedUpdatingProviderNames(_ names: [String]) -> Set<String> {
+        self.providerPresentationState.insertUpdatingProviderNames(names)
+    }
+
+    func beginPresentedUpdatingProvider(_ name: String) -> Bool {
+        self.providerPresentationState.beginUpdatingProvider(name)
+    }
+
+    func endPresentedUpdatingProvider(_ name: String) {
+        self.providerPresentationState.endUpdatingProvider(name)
+    }
+
+    func retainPresentedUpdatingProviderNames(in currentNames: Set<String>) {
+        self.providerPresentationState.retainUpdatingProviderNames(in: currentNames)
+    }
+
+    func clearPresentedProviderCollections(keepingCapacity: Bool) {
+        self.providerPresentationState.clearCollections(keepingCapacity: keepingCapacity)
+    }
+
+    func updatePresentedProviderRefreshStatus(
+        phase: ProviderRefreshPhase,
+        trigger: ProviderRefreshTrigger?,
+        progressDone: Int,
+        progressTotal: Int,
+        message: String?,
+        updatedAt: Date = Date())
+    {
+        self.providerPresentationState.updateRefreshStatus(
+            phase: phase,
+            trigger: trigger,
+            progressDone: progressDone,
+            progressTotal: progressTotal,
+            message: message,
+            updatedAt: updatedAt)
+    }
+
+    func beginPresentedLatestAppReleaseCheck() -> Bool {
+        self.appReleasePresentationState.beginCheckingLatestRelease()
+    }
+
+    func endPresentedLatestAppReleaseCheck() {
+        self.appReleasePresentationState.endCheckingLatestRelease()
+    }
+
+    func updatePresentedLatestAppReleaseIfChanged(_ release: AppReleaseInfo) -> Bool {
+        self.appReleasePresentationState.updateLatestReleaseIfChanged(release)
+    }
+
+    func presentedAvailableAppUpdate(currentVersion: String) -> AppReleaseInfo? {
+        self.appReleasePresentationState.availableUpdate(currentVersion: currentVersion)
+    }
+
+    func syncPresentedLaunchAtLoginEnabled(_ enabled: Bool) {
+        self.launchAtLoginPresentationState.syncEnabled(enabled)
+    }
+
+    func clearPresentedLaunchAtLoginError() {
+        self.launchAtLoginPresentationState.clearError()
+    }
+
+    func applyPresentedLaunchAtLoginFailure(enabled: Bool, message: String) {
+        self.launchAtLoginPresentationState.applyFailure(enabled: enabled, message: message)
+    }
+
+    func beginPresentedCoreAction(_ action: CoreActionState) -> Bool {
+        self.coreControlPresentationState.beginAction(action)
+    }
+
+    func endPresentedCoreAction() {
+        self.coreControlPresentationState.endAction()
+    }
+
+    func setPresentedStartupError(_ message: String?) {
+        self.coreControlPresentationState.setStartupError(message)
+    }
+
+    func beginPresentedCoreUpgrade() -> Bool {
+        self.coreControlPresentationState.beginUpgrade()
+    }
+
+    func applyPresentedCoreUpgradeState(_ state: CoreUpgradeState) {
+        self.coreControlPresentationState.applyUpgradeState(state)
+    }
+
+    func beginLifecycleAutoStartAttempt() -> Bool {
+        self.lifecycleCoordinationState.beginAutoStartAttempt()
+    }
+
+    func markLifecycleSystemProxyConsistencyCheckedOnLaunch() {
+        self.lifecycleCoordinationState.markSystemProxyConsistencyCheckedOnLaunch()
+    }
+
+    func setPresentedPanelVisibility(_ presented: Bool) -> Bool {
+        self.interfacePresentationState.setPanelPresented(presented)
+    }
+
+    func setPresentedActiveMenuTab(_ tab: RootTab) -> Bool {
+        self.interfacePresentationState.setActiveMenuTab(tab)
+    }
+
+    func beginPresentedQuittingApp() -> Bool {
+        self.interfacePresentationState.beginQuitting()
+    }
+
+    func clearPresentedSystemProxyOpenFailureHint() {
+        self.systemProxyPresentationState.clearOpenFailureHint()
+    }
+
+    func updatePresentedSystemProxyOpenFailureHint(_ hint: String?) {
+        self.systemProxyPresentationState.updateOpenFailureHint(hint)
+    }
+
+    func resetPresentedSystemProxyObservedState() {
+        self.systemProxyPresentationState.resetObservedState()
+    }
+
+    func applyPresentedSystemProxyHelperHealthSnapshot(
+        _ snapshot: SystemProxyHelperHealthSnapshot)
+        -> (previousReason: SystemProxyHelperFailureReason?, previousMessage: String?)
+    {
+        self.systemProxyPresentationState.applyHelperHealthSnapshot(snapshot)
+    }
+
     var isRemoteTarget: Bool {
         !self.remoteMachineStore.activeTarget.isLocal
     }
 
+    var statusText: String {
+        get { self.coreRuntimePresentationState.statusText }
+        set {
+            self.coreRuntimePresentationState.statusText = newValue
+            self.refreshMenuBarDisplaySnapshotIfNeeded()
+        }
+    }
+
+    var version: String {
+        get { self.coreRuntimePresentationState.version }
+        set { self.coreRuntimePresentationState.version = newValue }
+    }
+
+    var controller: String {
+        get { self.coreRuntimePresentationState.controller }
+        set { self.coreRuntimePresentationState.controller = newValue }
+    }
+
+    var externalControllerDisplay: String {
+        get { self.coreRuntimePresentationState.externalControllerDisplay }
+        set { self.coreRuntimePresentationState.externalControllerDisplay = newValue }
+    }
+
+    var controllerUIURL: String {
+        get { self.coreRuntimePresentationState.controllerUIURL }
+        set { self.coreRuntimePresentationState.controllerUIURL = newValue }
+    }
+
+    var controllerSecret: String? {
+        get { self.coreRuntimePresentationState.controllerSecret }
+        set { self.coreRuntimePresentationState.controllerSecret = newValue }
+    }
+
+    var currentMode: CoreMode {
+        get { self.coreRuntimePresentationState.currentMode }
+        set { self.coreRuntimePresentationState.currentMode = newValue }
+    }
+
+    var logLevel: String {
+        get { self.coreRuntimePresentationState.logLevel }
+        set { self.coreRuntimePresentationState.logLevel = newValue }
+    }
+
+    var port: Int? {
+        get { self.coreRuntimePresentationState.port }
+        set { self.coreRuntimePresentationState.port = newValue }
+    }
+
+    var socksPort: Int? {
+        get { self.coreRuntimePresentationState.socksPort }
+        set { self.coreRuntimePresentationState.socksPort = newValue }
+    }
+
+    var redirPort: Int? {
+        get { self.coreRuntimePresentationState.redirPort }
+        set { self.coreRuntimePresentationState.redirPort = newValue }
+    }
+
+    var tproxyPort: Int? {
+        get { self.coreRuntimePresentationState.tproxyPort }
+        set { self.coreRuntimePresentationState.tproxyPort = newValue }
+    }
+
+    var mixedPort: Int {
+        get { self.coreRuntimePresentationState.mixedPort }
+        set { self.coreRuntimePresentationState.mixedPort = newValue }
+    }
+
+    var isProxySyncing: Bool {
+        get { self.coreRuntimePresentationState.isProxySyncing }
+        set { self.coreRuntimePresentationState.isProxySyncing = newValue }
+    }
+
+    var isTunSyncing: Bool {
+        get { self.coreRuntimePresentationState.isTunSyncing }
+        set { self.coreRuntimePresentationState.isTunSyncing = newValue }
+    }
+
+    var apiStatus: APIHealth {
+        get { self.coreRuntimePresentationState.apiStatus }
+        set {
+            self.coreRuntimePresentationState.apiStatus = newValue
+            self.refreshMenuBarDisplaySnapshotIfNeeded()
+        }
+    }
+
+    var traffic: TrafficSnapshot {
+        get { self.runtimeMetricsPresentationState.traffic }
+        set {
+            self.runtimeMetricsPresentationState.traffic = newValue
+            self.refreshMenuBarDisplaySnapshotIfNeeded()
+        }
+    }
+
+    var memory: MemorySnapshot {
+        get { self.runtimeMetricsPresentationState.memory }
+        set { self.runtimeMetricsPresentationState.memory = newValue }
+    }
+
+    var displayUpTotal: Int64 {
+        get { self.runtimeMetricsPresentationState.displayUpTotal }
+        set { self.runtimeMetricsPresentationState.displayUpTotal = newValue }
+    }
+
+    var displayDownTotal: Int64 {
+        get { self.runtimeMetricsPresentationState.displayDownTotal }
+        set { self.runtimeMetricsPresentationState.displayDownTotal = newValue }
+    }
+
+    var trafficHistoryUp: [Int64] {
+        get { self.runtimeMetricsPresentationState.trafficHistoryUp }
+        set { self.runtimeMetricsPresentationState.trafficHistoryUp = newValue }
+    }
+
+    var trafficHistoryDown: [Int64] {
+        get { self.runtimeMetricsPresentationState.trafficHistoryDown }
+        set { self.runtimeMetricsPresentationState.trafficHistoryDown = newValue }
+    }
+
+    var lastTrafficSampleAt: Date? {
+        get { self.runtimeMetricsPresentationState.lastTrafficSampleAt }
+        set { self.runtimeMetricsPresentationState.lastTrafficSampleAt = newValue }
+    }
+
     var isModeSwitchEnabled: Bool {
         (self.isRemoteTarget || self.coreRepository.isRunning) && self.apiStatus == .healthy
+    }
+
+    var mihomoBinaryPath: String {
+        get { self.configPresentationState.mihomoBinaryPath }
+        set { self.configPresentationState.mihomoBinaryPath = newValue }
+    }
+
+    var selectedConfigName: String {
+        get { self.configPresentationState.selectedConfigName }
+        set { self.configPresentationState.selectedConfigName = newValue }
+    }
+
+    var configDirectoryPath: String {
+        get { self.configPresentationState.configDirectoryPath }
+        set { self.configPresentationState.configDirectoryPath = newValue }
+    }
+
+    var availableConfigFileNames: [String] {
+        get { self.configPresentationState.availableConfigFileNames }
+        set { self.configPresentationState.availableConfigFileNames = newValue }
+    }
+
+    var remoteConfigMenuStates: [String: RemoteConfigMenuState] {
+        get { self.configPresentationState.remoteConfigMenuStates }
+        set { self.configPresentationState.remoteConfigMenuStates = newValue }
+    }
+
+    var proxyGroups: [ProxyGroup] {
+        get { self.proxyGroupPresentationState.proxyGroups }
+        set { self.proxyGroupPresentationState.proxyGroups = newValue }
+    }
+
+    var proxyHistoryLatestDelay: [String: Int] {
+        get { self.proxyGroupPresentationState.proxyHistoryLatestDelay }
+        set { self.proxyGroupPresentationState.proxyHistoryLatestDelay = newValue }
+    }
+
+    var proxyNodeTypes: [String: String] {
+        get { self.proxyGroupPresentationState.proxyNodeTypes }
+        set { self.proxyGroupPresentationState.proxyNodeTypes = newValue }
+    }
+
+    var proxyNodeIDs: [String: String] {
+        get { self.proxyGroupPresentationState.proxyNodeIDs }
+        set { self.proxyGroupPresentationState.proxyNodeIDs = newValue }
+    }
+
+    var groupLatencyLoading: Set<String> {
+        get { self.proxyLatencyPresentationState.groupLatencyLoading }
+        set { self.proxyLatencyPresentationState.groupLatencyLoading = newValue }
+    }
+
+    var nodeLatencyLoading: Set<String> {
+        get { self.proxyLatencyPresentationState.nodeLatencyLoading }
+        set { self.proxyLatencyPresentationState.nodeLatencyLoading = newValue }
+    }
+
+    var groupLatencyPendingDelayKeys: [String: Set<String>] {
+        get { self.proxyLatencyPresentationState.groupLatencyPendingDelayKeys }
+        set { self.proxyLatencyPresentationState.groupLatencyPendingDelayKeys = newValue }
+    }
+
+    var groupLatencies: [String: [String: Int]] {
+        get { self.proxyLatencyPresentationState.groupLatencies }
+        set { self.proxyLatencyPresentationState.groupLatencies = newValue }
+    }
+
+    var liveProxyLatestDelay: [String: Int] {
+        get { self.proxyLatencyPresentationState.liveProxyLatestDelay }
+        set { self.proxyLatencyPresentationState.liveProxyLatestDelay = newValue }
+    }
+
+    var errorLogs: [AppErrorLogEntry] {
+        get { self.logPresentationState.errorLogs }
+        set { self.logPresentationState.errorLogs = newValue }
+    }
+
+    var providerProxyCount: Int {
+        get { self.providerPresentationState.providerProxyCount }
+        set { self.providerPresentationState.providerProxyCount = newValue }
+    }
+
+    var providerRuleCount: Int {
+        get { self.providerPresentationState.providerRuleCount }
+        set { self.providerPresentationState.providerRuleCount = newValue }
+    }
+
+    var rulesCount: Int {
+        get { self.providerPresentationState.rulesCount }
+        set { self.providerPresentationState.rulesCount = newValue }
+    }
+
+    var providerRefreshStatus: ProviderRefreshStatus {
+        get { self.providerPresentationState.providerRefreshStatus }
+        set { self.providerPresentationState.providerRefreshStatus = newValue }
+    }
+
+    var proxyProvidersDetail: [String: ProviderDetail] {
+        get { self.providerPresentationState.proxyProvidersDetail }
+        set { self.providerPresentationState.proxyProvidersDetail = newValue }
+    }
+
+    var sortedProxyProviderNames: [String] {
+        self.providerPresentationState.sortedProxyProviderNames
+    }
+
+    var providerUpdating: Set<String> {
+        get { self.providerPresentationState.providerUpdating }
+        set { self.providerPresentationState.providerUpdating = newValue }
+    }
+
+    var isProxyProvidersRefreshing: Bool {
+        get { self.providerPresentationState.isProxyProvidersRefreshing }
+        set { self.providerPresentationState.isProxyProvidersRefreshing = newValue }
+    }
+
+    var ruleProviders: [String: ProviderDetail] {
+        get { self.providerPresentationState.ruleProviders }
+        set { self.providerPresentationState.ruleProviders = newValue }
+    }
+
+    var ruleItems: [RuleItem] {
+        get { self.providerPresentationState.ruleItems }
+        set { self.providerPresentationState.ruleItems = newValue }
+    }
+
+    var isRuleProvidersRefreshing: Bool {
+        get { self.providerPresentationState.isRuleProvidersRefreshing }
+        set { self.providerPresentationState.isRuleProvidersRefreshing = newValue }
+    }
+
+    var isSystemProxyEnabled: Bool {
+        get { self.systemProxyPresentationState.isEnabled }
+        set { self.systemProxyPresentationState.isEnabled = newValue }
+    }
+
+    var systemProxyEnableIntentInFlight: Bool {
+        get { self.systemProxyPresentationState.enableIntentInFlight }
+        set { self.systemProxyPresentationState.enableIntentInFlight = newValue }
+    }
+
+    var systemProxyHelperFailureReason: SystemProxyHelperFailureReason? {
+        get { self.systemProxyPresentationState.helperFailureReason }
+        set { self.systemProxyPresentationState.helperFailureReason = newValue }
+    }
+
+    var systemProxyHelperFailureMessage: String? {
+        get { self.systemProxyPresentationState.helperFailureMessage }
+        set { self.systemProxyPresentationState.helperFailureMessage = newValue }
+    }
+
+    var systemProxyBackgroundActivityAllowed: Bool? {
+        get { self.systemProxyPresentationState.backgroundActivityAllowed }
+        set { self.systemProxyPresentationState.backgroundActivityAllowed = newValue }
+    }
+
+    var systemProxyHelperProcessRunning: Bool? {
+        get { self.systemProxyPresentationState.helperProcessRunning }
+        set { self.systemProxyPresentationState.helperProcessRunning = newValue }
+    }
+
+    var systemProxyActiveDisplay: String? {
+        get { self.systemProxyPresentationState.activeDisplay }
+        set { self.systemProxyPresentationState.activeDisplay = newValue }
+    }
+
+    var systemProxyOpenFailureHint: String? {
+        get { self.systemProxyPresentationState.openFailureHint }
+        set { self.systemProxyPresentationState.openFailureHint = newValue }
+    }
+
+    var isTunEnabled: Bool {
+        get { self.settingsPresentationState.tunEnabled }
+        set { self.settingsPresentationState.tunEnabled = newValue }
+    }
+
+    var settingsAllowLan: Bool {
+        get { self.settingsPresentationState.allowLan }
+        set { self.settingsPresentationState.allowLan = newValue }
+    }
+
+    var settingsIPv6: Bool {
+        get { self.settingsPresentationState.ipv6 }
+        set { self.settingsPresentationState.ipv6 = newValue }
+    }
+
+    var settingsTCPConcurrent: Bool {
+        get { self.settingsPresentationState.tcpConcurrent }
+        set { self.settingsPresentationState.tcpConcurrent = newValue }
+    }
+
+    var settingsLogLevel: String {
+        get { self.settingsPresentationState.logLevel }
+        set { self.settingsPresentationState.logLevel = newValue }
+    }
+
+    var settingsPort: String {
+        get { self.settingsPresentationState.port }
+        set { self.settingsPresentationState.port = newValue }
+    }
+
+    var settingsSocksPort: String {
+        get { self.settingsPresentationState.socksPort }
+        set { self.settingsPresentationState.socksPort = newValue }
+    }
+
+    var settingsMixedPort: String {
+        get { self.settingsPresentationState.mixedPort }
+        set { self.settingsPresentationState.mixedPort = newValue }
+    }
+
+    var settingsRedirPort: String {
+        get { self.settingsPresentationState.redirPort }
+        set { self.settingsPresentationState.redirPort = newValue }
+    }
+
+    var settingsTProxyPort: String {
+        get { self.settingsPresentationState.tproxyPort }
+        set { self.settingsPresentationState.tproxyPort = newValue }
+    }
+
+    var settingsSyncingKey: String? {
+        get { self.settingsPresentationState.syncingKey }
+        set { self.settingsPresentationState.syncingKey = newValue }
+    }
+
+    var settingsErrorMessage: String? {
+        get { self.settingsPresentationState.errorMessage }
+        set { self.settingsPresentationState.errorMessage = newValue }
+    }
+
+    var settingsSavedMessage: String? {
+        get { self.settingsPresentationState.savedMessage }
+        set { self.settingsPresentationState.savedMessage = newValue }
+    }
+
+    var latestAppReleaseInfo: AppReleaseInfo? {
+        get { self.appReleasePresentationState.latestReleaseInfo }
+        set { self.appReleasePresentationState.latestReleaseInfo = newValue }
+    }
+
+    var launchAtLoginEnabled: Bool {
+        get { self.launchAtLoginPresentationState.isEnabled }
+        set { self.launchAtLoginPresentationState.isEnabled = newValue }
+    }
+
+    var launchAtLoginErrorMessage: String? {
+        get { self.launchAtLoginPresentationState.errorMessage }
+        set { self.launchAtLoginPresentationState.errorMessage = newValue }
+    }
+
+    var startupErrorMessage: String? {
+        get { self.coreControlPresentationState.startupErrorMessage }
+        set { self.coreControlPresentationState.startupErrorMessage = newValue }
+    }
+
+    var coreActionState: CoreActionState {
+        get { self.coreControlPresentationState.actionState }
+        set { self.coreControlPresentationState.actionState = newValue }
+    }
+
+    var coreUpgradeState: CoreUpgradeState {
+        get { self.coreControlPresentationState.upgradeState }
+        set { self.coreControlPresentationState.upgradeState = newValue }
+    }
+
+    var uiLanguage: AppLanguage {
+        get { self.interfacePresentationState.uiLanguage }
+        set { self.interfacePresentationState.uiLanguage = newValue }
+    }
+
+    var appearanceMode: AppAppearanceMode {
+        get { self.interfacePresentationState.appearanceMode }
+        set { self.interfacePresentationState.appearanceMode = newValue }
+    }
+
+    var isPanelPresented: Bool {
+        get { self.interfacePresentationState.isPanelPresented }
+        set { self.interfacePresentationState.isPanelPresented = newValue }
+    }
+
+    var isQuittingApp: Bool {
+        get { self.interfacePresentationState.isQuittingApp }
+        set { self.interfacePresentationState.isQuittingApp = newValue }
+    }
+
+    var activeMenuTab: RootTab {
+        get { self.interfacePresentationState.activeMenuTab }
+        set { self.interfacePresentationState.activeMenuTab = newValue }
+    }
+
+    var isLatestAppReleaseCheckInFlight: Bool {
+        get { self.appReleasePresentationState.isCheckingLatestRelease }
+        set { self.appReleasePresentationState.isCheckingLatestRelease = newValue }
+    }
+
+    var didAttemptAutoStart: Bool {
+        get { self.lifecycleCoordinationState.didAttemptAutoStart }
+        set { self.lifecycleCoordinationState.didAttemptAutoStart = newValue }
+    }
+
+    var didCheckSystemProxyConsistencyOnLaunch: Bool {
+        get { self.lifecycleCoordinationState.didCheckSystemProxyConsistencyOnLaunch }
+        set { self.lifecycleCoordinationState.didCheckSystemProxyConsistencyOnLaunch = newValue }
+    }
+
+    var lastSyncedEditableSettings: EditableSettingsSnapshot? {
+        get { self.settingsPresentationState.lastSyncedEditableSettings }
+        set { self.settingsPresentationState.lastSyncedEditableSettings = newValue }
+    }
+
+    var preserveLocalSettingsOnNextSync: Bool {
+        get { self.settingsPresentationState.preserveLocalSettingsOnNextSync }
+        set { self.settingsPresentationState.preserveLocalSettingsOnNextSync = newValue }
+    }
+
+    var pendingConfigSwitchOverlaySettings: EditableSettingsSnapshot? {
+        get { self.settingsPresentationState.pendingConfigSwitchOverlaySettings }
+        set { self.settingsPresentationState.pendingConfigSwitchOverlaySettings = newValue }
+    }
+
+    var pendingAppLaunchOverlaySettings: EditableSettingsSnapshot? {
+        get { self.settingsPresentationState.pendingAppLaunchOverlaySettings }
+        set { self.settingsPresentationState.pendingAppLaunchOverlaySettings = newValue }
+    }
+
+    var suppressSettingsPersistence: Bool {
+        get { self.settingsPresentationState.suppressPersistence }
+        set { self.settingsPresentationState.suppressPersistence = newValue }
     }
 
     var isTunToggleEnabled: Bool {
@@ -283,7 +845,11 @@ final class AppSession: ObservableObject {
     }
 
     var isCoreActionProcessing: Bool {
-        self.coreActionState != .idle
+        self.coreControlPresentationState.isActionProcessing
+    }
+
+    var isPresentedCoreUpgradeInFlight: Bool {
+        self.coreControlPresentationState.isUpgradeInFlight
     }
 
     var primaryCoreActionLabel: String {
@@ -321,6 +887,7 @@ final class AppSession: ObservableObject {
     var streamReconnectAttempts: [String: Int] = [:]
     var streamLastDisconnectLogAt: [String: Date] = [:]
     var streamLastDisconnectLogMessage: [String: String] = [:]
+    var streamLastPayloadAt: [String: Date] = [:]
     var proxyPortsAutoSaveTask: Task<Void, Never>?
     var settingsFeedbackClearTask: Task<Void, Never>?
     var providerRefreshTask: Task<Void, Never>?
@@ -332,7 +899,6 @@ final class AppSession: ObservableObject {
     var trafficDecodeTask: Task<Void, Never>?
     var mihomoLogFlushTask: Task<Void, Never>?
     var providerRefreshGeneration: Int = 0
-    var lastTrafficSampleAt: Date?
     var lastTrafficDecodeAt: Date = .distantPast
     var pendingTrafficPayload: Data?
     var pendingMihomoLogs: [AppErrorLogEntry] = []
@@ -340,8 +906,6 @@ final class AppSession: ObservableObject {
     var activatedTabRefreshGeneration: Int = 0
     var configFileSignatureSnapshot: [String: String] = [:]
     var pendingConfigChangeRestart = false
-    @Published var isLatestAppReleaseCheckInFlight: Bool = false
-
     let defaults = UserDefaults.standard
     @AppStorage("catbar.auto.start.core") private var autoStartCore: Bool = false
     @AppStorage("catbar.auto.core.network.recovery") private var autoCoreControlOnNetworkChange: Bool = true
@@ -382,18 +946,29 @@ final class AppSession: ObservableObject {
     var mihomoLogFileURL: URL?
     var catbarLogStore: AppLogStore?
     var mihomoLogStore: AppLogStore?
-    var didAttemptAutoStart = false
-    var didCheckSystemProxyConsistencyOnLaunch = false
     var lastCoreFailureAlertKey: String?
     var lastCoreFailureAlertAt: Date?
     let coreFailureAlertThrottleInterval: TimeInterval = 20
-    var networkReachabilityStatus: NetworkReachabilityStatus = .unknown
-    var shouldResumeCoreAfterNetworkRecovery = false
-    var isNetworkReachabilityMonitoring = false
-    var pendingCoreFeatureRecoveryState: CoreFeatureRecoveryState?
-    var deferredEditableSettingsOverlay: (snapshot: EditableSettingsSnapshot, syncingKey: String)?
+    var networkReachabilityStatus: NetworkReachabilityStatus {
+        get { self.lifecycleCoordinationState.networkReachabilityStatus }
+        set { self.lifecycleCoordinationState.networkReachabilityStatus = newValue }
+    }
+    var shouldResumeCoreAfterNetworkRecovery: Bool {
+        get { self.lifecycleCoordinationState.shouldResumeCoreAfterNetworkRecovery }
+        set { self.lifecycleCoordinationState.shouldResumeCoreAfterNetworkRecovery = newValue }
+    }
+    var isNetworkReachabilityMonitoring: Bool {
+        get { self.lifecycleCoordinationState.isNetworkReachabilityMonitoring }
+        set { self.lifecycleCoordinationState.isNetworkReachabilityMonitoring = newValue }
+    }
+    var pendingCoreFeatureRecoveryState: CoreFeatureRecoveryState? {
+        get { self.lifecycleCoordinationState.pendingCoreFeatureRecoveryState }
+        set { self.lifecycleCoordinationState.pendingCoreFeatureRecoveryState = newValue }
+    }
+    var deferredEditableSettingsOverlay: DeferredEditableSettingsOverlayRequest?
     var remoteConfigSources: [String: String] = [:]
     var externalControllerWarningKeys: Set<String> = []
+    var powerEventObservers: [(center: NotificationCenter, observer: Any)] = []
     let streamJSONDecoder = JSONDecoder()
     let initialNoCoreSetupGuideShownKey = "catbar.core.install.guide.shown.v1"
     let bundlesMihomoCore: Bool
@@ -548,34 +1123,40 @@ final class AppSession: ObservableObject {
 
             self.startConfigDirectoryMonitoringIfNeeded()
         }
-        if startBackgroundRefresh, self.autoStartCore {
-            if !self.shouldDeferAutoStartForMissingManagedCore() {
-                Task { [weak self] in
-                    await self?.attemptAutoStartIfNeeded()
-                }
+        if self.resolveAppLaunchAutoStartUseCase.execute(.init(
+            startBackgroundRefresh: startBackgroundRefresh,
+            autoStartCoreEnabled: self.autoStartCore,
+            shouldDeferForMissingManagedCore: self.shouldDeferAutoStartForMissingManagedCore())) == .schedule
+        {
+            Task { [weak self] in
+                await self?.attemptAutoStartIfNeeded()
             }
         }
 
         self.updateNetworkReachabilityMonitoringState()
+        self.startPowerEventMonitoringIfNeeded()
         self.refreshMenuBarDisplaySnapshotIfNeeded()
     }
 
     deinit {
-        networkAutoStopTask?.cancel()
-        networkAutoStartTask?.cancel()
-        deferredEditableSettingsOverlayTask?.cancel()
-        configDirectoryMonitorTask?.cancel()
-        trafficDecodeTask?.cancel()
-        mihomoLogFlushTask?.cancel()
-        mediumFrequencyTask?.cancel()
-        lowFrequencyTask?.cancel()
-        for task in streamReceiveTasks.values {
-            task.cancel()
+        MainActor.assumeIsolated {
+            self.stopPowerEventMonitoring()
+            networkAutoStopTask?.cancel()
+            networkAutoStartTask?.cancel()
+            deferredEditableSettingsOverlayTask?.cancel()
+            configDirectoryMonitorTask?.cancel()
+            trafficDecodeTask?.cancel()
+            mihomoLogFlushTask?.cancel()
+            mediumFrequencyTask?.cancel()
+            lowFrequencyTask?.cancel()
+            for task in streamReceiveTasks.values {
+                task.cancel()
+            }
+            for webSocketTask in streamWebSocketTasks.values {
+                webSocketTask.cancel(with: .goingAway, reason: nil)
+            }
+            providerRefreshTask?.cancel()
         }
-        for webSocketTask in streamWebSocketTasks.values {
-            webSocketTask.cancel(with: .goingAway, reason: nil)
-        }
-        providerRefreshTask?.cancel()
     }
 
     private static func resolveBundledMihomoCoreFlag() -> Bool {

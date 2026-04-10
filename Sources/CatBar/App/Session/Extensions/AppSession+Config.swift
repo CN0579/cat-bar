@@ -4,8 +4,112 @@ import UniformTypeIdentifiers
 
 @MainActor
 extension AppSession {
+    private var resolveConfigReloadFeedbackUseCase: ResolveConfigReloadFeedbackUseCase {
+        ResolveConfigReloadFeedbackUseCase()
+    }
+
+    private var resolveConfigMutationFollowUpUseCase: ResolveConfigMutationFollowUpUseCase {
+        ResolveConfigMutationFollowUpUseCase()
+    }
+
+    private var resolveRemoteConfigImportFeedbackUseCase: ResolveRemoteConfigImportFeedbackUseCase {
+        ResolveRemoteConfigImportFeedbackUseCase()
+    }
+
+    private var resolveRemoteConfigRefreshCompletionStateUseCase: ResolveRemoteConfigRefreshCompletionStateUseCase {
+        ResolveRemoteConfigRefreshCompletionStateUseCase()
+    }
+
+    private var resolveRemoteConfigMenuStatesUseCase: ResolveRemoteConfigMenuStatesUseCase {
+        ResolveRemoteConfigMenuStatesUseCase()
+    }
+
+    private var resolveRemoteConfigImportRequestUseCase: ResolveRemoteConfigImportRequestUseCase {
+        ResolveRemoteConfigImportRequestUseCase()
+    }
+
+    private var resolveConfigSelectionTransitionUseCase: ResolveConfigSelectionTransitionUseCase {
+        ResolveConfigSelectionTransitionUseCase()
+    }
+
+    private var resolveRemoteConfigRefreshTargetUseCase: ResolveRemoteConfigRefreshTargetUseCase {
+        ResolveRemoteConfigRefreshTargetUseCase()
+    }
+
+    private struct ConfigImportDestination {
+        let fileName: String
+        let targetURL: URL
+    }
+
     private func reloadRuntimeConfigUseCase() throws -> ReloadRuntimeConfigUseCase {
         try ReloadRuntimeConfigUseCase(repository: DefaultRuntimeConfigRepository(transport: self.clientOrThrow()))
+    }
+
+    private func canonicalConfigPath(_ url: URL?) -> String? {
+        url?.standardizedFileURL.resolvingSymlinksInPath().path
+    }
+
+    private func validateConfigSelectionIfNeeded(
+        previousSelectedURL: URL?,
+        targetSelectedURL: URL,
+        staleSelectionCanonicalPath: String?) async -> Bool
+    {
+        let validationFailure = await self.configValidationFailureDetails(configPath: targetSelectedURL.path)
+        let currentCanonicalPath = self.canonicalConfigPath(self.configRepository.selectedConfig)
+        guard currentCanonicalPath == staleSelectionCanonicalPath else { return false }
+
+        guard let validationFailure else { return true }
+        self.handleConfigValidationFailure(configPath: targetSelectedURL.path, details: validationFailure)
+        if let previousSelectedURL {
+            configRepository.selectConfig(previousSelectedURL)
+        }
+        _ = self.syncSelectedConfigSelection(configRepository.selectedConfig)
+        syncConfigDisplayState()
+        return false
+    }
+
+    private func prepareConfigImportDestination(
+        configDirectory: URL,
+        fileName: String) -> ConfigImportDestination?
+    {
+        let targetURL = configDirectory.appendingPathComponent(fileName, isDirectory: false)
+        let isOverwrite = FileManager.default.fileExists(atPath: targetURL.path)
+        guard !isOverwrite || self.confirmOverwriteConfig(named: fileName) else {
+            appendLog(level: "info", message: tr("log.config.import.cancelled", fileName))
+            return nil
+        }
+
+        return ConfigImportDestination(
+            fileName: fileName,
+            targetURL: targetURL)
+    }
+
+    private func replaceRemoteConfigFile(
+        from remoteURL: URL,
+        userAgent: String?,
+        targetURL: URL) async throws
+    {
+        let data = try await downloadRemoteConfigData(from: remoteURL, userAgent: userAgent)
+        try writeConfigData(data, to: targetURL)
+    }
+
+    private func resolveRemoteConfigImportRequestOrPresentFeedback(
+        _ input: RemoteConfigImportInput) -> RemoteConfigImportRequest?
+    {
+        let requestResult = self.resolveRemoteConfigImportRequestUseCase.execute(
+            urlString: input.urlString,
+            fileNameInput: input.fileName,
+            isSupportedRemoteConfigURL: self.isSupportedRemoteConfigURL,
+            inferredRemoteConfigFileName: self.inferredRemoteConfigFileName,
+            normalizedConfigFileName: self.normalizedConfigFileName)
+        guard case let .success(request) = requestResult else {
+            if let feedback = self.remoteConfigImportFeedback(from: requestResult) {
+                self.presentRemoteConfigImportFeedback(feedback)
+            }
+            return nil
+        }
+
+        return request
     }
 
     func seedBundledConfigIfNeeded() {
@@ -39,28 +143,20 @@ extension AppSession {
 
     func selectConfig() async {
         let previousSelectedURL = configRepository.selectedConfig
-        let previousSelectedPath = configRepository.selectedConfig?.path
         guard configRepository.chooseConfigDirectory() != nil else { return }
 
-        let nextSelectedURL = configRepository.selectedConfig
-        let previousCanonicalPath = previousSelectedURL?.standardizedFileURL.resolvingSymlinksInPath().path
-        let nextCanonicalPath = nextSelectedURL?.standardizedFileURL.resolvingSymlinksInPath().path
+        let transition = self.resolveConfigSelectionTransitionUseCase.execute(
+            previousSelectedURL: previousSelectedURL,
+            nextSelectedURL: configRepository.selectedConfig,
+            coreIsRunning: coreRepository.isRunning,
+            validationTiming: .afterSelection)
 
-        if coreRepository.isRunning,
-           let nextSelectedURL,
-           previousCanonicalPath != nextCanonicalPath
-        {
-            let validationFailure = await self.configValidationFailureDetails(configPath: nextSelectedURL.path)
-            let currentCanonicalPath = self.configRepository.selectedConfig?.standardizedFileURL
-                .resolvingSymlinksInPath().path
-            guard currentCanonicalPath == nextCanonicalPath else { return }
-            if let validationFailure {
-                self.handleConfigValidationFailure(configPath: nextSelectedURL.path, details: validationFailure)
-                if let previousSelectedURL {
-                    configRepository.selectConfig(previousSelectedURL)
-                }
-                _ = self.syncSelectedConfigSelection(configRepository.selectedConfig)
-                syncConfigDisplayState()
+        if let validationRequest = transition.validationRequest {
+            guard await self.validateConfigSelectionIfNeeded(
+                previousSelectedURL: previousSelectedURL,
+                targetSelectedURL: validationRequest.targetSelectedURL,
+                staleSelectionCanonicalPath: validationRequest.staleSelectionCanonicalPath)
+            else {
                 return
             }
         }
@@ -69,35 +165,30 @@ extension AppSession {
         syncConfigDisplayState()
 
         appendLog(level: "info", message: tr("log.config.loaded_count", configRepository.availableConfigs.count))
-        await restartCoreIfNeededForConfigSwitch(previousPath: previousSelectedPath, nextPath: nextSelectedPath)
+        await restartCoreIfNeededForConfigSwitch(
+            previousPath: transition.previousSelectedPath,
+            nextPath: nextSelectedPath)
     }
 
     func selectConfigFile(named fileName: String) async {
         let previousSelectedURL = configRepository.selectedConfig
-        let previousSelectedPath = configRepository.selectedConfig?.path
         guard let matched = configRepository.availableConfigs.first(where: { $0.lastPathComponent == fileName }) else {
             appendLog(level: "error", message: tr("log.config.not_found", fileName))
             return
         }
 
-        let previousCanonicalPath = previousSelectedURL?.standardizedFileURL.resolvingSymlinksInPath().path
-        let targetCanonicalPath = matched.standardizedFileURL.resolvingSymlinksInPath().path
+        let transition = self.resolveConfigSelectionTransitionUseCase.execute(
+            previousSelectedURL: previousSelectedURL,
+            nextSelectedURL: matched,
+            coreIsRunning: coreRepository.isRunning,
+            validationTiming: .beforeSelection)
 
-        if coreRepository.isRunning,
-           previousCanonicalPath != targetCanonicalPath
-        {
-            let validationFailure = await self.configValidationFailureDetails(configPath: matched.path)
-            let currentCanonicalPath = self.configRepository.selectedConfig?.standardizedFileURL
-                .resolvingSymlinksInPath().path
-            // Validation runs before selecting `matched`, so stale-check against the original selection.
-            guard currentCanonicalPath == previousCanonicalPath else { return }
-            if let validationFailure {
-                self.handleConfigValidationFailure(configPath: matched.path, details: validationFailure)
-                if let previousSelectedURL {
-                    configRepository.selectConfig(previousSelectedURL)
-                }
-                _ = self.syncSelectedConfigSelection(configRepository.selectedConfig)
-                syncConfigDisplayState()
+        if let validationRequest = transition.validationRequest {
+            guard await self.validateConfigSelectionIfNeeded(
+                previousSelectedURL: previousSelectedURL,
+                targetSelectedURL: validationRequest.targetSelectedURL,
+                staleSelectionCanonicalPath: validationRequest.staleSelectionCanonicalPath)
+            else {
                 return
             }
         }
@@ -106,7 +197,9 @@ extension AppSession {
         let nextSelectedPath = self.syncSelectedConfigSelection(matched)
         syncConfigDisplayState()
         appendLog(level: "info", message: tr("log.config.selected", fileName))
-        await restartCoreIfNeededForConfigSwitch(previousPath: previousSelectedPath, nextPath: nextSelectedPath)
+        await restartCoreIfNeededForConfigSwitch(
+            previousPath: transition.previousSelectedPath,
+            nextPath: nextSelectedPath)
     }
 
     func importLocalConfigFile() {
@@ -137,75 +230,62 @@ extension AppSession {
             return
         }
 
-        let targetURL = configDirectory.appendingPathComponent(fileName, isDirectory: false)
-        let isOverwrite = FileManager.default.fileExists(atPath: targetURL.path)
-        guard !isOverwrite || self.confirmOverwriteConfig(named: fileName) else {
-            appendLog(level: "info", message: tr("log.config.import.cancelled", fileName))
+        guard let destination = self.prepareConfigImportDestination(
+            configDirectory: configDirectory,
+            fileName: fileName)
+        else {
             return
         }
 
         do {
             let data = try Data(contentsOf: sourceURL)
-            try writeConfigData(data, to: targetURL)
+            try writeConfigData(data, to: destination.targetURL)
 
-            self.updateRemoteConfigSource(for: fileName, urlString: nil)
-            appendLog(level: "info", message: tr("log.config.import_local.success", fileName))
-
-            if isOverwrite, self.shouldAutoReloadCurrentConfig(updatedFileNames: [fileName]) {
-                Task { await self.reloadConfig() }
+            Task {
+                await self.completeConfigMutation(
+                    updatedFileNames: [destination.fileName],
+                    remoteSourceUpdates: [destination.fileName: nil])
             }
+            appendLog(level: "info", message: tr("log.config.import_local.success", destination.fileName))
         } catch {
             appendLog(
                 level: "error",
-                message: tr("log.config.import_local.failed", fileName, error.localizedDescription))
+                message: tr("log.config.import_local.failed", destination.fileName, error.localizedDescription))
         }
     }
 
     func importRemoteConfigFile() async {
         guard let configDirectory = ensureConfigDirectoryAvailable() else { return }
         guard let input = promptRemoteConfigImportInput() else { return }
+        guard let request = self.resolveRemoteConfigImportRequestOrPresentFeedback(input) else { return }
 
-        let urlText = input.urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let remoteURL = URL(string: urlText), isSupportedRemoteConfigURL(remoteURL) else {
-            let message = tr("log.config.remote.invalid_url", urlText)
-            appendLog(level: "error", message: message)
-            self.presentRemoteConfigImportResultAlert(success: false, message: message)
-            return
-        }
-
-        let fallbackName = self.inferredRemoteConfigFileName(from: remoteURL)
-        guard let fileName = normalizedConfigFileName(input.fileName, fallback: fallbackName) else {
-            let message = tr("log.config.import.invalid_filename", input.fileName)
-            appendLog(level: "error", message: message)
-            self.presentRemoteConfigImportResultAlert(success: false, message: message)
-            return
-        }
-
-        let targetURL = configDirectory.appendingPathComponent(fileName, isDirectory: false)
-        let isOverwrite = FileManager.default.fileExists(atPath: targetURL.path)
-        guard !isOverwrite || self.confirmOverwriteConfig(named: fileName) else {
-            appendLog(level: "info", message: tr("log.config.import.cancelled", fileName))
+        guard let destination = self.prepareConfigImportDestination(
+            configDirectory: configDirectory,
+            fileName: request.fileName)
+        else {
             return
         }
 
         do {
             let userAgent = await remoteSubscriptionUserAgent()
-            let data = try await downloadRemoteConfigData(from: remoteURL, userAgent: userAgent)
-            try writeConfigData(data, to: targetURL)
+            try await self.replaceRemoteConfigFile(
+                from: request.remoteURL,
+                userAgent: userAgent,
+                targetURL: destination.targetURL)
 
-            self.updateRemoteConfigSource(for: fileName, urlString: remoteURL.absoluteString)
-            let message = tr("log.config.import_remote.success", fileName)
-            appendLog(level: "info", message: message)
+            await self.completeConfigMutation(
+                updatedFileNames: [destination.fileName],
+                remoteSourceUpdates: [destination.fileName: request.remoteURL.absoluteString])
+            let feedback = self.remoteConfigImportFeedback(
+                outcome: .succeeded(fileName: destination.fileName))
 
-            if isOverwrite, self.shouldAutoReloadCurrentConfig(updatedFileNames: [fileName]) {
-                await self.reloadConfig()
-            }
-
-            self.presentRemoteConfigImportResultAlert(success: true, message: message)
+            self.presentRemoteConfigImportFeedback(feedback)
         } catch {
-            let message = tr("log.config.import_remote.failed", fileName, error.localizedDescription)
-            appendLog(level: "error", message: message)
-            self.presentRemoteConfigImportResultAlert(success: false, message: message)
+            let feedback = self.remoteConfigImportFeedback(
+                outcome: .failed(
+                    fileName: destination.fileName,
+                    reason: error.localizedDescription))
+            self.presentRemoteConfigImportFeedback(feedback)
         }
     }
 
@@ -224,36 +304,25 @@ extension AppSession {
         var failedCount = 0
 
         for fileName in sources.keys.sorted() {
-            guard let remoteURL = self.resolvedRemoteURL(for: fileName) else {
+            guard let target = self.resolveRemoteConfigRefreshTargetOrLogFailure(
+                fileName: fileName,
+                configDirectory: configDirectory)
+            else {
                 failedCount += 1
-                appendLog(
-                    level: "error",
-                    message: tr(
-                        "log.config.remote.update_item_failed",
-                        fileName,
-                        tr("log.config.remote.invalid_url", sources[fileName] ?? fileName)))
                 continue
             }
 
-            let targetURL = configDirectory.appendingPathComponent(fileName, isDirectory: false)
             do {
-                let data = try await downloadRemoteConfigData(from: remoteURL, userAgent: userAgent)
-                try writeConfigData(data, to: targetURL)
-                updatedFileNames.insert(fileName)
+                try await self.refreshRemoteConfigTarget(target, userAgent: userAgent)
+                updatedFileNames.insert(target.fileName)
             } catch {
                 failedCount += 1
-                appendLog(
-                    level: "error",
-                    message: tr("log.config.remote.update_item_failed", fileName, error.localizedDescription))
+                self.logRemoteConfigUpdateFailure(fileName: fileName, error: error)
             }
         }
 
-        self.refreshConfigStateAfterMutation()
+        await self.completeConfigMutation(updatedFileNames: updatedFileNames)
         appendLog(level: "info", message: tr("log.config.remote.update_summary", updatedFileNames.count, failedCount))
-
-        if self.shouldAutoReloadCurrentConfig(updatedFileNames: updatedFileNames) {
-            await self.reloadConfig()
-        }
     }
 
     func showSelectedConfigInFinder() {
@@ -291,21 +360,10 @@ extension AppSession {
     }
 
     func refreshRemoteConfigMenuStates() {
-        let remoteFileNames = Set(self.remoteConfigSources.keys)
-        guard !remoteFileNames.isEmpty else {
-            self.remoteConfigMenuStates = [:]
-            return
-        }
-
-        var nextStates: [String: RemoteConfigMenuState] = [:]
-        nextStates.reserveCapacity(remoteFileNames.count)
-
-        for fileName in remoteFileNames {
-            let updatedAt = self.remoteConfigUpdatedAt(for: fileName)
-            nextStates[fileName] = self.mergedRemoteConfigMenuState(for: fileName, updatedAt: updatedAt)
-        }
-
-        self.remoteConfigMenuStates = nextStates
+        self.remoteConfigMenuStates = self.resolveRemoteConfigMenuStatesUseCase.execute(
+            remoteConfigSources: self.remoteConfigSources,
+            currentStates: self.remoteConfigMenuStates,
+            updatedAtProvider: self.remoteConfigUpdatedAt)
     }
 
     func remoteConfigMenuState(for fileName: String) -> RemoteConfigMenuState {
@@ -317,50 +375,33 @@ extension AppSession {
         guard let configDirectory = self.ensureConfigDirectoryAvailable() else { return }
 
         self.pruneRemoteConfigSourcesIfNeeded()
-        self.setRemoteConfigMenuState(for: fileName, phase: .refreshing)
+        let currentRefreshingState = self.beginRemoteConfigRefresh(fileName: fileName)
 
-        guard let remoteURL = self.resolvedRemoteURL(for: fileName) else {
-            let reason = tr("log.config.remote.invalid_url", self.remoteConfigSources[fileName] ?? fileName)
-            self.appendLog(level: "error", message: tr("log.config.remote.update_item_failed", fileName, reason))
-            self.setRemoteConfigMenuState(for: fileName, phase: .failed)
+        guard let target = self.resolveRemoteConfigRefreshTargetOrLogFailure(
+            fileName: fileName,
+            configDirectory: configDirectory)
+        else {
+            self.failRemoteConfigRefresh(fileName: fileName, currentState: currentRefreshingState)
             return
         }
 
         do {
             let userAgent = await self.remoteSubscriptionUserAgent()
-            let data = try await self.downloadRemoteConfigData(from: remoteURL, userAgent: userAgent)
-            let targetURL = configDirectory.appendingPathComponent(fileName, isDirectory: false)
-            try self.writeConfigData(data, to: targetURL)
-
-            self.refreshConfigStateAfterMutation()
-
-            if self.shouldAutoReloadCurrentConfig(updatedFileNames: [fileName]) {
-                await self.reloadConfig()
-            }
-
-            self.setRemoteConfigMenuState(
-                for: fileName,
-                phase: .idle,
-                updatedAt: self.remoteConfigUpdatedAt(for: fileName) ?? Date())
+            try await self.refreshRemoteConfigTarget(target, userAgent: userAgent)
+            await self.completeConfigMutation(updatedFileNames: [fileName])
+            self.completeRemoteConfigRefreshSuccess(fileName: fileName, currentState: currentRefreshingState)
         } catch {
-            self.appendLog(
-                level: "error",
-                message: tr("log.config.remote.update_item_failed", fileName, error.localizedDescription))
-            self.setRemoteConfigMenuState(for: fileName, phase: .failed)
+            self.logRemoteConfigUpdateFailure(fileName: fileName, error: error)
+            self.failRemoteConfigRefresh(fileName: fileName, currentState: currentRefreshingState)
         }
     }
 
     func reloadConfig() async {
-        let actionName = tr("log.action_name.reload_config")
-        let expectedTunEnabled = isTunEnabled
-
         do {
-            ensureAPIClient()
-            try await self.reloadRuntimeConfigUseCase().execute(force: false)
-            try await self.restoreTunAfterConfigReloadIfNeeded(expectedEnabled: expectedTunEnabled)
-            appendLog(level: "info", message: tr("log.action.success", actionName))
+            try await self.executeConfigReload(expectedTunEnabled: isTunEnabled)
+            self.appendConfigReloadFeedback(self.reloadConfigSuccessFeedback())
         } catch {
-            appendLog(level: "error", message: tr("log.action.failed", actionName, error.localizedDescription))
+            self.appendConfigReloadFeedback(self.reloadConfigFailureFeedback(reason: error.localizedDescription))
         }
     }
 
@@ -399,12 +440,6 @@ extension AppSession {
         selectedConfigName = selected.lastPathComponent
         defaults.set(selected.lastPathComponent, forKey: selectedConfigKey)
         return selected.path
-    }
-
-    private func shouldAutoReloadCurrentConfig(updatedFileNames: Set<String>) -> Bool {
-        guard !updatedFileNames.isEmpty else { return false }
-        guard isRuntimeRunning else { return false }
-        return updatedFileNames.contains(selectedConfigName)
     }
 
     private func writeConfigData(_ data: Data, to targetURL: URL) throws {
@@ -536,24 +571,91 @@ extension AppSession {
         return trimmed
     }
 
+    private func executeConfigReload(expectedTunEnabled: Bool) async throws {
+        ensureAPIClient()
+        try await self.executeRuntimeConfigReloadRequest()
+        try await self.restoreTunAfterConfigReloadIfNeeded(expectedEnabled: expectedTunEnabled)
+    }
+
+    private func executeRuntimeConfigReloadRequest() async throws {
+        try await self.reloadRuntimeConfigUseCase().execute(force: false)
+    }
+
     private func restoreTunAfterConfigReloadIfNeeded(expectedEnabled: Bool) async throws {
-        guard isRuntimeRunning else { return }
+        guard self.shouldRestoreTunAfterConfigReload() else { return }
+        try await self.executeTunRestoreAfterConfigReload(expectedEnabled: expectedEnabled)
+        self.persistTunSettingAfterConfigReloadIfNeeded(expectedEnabled: expectedEnabled)
+    }
+
+    private func shouldRestoreTunAfterConfigReload() -> Bool {
+        isRuntimeRunning
+    }
+
+    private func executeTunRestoreAfterConfigReload(expectedEnabled: Bool) async throws {
         try await self.patchTunConfig(enable: expectedEnabled)
         try await self.verifyTunRuntimeState(expectedEnabled: expectedEnabled)
-        if isTunEnabled != expectedEnabled {
-            isTunEnabled = expectedEnabled
-            persistEditableSettingsSnapshot()
+    }
+
+    private func persistTunSettingAfterConfigReloadIfNeeded(expectedEnabled: Bool) {
+        guard isTunEnabled != expectedEnabled else { return }
+        isTunEnabled = expectedEnabled
+        persistEditableSettingsSnapshot()
+    }
+
+    private func configReloadFeedback(outcome: ConfigReloadFeedbackOutcome) -> ConfigReloadFeedback {
+        self.resolveConfigReloadFeedbackUseCase.execute(
+            outcome: outcome,
+            successMessage: { tr("log.action.success", $0) },
+            failureMessage: { tr("log.action.failed", $0, $1) })
+    }
+
+    private func appendConfigReloadFeedback(_ feedback: ConfigReloadFeedback) {
+        appendLog(level: feedback.logLevel, message: feedback.message)
+    }
+
+    private func reloadConfigSuccessFeedback() -> ConfigReloadFeedback {
+        self.configReloadFeedback(outcome: .succeeded(actionName: tr("log.action_name.reload_config")))
+    }
+
+    private func reloadConfigFailureFeedback(reason: String) -> ConfigReloadFeedback {
+        self.configReloadFeedback(
+            outcome: .failed(
+                actionName: tr("log.action_name.reload_config"),
+                reason: reason))
+    }
+
+    private func completeConfigMutation(
+        updatedFileNames: Set<String>,
+        remoteSourceUpdates: [String: String?] = [:]) async
+    {
+        self.applyRemoteConfigSourceUpdates(remoteSourceUpdates)
+        let followUpPlan = self.resolveConfigMutationFollowUpUseCase.execute(
+            updatedFileNames: updatedFileNames,
+            selectedConfigName: selectedConfigName,
+            isRuntimeRunning: isRuntimeRunning,
+            hasRemoteSourceChanges: !remoteSourceUpdates.isEmpty)
+        self.applyConfigMutationFollowUp(followUpPlan)
+        if followUpPlan.shouldReloadCurrentConfig {
+            await self.reloadConfig()
         }
     }
 
-    private func updateRemoteConfigSource(for fileName: String, urlString: String?) {
-        if let urlString {
-            remoteConfigSources[fileName] = urlString
-        } else {
-            remoteConfigSources.removeValue(forKey: fileName)
+    private func applyConfigMutationFollowUp(_ plan: ConfigMutationFollowUpPlan) {
+        guard plan.shouldRefreshConfigState else { return }
+        self.refreshConfigStateAfterMutation()
+    }
+
+    private func applyRemoteConfigSourceUpdates(_ updates: [String: String?]) {
+        guard !updates.isEmpty else { return }
+
+        for (fileName, urlString) in updates {
+            if let urlString {
+                remoteConfigSources[fileName] = urlString
+            } else {
+                remoteConfigSources.removeValue(forKey: fileName)
+            }
         }
         persistRemoteConfigSources()
-        self.refreshConfigStateAfterMutation()
     }
 
     private func remoteConfigUpdatedAt(for fileName: String) -> Date? {
@@ -564,18 +666,48 @@ extension AppSession {
         return try? configURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
-    private func mergedRemoteConfigMenuState(for fileName: String, updatedAt: Date?) -> RemoteConfigMenuState {
-        let current = self.remoteConfigMenuStates[fileName] ?? .idle
-        let phase: RemoteConfigRefreshPhase = switch current.phase {
-        case .refreshing:
-            .refreshing
-        case .failed:
-            current.updatedAt == updatedAt ? .failed : .idle
-        case .idle:
-            .idle
-        }
+    private func invalidRemoteConfigUpdateMessage(for fileName: String) -> String {
+        let source = self.remoteConfigSources[fileName] ?? fileName
+        return self.remoteConfigUpdateFailureMessage(
+            fileName: fileName,
+            reason: tr("log.config.remote.invalid_url", source))
+    }
 
-        return RemoteConfigMenuState(updatedAt: updatedAt, phase: phase)
+    private func remoteConfigUpdateFailureMessage(fileName: String, reason: String) -> String {
+        tr("log.config.remote.update_item_failed", fileName, reason)
+    }
+
+    private func logRemoteConfigUpdateFailure(fileName: String, error: Error) {
+        appendLog(
+            level: "error",
+            message: self.remoteConfigUpdateFailureMessage(
+                fileName: fileName,
+                reason: error.localizedDescription))
+    }
+
+    private func remoteConfigImportFeedback(
+        from result: Result<RemoteConfigImportRequest, ResolveRemoteConfigImportRequestError>) -> RemoteConfigImportFeedback?
+    {
+        guard case let .failure(error) = result else { return nil }
+        return self.remoteConfigImportFeedback(outcome: .requestValidationFailed(error))
+    }
+
+    private func remoteConfigImportFeedback(
+        outcome: RemoteConfigImportFeedbackOutcome) -> RemoteConfigImportFeedback
+    {
+        self.resolveRemoteConfigImportFeedbackUseCase.execute(
+            outcome: outcome,
+            invalidURLMessage: { tr("log.config.remote.invalid_url", $0) },
+            invalidFileNameMessage: { tr("log.config.import.invalid_filename", $0) },
+            successMessage: { tr("log.config.import_remote.success", $0) },
+            failureMessage: { tr("log.config.import_remote.failed", $0, $1) })
+    }
+
+    private func presentRemoteConfigImportFeedback(_ feedback: RemoteConfigImportFeedback) {
+        appendLog(level: feedback.logLevel, message: feedback.message)
+        self.presentRemoteConfigImportResultAlert(
+            success: feedback.alertIsSuccess,
+            message: feedback.message)
     }
 
     private func setRemoteConfigMenuState(
@@ -589,11 +721,79 @@ extension AppSession {
             phase: phase)
     }
 
-    private func resolvedRemoteURL(for fileName: String) -> URL? {
-        guard let urlString = self.remoteConfigSources[fileName],
-              let url = URL(string: urlString),
-              self.isSupportedRemoteConfigURL(url)
-        else { return nil }
-        return url
+    private func beginRemoteConfigRefresh(fileName: String) -> RemoteConfigMenuState {
+        self.setRemoteConfigMenuState(for: fileName, phase: .refreshing)
+        return self.remoteConfigMenuState(for: fileName)
+    }
+
+    private func finishRemoteConfigRefresh(
+        for fileName: String,
+        currentState: RemoteConfigMenuState,
+        completion: RemoteConfigRefreshCompletion)
+    {
+        self.remoteConfigMenuStates[fileName] = self.resolveRemoteConfigRefreshCompletionStateUseCase.execute(
+            current: currentState,
+            completion: completion)
+    }
+
+    private func completeRemoteConfigRefreshSuccess(
+        fileName: String,
+        currentState: RemoteConfigMenuState)
+    {
+        self.finishRemoteConfigRefresh(
+            for: fileName,
+            currentState: currentState,
+            completion: .succeeded(
+                updatedAt: self.remoteConfigUpdatedAt(for: fileName),
+                fallbackUpdatedAt: Date()))
+    }
+
+    private func failRemoteConfigRefresh(
+        fileName: String,
+        currentState: RemoteConfigMenuState)
+    {
+        self.finishRemoteConfigRefresh(
+            for: fileName,
+            currentState: currentState,
+            completion: .failed)
+    }
+
+    private func resolveRemoteConfigRefreshTargetOrLogFailure(
+        fileName: String,
+        configDirectory: URL) -> RemoteConfigRefreshTarget?
+    {
+        guard let target = self.resolveRemoteConfigRefreshTarget(
+            fileName: fileName,
+            configDirectory: configDirectory)
+        else {
+            appendLog(level: "error", message: self.invalidRemoteConfigUpdateMessage(for: fileName))
+            return nil
+        }
+
+        return target
+    }
+
+    private func refreshRemoteConfigTarget(
+        _ target: RemoteConfigRefreshTarget,
+        userAgent: String?) async throws
+    {
+        try await self.replaceRemoteConfigFile(
+            from: target.remoteURL,
+            userAgent: userAgent,
+            targetURL: target.targetURL)
+    }
+
+    private func resolveRemoteConfigRefreshTarget(fileName: String, configDirectory: URL) -> RemoteConfigRefreshTarget? {
+        switch self.resolveRemoteConfigRefreshTargetUseCase.execute(
+            fileName: fileName,
+            remoteConfigSources: self.remoteConfigSources,
+            configDirectory: configDirectory,
+            isSupportedRemoteConfigURL: self.isSupportedRemoteConfigURL)
+        {
+        case let .success(target):
+            target
+        case .failure:
+            nil
+        }
     }
 }

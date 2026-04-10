@@ -4,45 +4,6 @@ import SwiftUI
 // swiftlint:disable:next type_name
 private typealias T = MenuBarLayoutTokens
 
-private struct LogsFilterChipButton: View {
-    let title: String
-    let selected: Bool
-    let selectedFill: Color
-    let selectedBorder: Color
-    let selectedText: Color
-    let normalText: Color
-    let hoverFill: Color
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: self.action) {
-            Text(self.title)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, T.space6)
-                .padding(.vertical, T.space2)
-                .foregroundStyle(self.selected ? self.selectedText : self.normalText)
-                .background {
-                    Capsule(style: .continuous)
-                        .fill(self.selected ? self.selectedFill : (self.isHovered ? self.hoverFill : .clear))
-                        .overlay {
-                            if self.selected {
-                                Capsule(style: .continuous)
-                                    .stroke(self.selectedBorder, lineWidth: T.stroke)
-                            }
-                        }
-                }
-                .contentShape(Capsule(style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .onHover { self.isHovered = $0 }
-        .animation(.easeOut(duration: 0.12), value: self.isHovered)
-        .animation(.snappy(duration: 0.16), value: self.selected)
-    }
-}
-
 private struct LogFilterGroupConfiguration<Item: Hashable> {
     let symbol: String
     let allTitle: String
@@ -55,6 +16,10 @@ private struct LogFilterGroupConfiguration<Item: Hashable> {
 }
 
 extension MenuBarRootView {
+    private var logEntryPresentationResolver: LogEntryPresentationResolver {
+        LogEntryPresentationResolver(fallbackText: tr("ui.common.na"))
+    }
+
     var logsTabBody: some View {
         let logs = self.logsViewModel.visibleLogs
 
@@ -157,13 +122,13 @@ extension MenuBarRootView {
                 .font(.app(size: T.FontSize.caption, weight: .semibold))
                 .foregroundStyle(nativeTertiaryLabel)
 
-            self.logFilterToggleButton(
+            self.filterChipButton(
                 title: configuration.allTitle,
                 selected: configuration.allSelected,
                 action: configuration.selectAll)
 
             ForEach(configuration.items, id: \.self) { item in
-                self.logFilterToggleButton(
+                self.filterChipButton(
                     title: configuration.itemTitle(item),
                     selected: configuration.itemSelected(item),
                     action: { configuration.toggleItem(item) })
@@ -171,39 +136,18 @@ extension MenuBarRootView {
         }
     }
 
-    func logFilterToggleButton(
-        title: String,
-        selected: Bool,
-        action: @escaping () -> Void) -> some View
-    {
-        LogsFilterChipButton(
-            title: title,
-            selected: selected,
-            selectedFill: self.nativeAccent
-                .opacity(self.isDarkAppearance ? 0.10 : 0.045),
-            selectedBorder: self.nativeAccent
-                .opacity(self.isDarkAppearance ? 0.14 : 0.08),
-            selectedText: self.nativePrimaryLabel
-                .opacity(self.isDarkAppearance ? 0.96 : 0.88),
-            normalText: self.nativeSecondaryLabel,
-            hoverFill: self.nativeHoverFill
-                .opacity(self.isDarkAppearance ? 0.06 : 0.035),
-            action: action)
-    }
-
     func refreshVisibleLogs() {
         self.logsViewModel.updateVisibleLogs(
             from: self.appSession.errorLogs,
             searchTextContent: { log in self.logSearchTextContent(for: log) },
-            normalizedLevel: { level in self.normalizedLogLevel(level) },
+            normalizedLevel: { level in self.logEntryPresentationResolver.normalizedLevel(level) },
             levelFilter: { level in self.logLevelFilter(level) })
     }
 
     func logEntryRow(_ log: AppErrorLogEntry) -> some View {
-        let level = self.normalizedLogLevel(log.level)
+        let presentation = self.logEntryPresentationResolver.parseMessage(log.message)
         let sourceInfo = self.logSourcePresentation(log.source)
-        let levelInfo = self.logLevelPresentation(level)
-        let parsed = self.parseLogMessage(log.message)
+        let levelInfo = self.logLevelPresentation(self.normalizedLogLevel(log.level))
         let tone = levelInfo.color
         let symbol = levelInfo.symbol
 
@@ -219,11 +163,11 @@ extension MenuBarRootView {
                         .font(.app(size: T.FontSize.caption, weight: .semibold))
                         .foregroundStyle(sourceInfo.color)
 
-                    if let protocolTag = parsed.protocolTag {
+                    if let protocolTag = presentation.protocolTag {
                         self.logMetadataSeparator
                         Text(protocolTag)
                             .font(.app(size: T.FontSize.caption, weight: .semibold))
-                            .foregroundStyle(parsed.protocolColor)
+                            .foregroundStyle(self.logProtocolColor(presentation.protocolStyle))
                     }
 
                     self.logMetadataSeparator
@@ -233,12 +177,12 @@ extension MenuBarRootView {
                         .lineLimit(1)
                 }
 
-                Text(parsed.mainText)
+                Text(presentation.mainText)
                     .font(.app(size: T.FontSize.caption, weight: .regular))
                     .foregroundStyle(nativePrimaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if let detailText = parsed.detailText {
+                if let detailText = presentation.detailText {
                     Text(detailText)
                         .font(.app(size: T.FontSize.caption, weight: .regular))
                         .foregroundStyle(nativeSecondaryLabel)
@@ -275,14 +219,7 @@ extension MenuBarRootView {
     }
 
     func normalizedLogLevel(_ raw: String) -> String {
-        let lower = raw.trimmed.lowercased()
-        if lower.contains("error") || lower.contains("err") {
-            return "ERROR"
-        }
-        if lower.contains("warn") {
-            return "WARNING"
-        }
-        return "INFO"
+        self.logEntryPresentationResolver.normalizedLevel(raw)
     }
 
     func logSourcePresentation(_ source: AppLogSource) -> (label: String, color: Color) {
@@ -331,64 +268,20 @@ extension MenuBarRootView {
         }
     }
 
-    func parseLogMessage(_ raw: String)
-    -> (protocolTag: String?, protocolColor: Color, mainText: String, detailText: String?) {
-        var message = raw.trimmed
-        if message.isEmpty {
-            return (nil, nativeSecondaryLabel, tr("ui.common.na"), nil)
+    private func logProtocolColor(_ style: LogMessageProtocolStyle) -> Color {
+        switch style {
+        case .accent:
+            nativeAccent.opacity(T.Opacity.solid)
+        case .warning:
+            nativeWarning.opacity(T.Opacity.solid)
+        case .positive:
+            nativePositive.opacity(T.Opacity.solid)
         }
-
-        if let extracted = firstRegexCapture(in: message, regex: CachedLogRegex.msgField), !extracted.isEmpty {
-            message = extracted
-        }
-
-        var detailText: String?
-        if let trailingBracket = firstRegexCapture(in: message, regex: CachedLogRegex.trailingBracket) {
-            detailText = trailingBracket
-            message = message.replacingOccurrences(of: trailingBracket, with: "").trimmed
-        }
-
-        var protocolTag: String?
-        var protocolColor = nativeAccent.opacity(T.Opacity.solid)
-        if let tag = firstRegexCapture(in: message, regex: CachedLogRegex.protocolTag) {
-            protocolTag = tag
-            message = message.replacingOccurrences(of: tag, with: "").trimmed
-
-            let upper = tag.uppercased()
-            if upper.contains("UDP") { protocolColor = nativeWarning.opacity(T.Opacity.solid) }
-            if upper.contains("DNS") { protocolColor = nativePositive.opacity(T.Opacity.solid) }
-            if upper.contains("HTTP") { protocolColor = nativeAccent.opacity(T.Opacity.solid) }
-        }
-
-        if message.isEmpty {
-            message = raw.trimmed
-        }
-        return (protocolTag, protocolColor, message, detailText)
-    }
-
-    func firstRegexCapture(in text: String, regex: NSRegularExpression?) -> String? {
-        guard let regex else { return nil }
-        let nsText = text as NSString
-        let range = NSRange(location: 0, length: nsText.length)
-        guard let match = regex.firstMatch(in: text, options: [], range: range), match.numberOfRanges > 1 else {
-            return nil
-        }
-        let captureRange = match.range(at: 1)
-        guard captureRange.location != NSNotFound else { return nil }
-        return nsText.substring(with: captureRange)
     }
 
     func logSearchTextContent(for log: AppErrorLogEntry) -> String {
         let source = self.logSourcePresentation(log.source).label
-        let level = self.normalizedLogLevel(log.level)
         let time = ValueFormatter.dateTime(log.timestamp)
-        let message = log.message
-        return "\(source) \(level) \(time) \(message)"
+        return self.logEntryPresentationResolver.searchText(for: log, sourceText: source, timeText: time)
     }
-}
-
-private enum CachedLogRegex {
-    static let msgField = try? NSRegularExpression(pattern: #"msg="([^"]+)""#, options: [])
-    static let trailingBracket = try? NSRegularExpression(pattern: #"(?:\s|^)(\[[^\[\]]+\])\s*$"#, options: [])
-    static let protocolTag = try? NSRegularExpression(pattern: #"(\[(?:TCP|UDP|DNS|HTTP|HTTPS)\])"#, options: [])
 }

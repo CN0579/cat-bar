@@ -6,6 +6,10 @@ extension AppSession {
         ComputeNextStreamReconnectDelayUseCase()
     }
 
+    private var shouldIgnoreStreamErrorUseCase: ShouldIgnoreStreamErrorUseCase {
+        ShouldIgnoreStreamErrorUseCase()
+    }
+
     private var normalizeWebSocketPayloadUseCase: NormalizeWebSocketPayloadUseCase {
         NormalizeWebSocketPayloadUseCase()
     }
@@ -110,6 +114,7 @@ extension AppSession {
                 message = try await ws.receive()
             } catch {
                 if Task.isCancelled { return }
+                if self.shouldIgnoreStreamErrorUseCase.execute(error) { return }
                 let disconnectMessage = error.localizedDescription
                 if self.shouldLogStreamDisconnect(kind: kind, message: disconnectMessage) {
                     appendLog(level: "error", message: tr("log.stream.disconnected", tr(kind.label), disconnectMessage))
@@ -300,10 +305,16 @@ extension AppSession {
         streamReconnectAttempts.removeValue(forKey: kind.key)
         streamLastDisconnectLogAt.removeValue(forKey: kind.key)
         streamLastDisconnectLogMessage.removeValue(forKey: kind.key)
+        streamLastPayloadAt.removeValue(forKey: kind.key)
     }
 
     private func markStreamPayloadReceived(for kind: StreamKind) {
         streamReconnectAttempts[kind.key] = 0
+        streamLastPayloadAt[kind.key] = Date()
+    }
+
+    func streamLastPayloadAt(for kind: StreamKind) -> Date? {
+        self.streamLastPayloadAt[kind.key]
     }
 
     private func nextReconnectDelayNanoseconds(for kind: StreamKind) -> UInt64 {
