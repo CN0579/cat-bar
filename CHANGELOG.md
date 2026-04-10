@@ -1,3 +1,18 @@
+## v0.7.2
+
+> 本次更新将来源管理迁移至独立窗口、修复了本地节点列表误含远程节点的问题，并通过减少临时内存分配与引入索引查找优化了代理分组的运行效率。
+
+### 🚀 优化改进
+
+- **source-manager**：move source management into a dedicated window
+- **menu-bar**：reduce transient allocations in tab filtering
+- **session**：replace proxy group cache with index lookup
+- **changelog**：normalize changelog grouping and tool log cleanup
+
+### 🐞 问题修复
+
+- **nodes**：exclude provider-backed remote leaf nodes from local list
+
 ## v0.7.1
 
 > 本次更新将应用会话决策与菜单栏展示逻辑分离，使状态管理更清晰，为后续功能扩展奠定更稳固的基础。
