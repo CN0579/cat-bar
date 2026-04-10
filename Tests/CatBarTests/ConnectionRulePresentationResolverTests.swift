@@ -31,7 +31,7 @@ final class ConnectionRulePresentationResolverTests: XCTestCase {
             ["Group", "Proxy"])
     }
 
-    func testSearchTextIncludesCoreSearchFields() {
+    func testMatchesSearchChecksCoreSearchFieldsWithoutBuildingJoinedText() {
         let connection = ConnectionSummary(
             id: "abc",
             upload: 1,
@@ -46,13 +46,12 @@ final class ConnectionRulePresentationResolverTests: XCTestCase {
                 destinationIP: "1.1.1.1",
                 host: "example.com"))
 
-        let text = self.resolver.searchText(for: connection)
-
-        XCTAssertTrue(text.contains("example.com"))
-        XCTAssertTrue(text.contains("1.1.1.1"))
-        XCTAssertTrue(text.contains("10.0.0.1"))
-        XCTAssertTrue(text.contains("tcp"))
-        XCTAssertTrue(text.contains("abc"))
-        XCTAssertTrue(text.contains("Group > Proxy"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "example.com"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "1.1.1.1"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "10.0.0.1"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "tcp"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "abc"))
+        XCTAssertTrue(self.resolver.matchesSearch(connection, keyword: "Group"))
+        XCTAssertFalse(self.resolver.matchesSearch(connection, keyword: "missing"))
     }
 }

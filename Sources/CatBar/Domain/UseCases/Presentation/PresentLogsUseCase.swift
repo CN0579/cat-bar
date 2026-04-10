@@ -8,7 +8,7 @@ struct PresentLogsUseCase {
         let selectedSources: Set<AppLogSource>
         let selectedLevels: Set<LogLevelFilter>
         let searchText: String
-        let searchTextContent: (AppErrorLogEntry) -> String
+        let matchesSearch: (AppErrorLogEntry, String) -> Bool
         let normalizedLevel: (String) -> String
         let levelFilter: (String) -> LogLevelFilter
     }
@@ -31,7 +31,7 @@ struct PresentLogsUseCase {
             if needsSourceFilter, !input.selectedSources.contains(log.source) {
                 continue
             }
-            if needsSearch, !input.searchTextContent(log).localizedStandardContains(trimmedKeyword) {
+            if needsSearch, !input.matchesSearch(log, trimmedKeyword) {
                 continue
             }
             if needsLevelFilter {

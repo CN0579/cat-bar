@@ -62,7 +62,7 @@ final class PresentLogsUseCaseTests: XCTestCase {
             selectedSources: selectedSources,
             selectedLevels: selectedLevels,
             searchText: searchText,
-            searchTextContent: \.message,
+            matchesSearch: { $0.message.localizedStandardContains($1) },
             normalizedLevel: { $0.trimmed.lowercased() },
             levelFilter: {
                 switch $0 {

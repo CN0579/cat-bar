@@ -24,7 +24,7 @@ final class LogsTabViewModel: ObservableObject {
 
     func updateVisibleLogs(
         from logs: [AppErrorLogEntry],
-        searchTextContent: @escaping (AppErrorLogEntry) -> String,
+        matchesSearch: @escaping (AppErrorLogEntry, String) -> Bool,
         normalizedLevel: @escaping (String) -> String,
         levelFilter: @escaping (String) -> LogLevelFilter)
     {
@@ -33,7 +33,7 @@ final class LogsTabViewModel: ObservableObject {
             selectedSources: self.selectedSources,
             selectedLevels: self.selectedLevels,
             searchText: self.searchText,
-            searchTextContent: searchTextContent,
+            matchesSearch: matchesSearch,
             normalizedLevel: normalizedLevel,
             levelFilter: levelFilter))
         guard nextLogs != self.visibleLogs else { return }

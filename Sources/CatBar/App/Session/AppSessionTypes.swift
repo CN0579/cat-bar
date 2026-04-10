@@ -230,9 +230,27 @@ struct LogPresentationState {
     }
 
     mutating func prepend(_ entries: [AppErrorLogEntry], limit: Int) {
+        guard limit > 0 else {
+            self.errorLogs.removeAll(keepingCapacity: false)
+            return
+        }
         guard !entries.isEmpty else { return }
-        let combined = entries.reversed() + self.errorLogs
-        self.errorLogs = Array(combined.prefix(limit))
+
+        let newEntryCount = min(entries.count, limit)
+        let retainedExistingCount = min(self.errorLogs.count, max(0, limit - newEntryCount))
+
+        var nextLogs: [AppErrorLogEntry] = []
+        nextLogs.reserveCapacity(newEntryCount + retainedExistingCount)
+
+        for entry in entries.suffix(newEntryCount).reversed() {
+            nextLogs.append(entry)
+        }
+
+        if retainedExistingCount > 0 {
+            nextLogs.append(contentsOf: self.errorLogs.prefix(retainedExistingCount))
+        }
+
+        self.errorLogs = nextLogs
     }
 }
 

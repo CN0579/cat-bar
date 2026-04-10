@@ -70,8 +70,14 @@ struct LogEntryPresentationResolver {
             detailText: detailText)
     }
 
-    func searchText(for log: AppErrorLogEntry, sourceText: String, timeText: String) -> String {
-        "\(sourceText) \(self.normalizedLevel(log.level)) \(timeText) \(log.message)"
+    func matchesSearch(_ log: AppErrorLogEntry, keyword: String, sourceText: String) -> Bool {
+        if sourceText.localizedStandardContains(keyword) {
+            return true
+        }
+        if self.normalizedLevel(log.level).localizedStandardContains(keyword) {
+            return true
+        }
+        return log.message.localizedStandardContains(keyword)
     }
 
     func firstRegexCapture(in text: String, regex: NSRegularExpression?) -> String? {

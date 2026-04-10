@@ -46,16 +46,30 @@ struct ConnectionRulePresentationResolver {
         Array((chains ?? []).compactMap(\.trimmedNonEmpty).reversed())
     }
 
-    func searchText(for connection: ConnectionSummary) -> String {
-        let host = connection.metadata?.host ?? ""
-        let destinationIP = connection.metadata?.destinationIP ?? ""
-        let sourceIP = connection.metadata?.sourceIP ?? ""
-        let network = connection.metadata?.network ?? ""
-        let id = connection.id
-        let rule = connection.rule ?? ""
-        let rulePayload = connection.rulePayload ?? ""
-        let chains = self.chainsParts(connection.chains).joined(separator: " > ")
-        let start = connection.start ?? ""
-        return "\(host) \(destinationIP) \(sourceIP) \(network) \(id) \(rule) \(rulePayload) \(chains) \(start)"
+    func matchesSearch(_ connection: ConnectionSummary, keyword: String) -> Bool {
+        let fields: [String?] = [
+            connection.metadata?.host,
+            connection.metadata?.destinationIP,
+            connection.metadata?.sourceIP,
+            connection.metadata?.network,
+            connection.id,
+            connection.rule,
+            connection.rulePayload,
+            connection.start,
+        ]
+
+        for field in fields {
+            if field?.localizedStandardContains(keyword) == true {
+                return true
+            }
+        }
+
+        for chainPart in self.chainsParts(connection.chains) {
+            if chainPart.localizedStandardContains(keyword) {
+                return true
+            }
+        }
+
+        return false
     }
 }

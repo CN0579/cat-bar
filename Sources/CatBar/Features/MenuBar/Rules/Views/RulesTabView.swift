@@ -3,12 +3,18 @@ import SwiftUI
 // swiftlint:disable:next type_name
 private typealias T = MenuBarLayoutTokens
 
+private struct RuleProviderStats {
+    let count: Int
+    let updatedText: String?
+}
+
 extension MenuBarRootView {
     var rulesTabBody: some View {
         let groups = self.rulesViewModel.policyGroups
         let providerLookup = self.rulesViewModel.providerLookup
-
-        let totalConcreteCount = self.totalConcreteRuleCount(groups: groups, providerLookup: providerLookup)
+        let providerStats = self.makeRuleProviderStatsLookup(providerLookup: providerLookup)
+        let groupConcreteCounts = self.makeRuleGroupConcreteCounts(groups: groups, providerStats: providerStats)
+        let totalConcreteCount = groupConcreteCounts.values.reduce(0, +)
 
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 0) {
@@ -29,7 +35,10 @@ extension MenuBarRootView {
             } else {
                 VStack(spacing: 0) {
                     ForEach(groups) { group in
-                        self.rulePolicyGroupSection(group: group, providerLookup: providerLookup)
+                        self.rulePolicyGroupSection(
+                            group: group,
+                            providerStats: providerStats,
+                            concreteCount: groupConcreteCounts[group.id] ?? group.rules.count)
                     }
                 }
             }
@@ -39,12 +48,12 @@ extension MenuBarRootView {
 
     private func rulePolicyGroupSection(
         group: RulePolicyGroup,
-        providerLookup: [String: ProviderDetail]) -> some View
+        providerStats: [String: RuleProviderStats],
+        concreteCount: Int) -> some View
     {
         let isExpanded = expandedRuleGroups.contains(group.policy)
         let policyText = group.policy.isEmpty ? tr("ui.common.na") : group.policy
         let hovered = hoveredRuleGroup == group.policy
-        let concreteCount = self.concreteRuleCount(for: group, providerLookup: providerLookup)
 
         return VStack(spacing: 0) {
             Button {
@@ -85,7 +94,7 @@ extension MenuBarRootView {
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(group.rules) { rule in
-                        self.rulesRow(rule: rule, providerLookup: providerLookup)
+                        self.rulesRow(rule: rule, providerStats: providerStats)
                     }
                 }
             }
@@ -118,10 +127,10 @@ extension MenuBarRootView {
         .opacity(appSession.isRuleProvidersRefreshing ? 0.6 : 1)
     }
 
-    func rulesRow(rule: RuleItem, providerLookup: [String: ProviderDetail]) -> some View {
+    fileprivate func rulesRow(rule: RuleItem, providerStats: [String: RuleProviderStats]) -> some View {
         let typeText = (rule.type.trimmedNonEmpty ?? tr("ui.common.na")).uppercased()
         let targetText = rule.payload.trimmedNonEmpty ?? tr("ui.common.na")
-        let stats = self.ruleStats(payload: targetText, providerLookup: providerLookup)
+        let stats = self.ruleStats(payload: targetText, providerStats: providerStats)
 
         return HStack(spacing: T.space4) {
             Color.clear.frame(width: 14)
@@ -153,40 +162,64 @@ extension MenuBarRootView {
         .frame(height: T.rowHeight)
     }
 
-    func ruleStats(
+    fileprivate func ruleStats(
         payload: String,
-        providerLookup: [String: ProviderDetail]) -> (count: Int, updatedText: String?, hasProvider: Bool)
+        providerStats: [String: RuleProviderStats]) -> (count: Int, updatedText: String?, hasProvider: Bool)
     {
         let payloadTrimmed = payload.trimmed
         guard !payloadTrimmed.isEmpty, payloadTrimmed != tr("ui.common.na") else {
             return (count: 0, updatedText: nil, hasProvider: false)
         }
 
-        if let provider = providerLookup[payloadTrimmed.lowercased()] {
-            let count = max(0, provider.ruleCount ?? 0)
+        if let provider = providerStats[payloadTrimmed.lowercased()] {
             return (
-                count: count,
-                updatedText: ValueFormatter.relativeTime(from: provider.updatedAt, language: language),
+                count: provider.count,
+                updatedText: provider.updatedText,
                 hasProvider: true)
         }
         return (count: 0, updatedText: nil, hasProvider: false)
     }
 
-    private func concreteRuleCount(for group: RulePolicyGroup, providerLookup: [String: ProviderDetail]) -> Int {
-        var count = 0
-        for rule in group.rules {
-            let payload = rule.payload?.trimmed ?? ""
-            if let provider = providerLookup[payload.lowercased()], let rc = provider.ruleCount, rc > 0 {
-                count += rc
-            } else {
-                count += 1
-            }
+    private func makeRuleProviderStatsLookup(
+        providerLookup: [String: ProviderDetail]) -> [String: RuleProviderStats]
+    {
+        guard !providerLookup.isEmpty else { return [:] }
+
+        var stats: [String: RuleProviderStats] = [:]
+        stats.reserveCapacity(providerLookup.count)
+
+        for (key, provider) in providerLookup {
+            stats[key] = RuleProviderStats(
+                count: max(0, provider.ruleCount ?? 0),
+                updatedText: ValueFormatter.relativeTime(from: provider.updatedAt, language: language))
         }
-        return count
+
+        return stats
     }
 
-    private func totalConcreteRuleCount(groups: [RulePolicyGroup], providerLookup: [String: ProviderDetail]) -> Int {
-        groups.reduce(0) { $0 + self.concreteRuleCount(for: $1, providerLookup: providerLookup) }
+    private func makeRuleGroupConcreteCounts(
+        groups: [RulePolicyGroup],
+        providerStats: [String: RuleProviderStats]) -> [String: Int]
+    {
+        guard !groups.isEmpty else { return [:] }
+
+        var counts: [String: Int] = [:]
+        counts.reserveCapacity(groups.count)
+
+        for group in groups {
+            var count = 0
+            for rule in group.rules {
+                let payload = rule.payload?.trimmed ?? ""
+                if let stats = providerStats[payload.lowercased()], stats.count > 0 {
+                    count += stats.count
+                } else {
+                    count += 1
+                }
+            }
+            counts[group.id] = count
+        }
+
+        return counts
     }
 
     func refreshVisibleRules() {

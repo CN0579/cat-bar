@@ -21,7 +21,7 @@ extension MenuBarRootView {
                 - 12
     }
 
-    private static var textWidthCache: [String: CGFloat] = [:]
+    private static let textWidthCache = ConnectionsTextWidthCache(limit: 512)
 
     private var connectionRulePresentationResolver: ConnectionRulePresentationResolver {
         ConnectionRulePresentationResolver()
@@ -159,8 +159,8 @@ extension MenuBarRootView {
     func refreshVisibleConnections() {
         self.connectionsViewModel.updateVisibleConnections(
             from: self.connectionsStore.connections,
-            searchText: { connection in
-                self.connectionRulePresentationResolver.searchText(for: connection)
+            matchesSearch: { connection, keyword in
+                self.connectionRulePresentationResolver.matchesSearch(connection, keyword: keyword)
             })
     }
 
@@ -230,14 +230,14 @@ extension MenuBarRootView {
 
     func connectionsMonospacedTextWidth(_ text: String, size: CGFloat, weight: NSFont.Weight) -> CGFloat {
         let cacheKey = "\(text)\0\(size)\0\(weight.rawValue)"
-        if let cached = Self.textWidthCache[cacheKey] {
+        if let cached = Self.textWidthCache.value(forKey: cacheKey) {
             return cached
         }
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedSystemFont(ofSize: size, weight: weight),
         ]
         let width = ceil((text as NSString).size(withAttributes: attributes).width)
-        Self.textWidthCache[cacheKey] = width
+        Self.textWidthCache.insert(width, forKey: cacheKey)
         return width
     }
 
@@ -265,6 +265,40 @@ extension MenuBarRootView {
             nativeInfo.opacity(MenuBarLayoutTokens.Opacity.solid)
         case .generic:
             nativeSecondaryLabel
+        }
+    }
+}
+
+private final class ConnectionsTextWidthCache {
+    private let limit: Int
+    private var storage: [String: CGFloat] = [:]
+    private var insertionOrder: [String] = []
+
+    init(limit: Int) {
+        self.limit = max(1, limit)
+        self.storage.reserveCapacity(limit)
+        self.insertionOrder.reserveCapacity(limit)
+    }
+
+    func value(forKey key: String) -> CGFloat? {
+        self.storage[key]
+    }
+
+    func insert(_ value: CGFloat, forKey key: String) {
+        if self.storage.updateValue(value, forKey: key) == nil {
+            self.insertionOrder.append(key)
+        }
+        self.trimIfNeeded()
+    }
+
+    private func trimIfNeeded() {
+        while self.storage.count > self.limit, let oldestKey = self.insertionOrder.first {
+            self.insertionOrder.removeFirst()
+            guard self.storage.removeValue(forKey: oldestKey) != nil else { continue }
+        }
+
+        if self.insertionOrder.count > self.limit * 2 {
+            self.insertionOrder = self.insertionOrder.filter { self.storage[$0] != nil }
         }
     }
 }

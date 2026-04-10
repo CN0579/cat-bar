@@ -139,7 +139,7 @@ extension MenuBarRootView {
     func refreshVisibleLogs() {
         self.logsViewModel.updateVisibleLogs(
             from: self.appSession.errorLogs,
-            searchTextContent: { log in self.logSearchTextContent(for: log) },
+            matchesSearch: { log, keyword in self.logMatchesSearch(log, keyword: keyword) },
             normalizedLevel: { level in self.logEntryPresentationResolver.normalizedLevel(level) },
             levelFilter: { level in self.logLevelFilter(level) })
     }
@@ -279,9 +279,8 @@ extension MenuBarRootView {
         }
     }
 
-    func logSearchTextContent(for log: AppErrorLogEntry) -> String {
+    func logMatchesSearch(_ log: AppErrorLogEntry, keyword: String) -> Bool {
         let source = self.logSourcePresentation(log.source).label
-        let time = ValueFormatter.dateTime(log.timestamp)
-        return self.logEntryPresentationResolver.searchText(for: log, sourceText: source, timeText: time)
+        return self.logEntryPresentationResolver.matchesSearch(log, keyword: keyword, sourceText: source)
     }
 }

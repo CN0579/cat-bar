@@ -15,7 +15,7 @@ final class PresentConnectionsUseCaseTests: XCTestCase {
             filterText: "",
             transportFilter: .all,
             sortOption: .default,
-            searchText: \.id)
+            matchesSearch: { $0.id.localizedStandardContains($1) })
 
         XCTAssertEqual(result.count, 120)
         XCTAssertEqual(result.first?.id, "conn-0")
@@ -34,7 +34,9 @@ final class PresentConnectionsUseCaseTests: XCTestCase {
             filterText: "gamma",
             transportFilter: .other,
             sortOption: .default,
-            searchText: { $0.metadata?.host ?? "" })
+            matchesSearch: { connection, keyword in
+                (connection.metadata?.host ?? "").localizedStandardContains(keyword)
+            })
 
         XCTAssertEqual(result.map(\.id), ["3"])
     }
@@ -52,7 +54,7 @@ final class PresentConnectionsUseCaseTests: XCTestCase {
             filterText: "",
             transportFilter: .all,
             sortOption: .newest,
-            searchText: \.id)
+            matchesSearch: { $0.id.localizedStandardContains($1) })
 
         XCTAssertEqual(result.map(\.id), ["c", "a", "b", "d"])
     }
@@ -70,7 +72,7 @@ final class PresentConnectionsUseCaseTests: XCTestCase {
             filterText: "",
             transportFilter: .all,
             sortOption: .totalDesc,
-            searchText: \.id)
+            matchesSearch: { $0.id.localizedStandardContains($1) })
 
         XCTAssertEqual(result.map(\.id), ["large", "tie-newer", "small", "tie-older"])
     }
@@ -88,7 +90,9 @@ final class PresentConnectionsUseCaseTests: XCTestCase {
             filterText: "match",
             transportFilter: .all,
             sortOption: .default,
-            searchText: { $0.metadata?.host ?? "" })
+            matchesSearch: { connection, keyword in
+                (connection.metadata?.host ?? "").localizedStandardContains(keyword)
+            })
 
         XCTAssertTrue(result.isEmpty)
     }

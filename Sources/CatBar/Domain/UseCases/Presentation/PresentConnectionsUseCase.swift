@@ -6,7 +6,7 @@ struct PresentConnectionsUseCase {
         filterText: String,
         transportFilter: ConnectionsTransportFilter,
         sortOption: ConnectionsSortOption,
-        searchText: (ConnectionSummary) -> String) -> [ConnectionSummary]
+        matchesSearch: (ConnectionSummary, String) -> Bool) -> [ConnectionSummary]
     {
         let source = connections.prefix(ConnectionsSnapshot.retainedConnectionLimit)
         let keyword = filterText.trimmed
@@ -24,7 +24,7 @@ struct PresentConnectionsUseCase {
                 if needsTransportFilter, !transportFilter.matches(connection.metadata?.network) {
                     continue
                 }
-                if needsSearch, !searchText(connection).localizedStandardContains(keyword) {
+                if needsSearch, !matchesSearch(connection, keyword) {
                     continue
                 }
                 matches.append(connection)

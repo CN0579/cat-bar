@@ -86,14 +86,14 @@ final class ConnectionsTabViewModel: ObservableObject {
 
     func updateVisibleConnections(
         from connections: [ConnectionSummary],
-        searchText: (ConnectionSummary) -> String)
+        matchesSearch: (ConnectionSummary, String) -> Bool)
     {
         let nextConnections = self.presentConnectionsUseCase.execute(
             connections: connections,
             filterText: self.filterText,
             transportFilter: self.transportFilter,
             sortOption: self.sortOption,
-            searchText: searchText)
+            matchesSearch: matchesSearch)
         guard nextConnections != self.visibleConnections else { return }
         self.visibleConnections = nextConnections
     }
