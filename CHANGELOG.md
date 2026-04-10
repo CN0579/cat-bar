@@ -1,8 +1,6 @@
 ## v0.7.1
 
-> ● Check recent commits for context (shell)
-
-本次更新将应用会话决策与菜单栏展示逻辑分离，使状态管理更清晰，为后续功能扩展奠定更稳固的基础。
+> 本次更新将应用会话决策与菜单栏展示逻辑分离，使状态管理更清晰，为后续功能扩展奠定更稳固的基础。
 
 ### 🚀 优化改进
 
@@ -14,11 +12,12 @@
 
 ### ✨ 新增功能
 
-- **view**：enhance MenuBarNodeRow with metric action display and refactor proxy group handling
+- **view**：
+  - enhance MenuBarNodeRow with metric action display and refactor proxy group handling
+  - enhance TrafficSparklineView with improved path drawing and control point calculations
+  - introduce NonActivatingTextField for improved focus handling in text fields
 - **nodes**：support batch latency tests in remote node popovers
 - **remote-machine**：add configurable web ui entry for remote sources
-- **view**：enhance TrafficSparklineView with improved path drawing and control point calculations
-- **view**：introduce NonActivatingTextField for improved focus handling in text fields
 - **system**：add core update entry to maintenance panel
 
 ### 🚀 优化改进
@@ -29,9 +28,10 @@
 ### 🐞 问题修复
 
 - **viewmodel**：filter out GLOBAL entries in rule mode for proxy groups
-- **view**：remove unused icon handling in connections and proxy group views
-- **view**：simplify sorting icon and label handling in proxy groups section
-- **view**：dismiss popover on disappearance of AttachedPopoverMenu
+- **view**：
+  - remove unused icon handling in connections and proxy group views
+  - simplify sorting icon and label handling in proxy groups section
+  - dismiss popover on disappearance of AttachedPopoverMenu
 - **system**：hide system proxy settings for remote targets
 
 ## v0.6.2
@@ -44,9 +44,7 @@
 
 ## v0.6.1
 
-> ✗ Check recent commits and changelog (shell)
-
-本次更新对核心逻辑进行了重新实现，进一步提升了整体运行的稳定性与可靠性。
+> 本次更新对核心逻辑进行了重新实现，进一步提升了整体运行的稳定性与可靠性。
 
 ### 🚀 优化改进
 
@@ -70,10 +68,11 @@
 ### 🐞 问题修复
 
 - **settings**：prevent auto-save triggering without actual content modification
-- **proxy**：fix layout truncation and incorrect height measurement
+- **proxy**：
+  - fix layout truncation and incorrect height measurement
+  - optimize helper recovery and offline proxy toggling
+  - force connection drop on network or proxy mode switch
 - **ui**：prevent bottom clipping and missing scroll on long lists
-- **proxy**：optimize helper recovery and offline proxy toggling
-- **proxy**：force connection drop on network or proxy mode switch
 
 ## v0.5.2
 
@@ -175,147 +174,125 @@
 
 ## v0.2.1
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.2.1-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新补齐了远程机器管理与远程感知界面，同时重做菜单栏顶部交互，并加强系统代理恢复链路，让多端点场景下的状态展示与操作反馈更可靠。
 
-> 本次更新主要围绕 **远程机器管理、菜单栏交互重构与系统代理恢复链路** 展开：新增远程控制端管理与本地/远程快速切换，Proxy、Rules、Connections、Logs、System 等页面会围绕当前目标自动切换；同时重做顶部模式/标签分段控件、代理详情与连接列表排版，并加强系统代理 Helper 的健康检查、恢复与提示，让多端点场景下的操作更清晰、状态更可信。
+### ✨ 新增功能
 
-### 📝 更新日志 (Changelog)
+- **remote-machine**：
+  - add remote machine management to the menu bar
+  - support local and remote target switching
+  - make remote-only and local-only settings explicit in remote sessions
+- **header**：show current target and connectivity status across tabs
 
-**✨ 新增功能 (New Features)**
+### 🚀 优化改进
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **远程机器管理**：在菜单栏中新增远程机器管理面板，支持添加、编辑、删除远程控制端，并可在本地 Mihomo 与远程机器之间快速切换。
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **远程目标感知视图**：顶部 Header 会显示当前连接目标与连通状态，Proxy、Logs、Connections、System 页面也会围绕当前目标自动刷新，多控制端场景下不容易混淆。
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **远程场景只读保护**：连接远程机器时，涉及本地应用或仅应作用于本地内核的设置会明确标注为只读或本地生效，减少误操作风险。
+- **menu-bar**：
+  - redesign segmented mode and tab controls
+  - refine proxy details, connection summaries, and list layouts
+- **system-proxy**：surface helper status, background permission state, and effective proxy address
+- **architecture**：reorganize the app into clearer layered modules and improve beta packaging flow
 
-**🚀 优化改进 (Improvements)**
+### 🐞 问题修复
 
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **菜单栏分段控件重做**：顶部模式切换与标签栏改为自定义分段控件，选中态、悬停反馈和整体层次更统一，菜单栏交互更贴近原生体验。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **代理与概览展示**：重新整理 Proxy 页的流量概览、快捷操作、Provider/Group 行信息和节点类型展示，查看节点状态、切换配置与复制代理命令时更直观。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **连接与日志信息密度**：Connections 页补充过滤、排序、链路与流量摘要展示；Logs、Rules、System 页的列表与卡片布局也同步细化，在固定宽度菜单栏里能承载更多信息。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **系统代理状态可视化**：系统代理入口现在会同时展示后台项目授权、Helper 进程与当前生效地址等状态，定位问题和确认代理指向都更直接。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **工程结构与构建链路**：将应用进一步整理为 App / Session / Domain / Infrastructure / Features 等分层，并补充 beta DMG 预发布流程、二进制瘦身和打包优化，为后续迭代与分发打下更稳的基础。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **系统代理恢复链路**：修复系统代理在启动、唤醒或切换场景下可能出现“开关已开但系统未生效”的问题，必要时会自动补齐配置并刷新真实状态。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **Helper 自恢复与预热**：修复系统代理 Helper 可能未及时拉起、注册状态失效或连接超时的问题，应用激活时会主动预热，并在连接失败后尝试恢复。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **授权与安装提示**：针对未放入“应用程序”目录、后台项目未允许、Helper 未注册或签名异常等场景补充更明确的错误提示，减少“打不开系统代理但不知道原因”的情况。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **远程切换状态一致性**：修复本地/远程目标切换时系统代理、快捷操作和页面状态可能不同步的问题，避免显示目标与实际控制端不一致。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **远程场景快捷操作适配**：修复复制终端代理命令、TUN/System Proxy 等快捷操作在远程使用场景下的适配问题，降低误用本地配置的风险。
+- **system-proxy**：
+  - restore proxy state more reliably after startup, wake, and target switches
+  - warm up the helper proactively and improve recovery behavior
+  - add clearer guidance for installation, permission, and helper registration failures
+- **remote-machine**：
+  - keep page state and quick actions consistent while switching targets
+  - adapt proxy command, TUN, and system proxy actions for remote usage
 
 ## v0.2.0
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.2.0-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新主要聚焦菜单栏交互稳定性与性能修复，减少代理分组悬停带来的高占用，并修正 Popover、System 页和 TUN 状态同步等一系列体验问题。
 
-> 本次更新主要聚焦在 **菜单栏交互稳定性与性能修复**：重点解决代理分组悬停时 CPU 异常飙高、Popover 悬停判定不稳、System 页面提示条布局跳动，以及 TUN 与系统代理状态在恢复场景下不同步的问题；同时继续优化活动数据缓存和界面细节，让整体菜单栏体验更顺滑。
+### 🚀 优化改进
 
-### 📝 更新日志 (Changelog)
+- **menu-bar**：
+  - cache derived activity data to reduce repeated recomputation
+  - isolate live connection stream handling from page state updates
+  - continue refining spacing, headers, and sparkline presentation
 
-**✨ 新增功能 (New Features)**
+### 🐞 问题修复
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **暂无内容**：当前版本未新增独立功能项，更新重点为稳定性、性能与交互体验修复。
-
-**🚀 优化改进 (Improvements)**
-
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **活动数据缓存**：为 Activity 页和菜单栏相关派生数据增加缓存与预计算，减少列表刷新和统计展示时的额外开销。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **实时连接状态处理**：整理实时连接与 WebSocket 数据流处理逻辑，降低 `AppState` 与页面刷新逻辑的耦合，提升 Activity、Proxy、Rules 等页面的刷新稳定性。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **菜单栏视觉打磨**：继续细化菜单栏界面的间距、标题区、Sparkline 和 System 页展示细节，整体观感更统一。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **代理分组悬停高占用**：修复鼠标悬停代理分组时可能触发 CPU 占用飙升的问题，显著减轻卡顿与发热。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **Popover 悬停稳定性**：修复附着式 Popover 在鼠标移动过程中的悬停判定不稳定问题，减少误闪动和意外收起。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **System 页布局跳动**：修复反馈提示条出现或消失时导致的 System 页面布局偏移问题。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **TUN 状态同步**：修复持久化的 TUN 开关状态与真实运行状态可能不一致的问题，避免界面显示和实际状态脱节。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **系统代理恢复竞态**：增强 Helper 恢复阶段的容错处理，减少系统代理状态恢复过程中的偶发异常。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **Fallback 分组排序**：修复 Fallback 代理组在刷新后的排序不稳定问题，让列表顺序更可预期。
+- **proxy**：
+  - fix excessive CPU usage while hovering proxy groups
+  - stabilize fallback group ordering after refresh
+- **popover**：stabilize hover detection for attached popovers
+- **system**：prevent feedback banners from shifting the System tab layout
+- **tun**：sync persisted TUN state with the actual runtime state
+- **system-proxy**：improve tolerance for helper recovery races
 
 ## v0.1.9
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.1.9-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新集中修正状态栏显示稳定性，将速度文本改为模板图像渲染，并修复状态栏宽度与弹出面板尺寸在切换场景下的抖动问题。
 
-> 本次更新集中修正了 **状态栏显示稳定性**：速度文本改为模板图像渲染，减少频繁重绘；同时修复状态栏宽度与弹出面板高度在切换场景下容易抖动、跳变的问题，让菜单栏体验更稳。
+### ✨ 新增功能
 
-### 📝 更新日志 (Changelog)
+- **status-bar**：render speed text with cached template images
 
-**✨ 新增功能 (New Features)**
+### 🚀 优化改进
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **模板化速度文本渲染**：状态栏上下行速率文本改为缓存模板图像渲染，保留系统原生的高亮/变暗行为，同时减少文本逐帧绘制开销。
+- **status-bar**：clean up rendering helpers and simplify width calculation
+- **popover**：use a more stable sizing path and respond faster to height changes
 
-**🚀 优化改进 (Improvements)**
+### 🐞 问题修复
 
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **状态栏渲染路径**：整理状态栏显示刷新与渲染辅助逻辑，宽度计算与运行态图标切换更直接，后续维护成本更低。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **Popover 尺寸跟随**：菜单弹出面板改为使用标准边界尺寸，并更及时响应高度变化，减少内容变化后的尺寸滞后。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **状态栏宽度抖动**：修复状态栏在图标/速率模式切换时宽度容易波动的问题，显示更稳定。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **弹出面板跳变**：修复菜单栏弹出面板在不同屏幕参数和内容高度变化下尺寸不稳定的问题，避免打开后出现跳一下的体验。
+- **status-bar**：fix width jitter while switching icon and speed display modes
+- **popover**：stabilize panel sizing across screen changes and content updates
 
 ## v0.1.8
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.1.8-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新提升了代理页面的信息展示与排序控制，新增代理组顺序切换，并重新设计订阅行摘要；同时修复状态栏图标模板化和 Helper XPC 认证问题。
 
-> 本次更新集中在 **代理页面体验提升**：新增 Proxy Group 排序切换（延迟排序 / 原始顺序），重新设计了代理订阅行的信息展示；同时修复了多显示器下状态栏图标不跟随系统变暗的问题，并加固了 Helper XPC 认证安全性。
+### ✨ 新增功能
 
-### 📝 更新日志 (Changelog)
+- **proxy**：add a proxy group ordering toggle for latency and default order
+- **status-bar**：introduce dedicated running and sleeping icons
 
-**✨ 新增功能 (New Features)**
+### 🚀 优化改进
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **代理组排序切换**：在 Proxy 页面工具栏新增排序切换，可在延迟排序与默认节点顺序之间切换，同时仍遵循隐藏不可用节点的过滤规则。
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **状态栏运行状态图标**：更新品牌图标资源，状态栏图标区分运行（Running）与休眠（Sleeping）两种状态。
+- **providers**：
+  - redesign provider rows to show update time, refresh state, expiry, and usage progress
+  - remove redundant node-level state tracking to keep provider summaries lightweight
 
-**🚀 优化改进 (Improvements)**
+### 🐞 问题修复
 
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **订阅信息重设计**：重新设计代理订阅（Proxy Provider）行，直接展示更新时间、刷新状态、到期信息和用量进度，信息一目了然。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **Provider 状态精简**：移除 Provider 节点级别的延迟、测试、展开等冗余状态追踪，保持订阅行聚焦于摘要信息，减少不必要的内存占用。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **状态栏图标变暗**：为状态栏图标启用 `isTemplate` 模式，修复多显示器切换焦点时图标不跟随系统自动变暗的问题，行为与系统电池、Wi-Fi 图标保持一致。
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **Helper XPC 认证**：XPC 认证改为基于代码签名要求（Code Signing Requirement），替代原有的 PID 签名校验方式，提升安全性与可靠性。
-
----
+- **status-bar**：enable template rendering so icons dim correctly with system focus changes
+- **helper**：replace PID-based XPC verification with code-signing requirement checks
 
 ## v0.1.7
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.1.7-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新补齐了系统代理状态恢复这条关键链路，避免应用重启后无故掉代理；同时新增 System 页快捷键，并在启动后自动触发分组延迟测试。
 
-> 本次更新重点补上了 **系统代理状态恢复** 这块一直该做但没做干净的事情：重启应用后不再莫名掉代理；同时顺手把 `System` 页快捷键和启动后的分组延迟探测补齐，让常用操作更顺手。
+### ✨ 新增功能
 
-### 📝 更新日志 (Changelog)
+- **system**：add a keyboard shortcut to open the System tab
+- **proxy**：auto-test proxy group latencies after core startup
 
-**✨ 新增功能 (New Features)**
+### 🚀 优化改进
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **系统页快捷键**：新增 `Command + ,` 快捷键，支持从菜单命令快速切换到 `System` 页面，更符合 macOS 用户习惯。
+- **lifecycle**：clear system proxy state proactively during app shutdown
 
-**🚀 优化改进 (Improvements)**
+### 🐞 问题修复
 
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **启动延迟探测**：内核启动完成后会自动触发 Proxy Group 延迟测试，用户打开面板时能更快看到各组节点状态。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **退出清理流程**：应用退出时会主动清理系统代理，减少异常退出后系统仍残留无效代理状态的情况。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **系统代理恢复**：修复 CatBar 重新启动后系统代理状态丢失的问题；如果退出前已开启代理，应用恢复运行后会自动按上次状态恢复。
+- **system-proxy**：restore the previous proxy state automatically after relaunch
 
 ## v0.1.6
 
-![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=flat-square&logo=apple) ![Version](https://img.shields.io/badge/Release-v0.1.6-10B981?style=flat-square) ![Core](https://img.shields.io/badge/Core-Mihomo-6366f1?style=flat-square)
+> 本次更新把 Mihomo 内核升级入口直接放进菜单栏底部，运行中也能一键检查和执行升级；同时补齐升级反馈、版本刷新与新版检测时机，减少升级过程中的黑盒感。
 
-> 本次更新重点把 **Mihomo 内核升级** 直接做进了菜单栏底部，运行中的用户无需再手动折腾；同时补齐了升级结果反馈、版本刷新与新版检测时机，减少“点了没反应”和版本信息滞后的问题。
+### ✨ 新增功能
 
-### 📝 更新日志 (Changelog)
+- **core**：add a one-click Mihomo upgrade action to the menu bar footer
 
-**✨ 新增功能 (New Features)**
+### 🚀 优化改进
 
-- ![Feature](https://img.shields.io/badge/Feature-10B981?style=flat-square) **内核一键升级**：在菜单栏底部新增 Mihomo 内核升级入口，支持在运行中直接检查并执行升级操作。
+- **core**：
+  - add clearer in-progress, success, up-to-date, and failure feedback during upgrades
+  - refresh the displayed Mihomo version after upgrade completes
+  - check for app updates when the panel opens instead of relying on background polling
 
-**🚀 优化改进 (Improvements)**
+### 🐞 问题修复
 
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **升级反馈**：为内核升级补充进行中、成功、已是最新版、失败等明确状态提示，并同步写入日志，减少黑盒体验。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **版本同步**：升级完成后自动刷新内核版本号，底部显示的 Mihomo 版本会尽快与实际运行版本保持一致。
-- ![Optimize](https://img.shields.io/badge/Optimize-3B82F6?style=flat-square) **版本检查时机**：应用新版检测改为在面板展开时刷新，避免后台无效轮询，同时保证用户打开菜单时能看到最新版本提示。
-
-**🐞 修复问题 (Bug Fixes)**
-
-- ![Fix](https://img.shields.io/badge/Fix-EF4444?style=flat-square) **升级响应兼容性**：兼容 Mihomo `/upgrade` 接口的多种响应与错误文案，正确识别“已是最新版”场景，避免把正常结果误判为失败。
+- **core**：improve compatibility with different `/upgrade` response formats and correctly detect already-up-to-date results

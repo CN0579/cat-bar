@@ -241,7 +241,8 @@ def build_summary_prompt(version: str, entries: list[CommitEntry]) -> str:
 
 
 TOOL_LOG_PATTERN = re.compile(
-    r"^\s*[●○◆◇▶▷→⟶⏵\-\*]\s+(?:Read|Write|Search|View|Execute|Open|Fetch|Load)\s+.+$"
+    r"^\s*>?\s*[✗●○◆◇▶▷→⟶⏵]\s+.+\((?:shell|bash|zsh|sh)\)\s*$"
+    r"|^\s*[●○◆◇▶▷→⟶⏵\-\*]\s+(?:Read|Write|Search|View|Execute|Open|Fetch|Load)\s+.+$"
     r"|^\s*[└├│─┌┐┘┤┬┴┼╠╣╔╗╚╝]\s*.*$"
     r"|^\s*L\d+:\d+\s*\(.*\)$",
     re.MULTILINE | re.IGNORECASE,
@@ -340,26 +341,39 @@ CATEGORY_EMOJI_HEADERS = {
 
 def render_by_category(entries: list[CommitEntry]) -> str:
     """Render entries grouped by category with emoji headers, omitting empty categories."""
-    categories: dict[str, list[str]] = {
-        "feature": [],
-        "improvement": [],
-        "fix": [],
+    categories: dict[str, OrderedDict[str | None, list[str]]] = {
+        "feature": OrderedDict(),
+        "improvement": OrderedDict(),
+        "fix": OrderedDict(),
     }
 
     for entry in entries:
-        scope_prefix = f"**{entry.scope}**：" if entry.scope else ""
-        categories[entry.category].append(f"- {scope_prefix}{entry.description}")
+        scoped_entries = categories[entry.category]
+        if entry.scope not in scoped_entries:
+            scoped_entries[entry.scope] = []
+        scoped_entries[entry.scope].append(entry.description)
 
     lines: list[str] = []
     for cat in ("feature", "improvement", "fix"):
-        items = dedupe_items(categories[cat])
-        if not items:
+        scoped_entries = categories[cat]
+        if not scoped_entries:
             continue
         if lines:
             lines.append("")
         lines.append(CATEGORY_EMOJI_HEADERS[cat])
         lines.append("")
-        lines.extend(items)
+        for scope, descriptions in scoped_entries.items():
+            unique_descriptions = dedupe_items(descriptions)
+            if not unique_descriptions:
+                continue
+            if scope is None:
+                lines.extend(f"- {description}" for description in unique_descriptions)
+                continue
+            if len(unique_descriptions) == 1:
+                lines.append(f"- **{scope}**：{unique_descriptions[0]}")
+                continue
+            lines.append(f"- **{scope}**：")
+            lines.extend(f"  - {description}" for description in unique_descriptions)
 
     return "\n".join(lines)
 
