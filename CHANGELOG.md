@@ -1,3 +1,13 @@
+## v0.7.1
+
+> ● Check recent commits for context (shell)
+
+本次更新将应用会话决策与菜单栏展示逻辑分离，使状态管理更清晰，为后续功能扩展奠定更稳固的基础。
+
+### 🚀 优化改进
+
+- split AppSession decisions and menu bar presentation (#2)
+
 ## v0.7.0
 
 > 本次更新优化了代理分组与节点管理的交互体验，支持批量延迟测试与核心更新入口，同时修复了规则模式下分组过滤异常、远程目标系统代理设置误显示等多处问题，整体运行更加稳定可靠。
