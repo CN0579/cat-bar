@@ -540,6 +540,26 @@ struct RuntimeMetricsPresentationState {
     }
 }
 
+enum RuntimeNetworkFeatureHealthStatus: Equatable {
+    case disabled
+    case healthy
+    case mismatch
+    case unavailable
+}
+
+struct RuntimeNetworkFeatureHealth: Equatable {
+    var status: RuntimeNetworkFeatureHealthStatus = .disabled
+    var detail: String?
+    var observedValue: String?
+}
+
+struct RuntimeNetworkHealthPresentationState: Equatable {
+    var systemProxy = RuntimeNetworkFeatureHealth()
+    var tun = RuntimeNetworkFeatureHealth()
+    var domesticAccess = RuntimeNetworkFeatureHealth(status: .unavailable)
+    var globalAccess = RuntimeNetworkFeatureHealth(status: .unavailable)
+}
+
 struct SystemProxyPresentationState {
     var isEnabled: Bool = false
     var enableIntentInFlight: Bool = false

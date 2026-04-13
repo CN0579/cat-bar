@@ -33,6 +33,8 @@ final class AppSession: ObservableObject {
     @Published private var proxyLatencyPresentationState = ProxyLatencyPresentationState()
     @Published private var providerPresentationState = ProviderPresentationState()
     @Published private var systemProxyPresentationState = SystemProxyPresentationState()
+    @Published private var runtimeNetworkHealthPresentationState = RuntimeNetworkHealthPresentationState()
+    @Published private var runtimeNetworkHealthRefreshing = false
 
     @Published private var logPresentationState = LogPresentationState()
     @Published private var coreControlPresentationState = CoreControlPresentationState()
@@ -143,6 +145,18 @@ final class AppSession: ObservableObject {
 
     func updatePresentedTrafficTotals(from snapshot: TrafficSnapshot, now: Date) {
         self.runtimeMetricsPresentationState.updateTrafficTotals(from: snapshot, now: now)
+    }
+
+    func applyPresentedRuntimeNetworkHealth(
+        _ state: RuntimeNetworkHealthPresentationState) -> RuntimeNetworkHealthPresentationState
+    {
+        let previous = self.runtimeNetworkHealthPresentationState
+        self.runtimeNetworkHealthPresentationState = state
+        return previous
+    }
+
+    func resetPresentedRuntimeNetworkHealth() {
+        self.runtimeNetworkHealthPresentationState = RuntimeNetworkHealthPresentationState()
     }
 
     func applyPresentedRuntimeConfigSnapshot(
@@ -669,6 +683,16 @@ final class AppSession: ObservableObject {
         set { self.systemProxyPresentationState.openFailureHint = newValue }
     }
 
+    var runtimeNetworkHealth: RuntimeNetworkHealthPresentationState {
+        get { self.runtimeNetworkHealthPresentationState }
+        set { self.runtimeNetworkHealthPresentationState = newValue }
+    }
+
+    var isRuntimeNetworkHealthRefreshing: Bool {
+        get { self.runtimeNetworkHealthRefreshing }
+        set { self.runtimeNetworkHealthRefreshing = newValue }
+    }
+
     var isTunEnabled: Bool {
         get { self.settingsPresentationState.tunEnabled }
         set { self.settingsPresentationState.tunEnabled = newValue }
@@ -884,6 +908,7 @@ final class AppSession: ObservableObject {
     let launchAtLoginRepository: any LaunchAtLoginRepository
     let workingDirectoryManager: WorkingDirectoryManager
     let networkReachabilityMonitor: NetworkReachabilityMonitor
+    let networkEndpointProbeService: NetworkEndpointProbeService
     let clipboardRepository: any ClipboardRepository
     let remoteMachineStore: RemoteMachineStore
     var apiClient: MihomoAPIClient?
@@ -959,6 +984,11 @@ final class AppSession: ObservableObject {
     var lastCoreFailureAlertKey: String?
     var lastCoreFailureAlertAt: Date?
     let coreFailureAlertThrottleInterval: TimeInterval = 20
+    var lastSystemProxyRuntimeRepairAttemptAt: Date?
+    var lastTunRuntimeRepairAttemptAt: Date?
+    var lastNetworkEndpointProbePairAt: Date?
+    let runtimeNetworkRepairThrottleInterval: TimeInterval = 45
+    let runtimeNetworkEndpointProbeInterval: TimeInterval = 30
     var networkReachabilityStatus: NetworkReachabilityStatus {
         get { self.lifecycleCoordinationState.networkReachabilityStatus }
         set { self.lifecycleCoordinationState.networkReachabilityStatus = newValue }
@@ -993,6 +1023,7 @@ final class AppSession: ObservableObject {
         configImportService: ConfigImportService = ConfigImportService(),
         appLaunchService: AppLaunchService = AppLaunchService(),
         networkReachabilityMonitor: NetworkReachabilityMonitor = NetworkReachabilityMonitor(),
+        networkEndpointProbeService: NetworkEndpointProbeService = NetworkEndpointProbeService(),
         clipboardRepository: any ClipboardRepository = PasteboardClipboardRepository(),
         remoteMachineStore: RemoteMachineStore = RemoteMachineStore(),
         catbarLogStore: AppLogStore? = nil,
@@ -1006,6 +1037,7 @@ final class AppSession: ObservableObject {
         self.tunPermissionRepository = DefaultTunPermissionRepository(service: tunPermissionService)
         self.launchAtLoginRepository = DefaultLaunchAtLoginRepository(service: appLaunchService)
         self.networkReachabilityMonitor = networkReachabilityMonitor
+        self.networkEndpointProbeService = networkEndpointProbeService
         self.clipboardRepository = clipboardRepository
         self.remoteMachineStore = remoteMachineStore
         self.catbarLogStore = catbarLogStore
