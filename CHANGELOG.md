@@ -1,3 +1,15 @@
+## v0.8.1
+
+> 本次更新修复了符号链接配置路径的处理问题，让通过软链接管理配置时的加载与使用更加稳定。
+
+### 🚀 优化改进
+
+- **release**：switch DMG publishing to gh CLI
+
+### 🐞 问题修复
+
+- **config**：handle symlinked config paths correctly
+
 ## v0.8.0
 
 > 本次更新新增运行时网络健康检查，帮助你更及时发现连接异常并更稳妥地使用 CatBar。
