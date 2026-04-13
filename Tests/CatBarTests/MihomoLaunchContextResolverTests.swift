@@ -29,4 +29,25 @@ final class MihomoLaunchContextResolverTests: XCTestCase {
             context.arguments,
             ["-d", "/tmp/custom", "-f", "/tmp/custom/profile.yaml", "-ext-ctl", "127.0.0.1:9090"])
     }
+
+    func testRuntimeContextKeepsCatBarRootForSymlinkedConfigInsideManagedConfigDirectory() {
+        let context = self.resolver.runtimeContext(
+            binaryPath: "/tmp/mihomo",
+            configPath: "/Users/test/Library/Application Support/catbar/config/linked.yaml",
+            controller: "127.0.0.1:9090")
+
+        XCTAssertEqual(
+            context.workingDirectoryURL.path,
+            "/Users/test/Library/Application Support/catbar")
+        XCTAssertEqual(
+            context.arguments,
+            [
+                "-d",
+                "/Users/test/Library/Application Support/catbar",
+                "-f",
+                "/Users/test/Library/Application Support/catbar/config/linked.yaml",
+                "-ext-ctl",
+                "127.0.0.1:9090",
+            ])
+    }
 }

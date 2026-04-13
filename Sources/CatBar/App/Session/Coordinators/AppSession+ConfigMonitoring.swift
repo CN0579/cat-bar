@@ -90,7 +90,8 @@ extension AppSession {
         var snapshot: [String: String] = [:]
 
         for fileURL in self.configRepository.availableConfigs {
-            let values = try? fileURL.resourceValues(forKeys: keys)
+            let signatureURL = fileURL.standardizedFileURL.resolvingSymlinksInPath()
+            let values = try? signatureURL.resourceValues(forKeys: keys)
             let modifiedAt = values?.contentModificationDate?.timeIntervalSince1970 ?? 0
             let size = values?.fileSize ?? -1
             snapshot[fileURL.lastPathComponent] = "\(modifiedAt)-\(size)"

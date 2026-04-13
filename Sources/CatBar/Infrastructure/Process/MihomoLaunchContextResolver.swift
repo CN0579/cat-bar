@@ -24,7 +24,7 @@ struct MihomoLaunchContextResolver {
     }
 
     private func workingDirectoryURL(for configPath: String) -> URL {
-        let configFileURL = URL(fileURLWithPath: configPath).standardizedFileURL.resolvingSymlinksInPath()
+        let configFileURL = URL(fileURLWithPath: configPath).standardizedFileURL
         let configDirectoryURL = configFileURL.deletingLastPathComponent()
         if configDirectoryURL.lastPathComponent == "config" {
             return configDirectoryURL.deletingLastPathComponent()
