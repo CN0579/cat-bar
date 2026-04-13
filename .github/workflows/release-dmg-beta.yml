@@ -145,14 +145,39 @@ jobs:
             "${{ needs.prepare-beta.outputs.version }}" \
             release.md
 
+      - name: Verify GitHub CLI
+        shell: bash
+        run: gh --version
+
       - name: Publish beta release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.prepare-beta.outputs.tag }}
-          target_commitish: ${{ needs.prepare-beta.outputs.source_ref }}
-          name: CatBar ${{ needs.prepare-beta.outputs.version }}
-          body_path: release.md
-          prerelease: true
-          fail_on_unmatched_files: true
-          files: |
-            dist/*.dmg
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare-beta.outputs.tag }}
+          RELEASE_TARGET: ${{ needs.prepare-beta.outputs.source_ref }}
+          RELEASE_NAME: CatBar ${{ needs.prepare-beta.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          assets=(dist/*.dmg)
+          if (( ${#assets[@]} == 0 )); then
+            echo "No beta DMG assets found." >&2
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --target "$RELEASE_TARGET" \
+              --title "$RELEASE_NAME" \
+              --notes-file release.md \
+              --prerelease
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$RELEASE_TARGET" \
+              --title "$RELEASE_NAME" \
+              --notes-file release.md \
+              --prerelease
+          fi
+
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber

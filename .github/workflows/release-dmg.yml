@@ -359,15 +359,38 @@ jobs:
             "${{ needs.prepare-version.outputs.version }}" \
             release.md
 
+      - name: Verify GitHub CLI
+        shell: bash
+        run: gh --version
+
       - name: Publish release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.prepare-version.outputs.tag }}
-          name: CatBar ${{ needs.prepare-version.outputs.version }}
-          body_path: release.md
-          generate_release_notes: false
-          fail_on_unmatched_files: false
-          files: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare-version.outputs.tag }}
+          RELEASE_NAME: CatBar ${{ needs.prepare-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          assets=(
             dist/*.dmg
             dist/*.sha256
             dist/appcast-*.xml
+          )
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "$RELEASE_NAME" \
+              --notes-file release.md
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_NAME" \
+              --notes-file release.md
+          fi
+
+          if (( ${#assets[@]} > 0 )); then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            echo "No release assets found; skipping asset upload."
+          fi
