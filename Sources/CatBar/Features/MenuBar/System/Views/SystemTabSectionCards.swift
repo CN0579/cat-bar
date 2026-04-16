@@ -126,30 +126,44 @@ extension MenuBarRootView {
         }
     }
 
-    private func networkHealthRow(_ row: NetworkHealthRowState) -> some View {
-        HStack(alignment: .top, spacing: T.space8) {
-            self.settingsRowLabel(symbol: row.symbol, title: row.title)
-                .layoutPriority(1)
-
-            if let detail = row.detail?.trimmedNonEmpty {
-                Text(detail)
-                    .font(.app(size: T.FontSize.caption, weight: .regular))
+    private func networkHealthGridCard(_ row: NetworkHealthRowState) -> some View {
+        VStack(alignment: .leading, spacing: T.space2) {
+            HStack(alignment: .center, spacing: T.space4) {
+                Image(systemName: row.symbol)
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
                     .foregroundStyle(nativeTertiaryLabel)
+                    .frame(width: 14, alignment: .center)
+
+                Text(row.title)
+                    .font(.app(size: T.FontSize.body, weight: .medium))
+                    .foregroundStyle(nativePrimaryLabel)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 0)
-
-            if let statusText = row.statusText?.trimmedNonEmpty {
-                VStack(alignment: .trailing, spacing: T.space2) {
+            HStack(alignment: .center, spacing: T.space4) {
+                if let statusText = row.statusText?.trimmedNonEmpty {
                     Text(statusText)
                         .font(.app(size: T.FontSize.caption, weight: .semibold))
                         .foregroundStyle(self.networkHealthColor(for: row.kind))
                         .lineLimit(1)
                 }
+
+                if let detail = row.detail?.trimmedNonEmpty {
+                    Text(detail)
+                        .font(.app(size: T.FontSize.caption, weight: .regular))
+                        .foregroundStyle(nativeTertiaryLabel)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
             }
+            .padding(.leading, 18)
         }
-        .menuRowPadding(vertical: T.space4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .menuRowPadding(vertical: T.space2)
     }
 
     private func proxyFeatureControlCard(
@@ -209,10 +223,15 @@ extension MenuBarRootView {
             })
         {
             VStack(alignment: .leading, spacing: T.space4) {
-                self.networkHealthRow(self.pathNetworkHealthRow)
-                self.networkHealthRow(self.coreNetworkHealthRow)
-                self.networkHealthRow(self.domesticAccessHealthRow)
-                self.networkHealthRow(self.globalAccessHealthRow)
+                HStack(alignment: .top, spacing: T.space8) {
+                    self.networkHealthGridCard(self.pathNetworkHealthRow)
+                    self.networkHealthGridCard(self.coreNetworkHealthRow)
+                }
+
+                HStack(alignment: .top, spacing: T.space8) {
+                    self.networkHealthGridCard(self.domesticAccessHealthRow)
+                    self.networkHealthGridCard(self.globalAccessHealthRow)
+                }
             }
             .menuRowPadding(vertical: T.space4)
         }
