@@ -337,6 +337,31 @@ extension AppSession {
         }
     }
 
+    func editConfigDirectoryInVSCode() {
+        do {
+            try workingDirectoryManager.bootstrapDirectories()
+        } catch {
+            appendLog(level: "error", message: tr("log.working_dir_init_failed", error.localizedDescription))
+            return
+        }
+
+        let catbarRootDirectory = workingDirectoryManager.rootDirectoryURL
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = [
+            "-a",
+            "Visual Studio Code",
+            catbarRootDirectory.path
+        ]
+
+        do {
+            try process.run()
+        } catch {
+            appendLog(level: "error", message: tr("log.config.open_in_vscode.failed", catbarRootDirectory.path))
+            return
+        }
+    }
+
     func showCoreDirectoryInFinder() {
         do {
             try workingDirectoryManager.bootstrapDirectories()

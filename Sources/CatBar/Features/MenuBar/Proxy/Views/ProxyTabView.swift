@@ -108,6 +108,14 @@ extension MenuBarRootView {
             Task { await appSession.updateAllRemoteConfigFiles() }
         }
         AttachedPopoverMenuItem(
+            title: tr("ui.quick.edit_config"),
+            leadingSymbol: "chevron.left.forwardslash.chevron.right",
+            leadingTint: self.nativeInfo.opacity(T.Opacity.solid))
+        {
+            dismiss()
+            appSession.editConfigDirectoryInVSCode()
+        }
+        AttachedPopoverMenuItem(
             title: tr("ui.quick.show_in_finder"),
             leadingSymbol: "folder",
             leadingTint: self.nativeSecondaryLabel)
