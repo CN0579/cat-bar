@@ -5,7 +5,7 @@ import XCTest
 final class SystemTabViewModelTests: XCTestCase {
     private final class StubProcessManager: MihomoControlling, @unchecked Sendable {
         var status: CoreLifecycleStatus = .stopped
-        var isRunning: Bool { false }
+        var isRunning = false
         var detectedBinaryPath: String? { nil }
 
         func validateConfig(configPath: String) throws {}
@@ -119,12 +119,36 @@ final class SystemTabViewModelTests: XCTestCase {
         XCTAssertEqual(summary.symbol, "checkmark.shield.fill")
     }
 
+    func testRemoteTunControlStateUsesStablePresentationMetadata() {
+        let session = self.makeRemoteSession()
+
+        let state = SystemTabViewModel.tunControlState(session: session)
+
+        XCTAssertEqual(state.title, session.tr("ui.network_health.row.tun"))
+        XCTAssertEqual(state.symbol, "shield.lefthalf.filled")
+    }
+
+    func testSystemProxyControlStateUsesStablePresentationMetadata() {
+        let session = self.makeSession()
+
+        let state = SystemTabViewModel.systemProxyControlState(session: session)
+
+        XCTAssertEqual(state.title, session.tr("ui.network_health.row.system_proxy"))
+        XCTAssertEqual(state.symbol, "network")
+    }
+
     private func makeSession() -> AppSession {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let suiteName = "SystemTabViewModelTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let processManager = StubProcessManager()
+        processManager.isRunning = true
         return AppSession(
-            processManager: StubProcessManager(),
+            processManager: processManager,
             workingDirectoryManager: WorkingDirectoryManager(homeDirectory: root),
+            remoteMachineStore: RemoteMachineStore(defaults: defaults),
             startBackgroundRefresh: false)
     }
 

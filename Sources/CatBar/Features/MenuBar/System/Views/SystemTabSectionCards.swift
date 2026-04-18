@@ -58,26 +58,12 @@ extension MenuBarRootView {
                 kind: .info)
     }
 
-    private var systemProxyHealthRow: NetworkHealthRowState {
-        SystemTabViewModel.networkHealthRows(session: appSession).first { $0.id == "system_proxy" }
-            ?? NetworkHealthRowState(
-                id: "system_proxy",
-                title: tr("ui.network_health.row.system_proxy"),
-                statusText: tr("ui.network_health.status.unavailable"),
-                detail: nil,
-                symbol: "network",
-                kind: .info)
+    private var systemProxyControlState: ProxyFeatureControlState {
+        SystemTabViewModel.systemProxyControlState(session: appSession)
     }
 
-    private var tunHealthRow: NetworkHealthRowState {
-        SystemTabViewModel.networkHealthRows(session: appSession).first { $0.id == "tun" }
-            ?? NetworkHealthRowState(
-                id: "tun",
-                title: tr("ui.network_health.row.tun"),
-                statusText: tr("ui.network_health.status.unavailable"),
-                detail: nil,
-                symbol: "shield.lefthalf.filled",
-                kind: .info)
+    private var tunControlState: ProxyFeatureControlState {
+        SystemTabViewModel.tunControlState(session: appSession)
     }
 
     private var domesticAccessHealthRow: NetworkHealthRowState {
@@ -167,24 +153,17 @@ extension MenuBarRootView {
     }
 
     private func proxyFeatureControlCard(
-        _ row: NetworkHealthRowState,
+        _ state: ProxyFeatureControlState,
         isOn: Binding<Bool>,
         isDisabled: Bool,
         hint: String? = nil) -> some View
     {
         VStack(alignment: .leading, spacing: T.space4) {
             HStack(alignment: .center, spacing: T.space8) {
-                self.settingsRowLabel(symbol: row.symbol, title: row.title)
+                self.settingsRowLabel(symbol: state.symbol, title: state.title)
                     .layoutPriority(1)
 
                 Spacer(minLength: 0)
-
-                if let statusText = row.statusText?.trimmedNonEmpty {
-                    Text(statusText)
-                        .font(.app(size: T.FontSize.caption, weight: .semibold))
-                        .foregroundStyle(self.networkHealthColor(for: row.kind))
-                        .lineLimit(1)
-                }
 
                 Toggle("", isOn: isOn)
                     .labelsHidden()
@@ -315,7 +294,7 @@ extension MenuBarRootView {
 
             if !appSession.isRemoteTarget {
                 self.proxyFeatureControlCard(
-                    self.systemProxyHealthRow,
+                    self.systemProxyControlState,
                     isOn: Binding(
                         get: { appSession.isSystemProxyEnabled },
                         set: { value in
@@ -326,7 +305,7 @@ extension MenuBarRootView {
             }
 
             self.proxyFeatureControlCard(
-                self.tunHealthRow,
+                self.tunControlState,
                 isOn: Binding(
                     get: { appSession.isTunEnabled },
                     set: { value in
