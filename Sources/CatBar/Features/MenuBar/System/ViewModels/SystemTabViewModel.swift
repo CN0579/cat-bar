@@ -28,6 +28,11 @@ struct NetworkHealthRowState: Equatable, Identifiable {
     let kind: SystemFeedbackKind
 }
 
+struct ProxyFeatureControlState: Equatable {
+    let title: String
+    let symbol: String
+}
+
 @MainActor
 enum SystemTabViewModel {
     static func maintenanceActionEnabled(session: AppSession) -> Bool {
@@ -189,6 +194,18 @@ enum SystemTabViewModel {
         ]
     }
 
+    static func systemProxyControlState(session: AppSession) -> ProxyFeatureControlState {
+        ProxyFeatureControlState(
+            title: session.tr("ui.network_health.row.system_proxy"),
+            symbol: "network")
+    }
+
+    static func tunControlState(session: AppSession) -> ProxyFeatureControlState {
+        ProxyFeatureControlState(
+            title: session.tr("ui.network_health.row.tun"),
+            symbol: "shield.lefthalf.filled")
+    }
+
     private static func coreStatusText(session: AppSession) -> String {
         if !session.isRuntimeRunning {
             return session.tr("ui.network_health.status.stopped")
@@ -245,4 +262,5 @@ enum SystemTabViewModel {
             .info
         }
     }
+
 }
