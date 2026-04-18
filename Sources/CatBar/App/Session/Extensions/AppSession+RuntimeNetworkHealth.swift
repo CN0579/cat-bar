@@ -3,13 +3,10 @@ import Foundation
 @MainActor
 extension AppSession {
     func refreshRuntimeNetworkHealth(autoRepair: Bool = true, forceProbe: Bool = false) async {
-        guard !self.isRemoteTarget else {
-            self.resetPresentedRuntimeNetworkHealth()
-            return
-        }
-
-        let systemProxy = await self.evaluateSystemProxyRuntimeHealth(autoRepair: autoRepair)
-        let tun = await self.evaluateTunRuntimeHealth(autoRepair: autoRepair)
+        let systemProxy = self.isRemoteTarget
+            ? RuntimeNetworkFeatureHealth(status: .disabled)
+            : await self.evaluateSystemProxyRuntimeHealth(autoRepair: autoRepair)
+        let tun = await self.evaluateTunRuntimeHealth(autoRepair: autoRepair && !self.isRemoteTarget)
         let endpointHealth = await self.evaluateNetworkEndpointHealthPair(forceProbe: forceProbe)
         let nextState = RuntimeNetworkHealthPresentationState(
             systemProxy: systemProxy,
@@ -146,7 +143,7 @@ extension AppSession {
     private func evaluateNetworkEndpointHealthPair(forceProbe: Bool) async
         -> (domestic: RuntimeNetworkFeatureHealth, global: RuntimeNetworkFeatureHealth)
     {
-        guard self.isRuntimeRunning, self.networkReachabilityStatus != .offline else {
+        guard self.networkReachabilityStatus != .offline else {
             let unavailable = RuntimeNetworkFeatureHealth(status: .unavailable)
             return (unavailable, unavailable)
         }

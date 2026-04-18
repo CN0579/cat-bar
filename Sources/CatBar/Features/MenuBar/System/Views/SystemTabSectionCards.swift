@@ -223,14 +223,21 @@ extension MenuBarRootView {
             })
         {
             VStack(alignment: .leading, spacing: T.space4) {
-                HStack(alignment: .top, spacing: T.space8) {
-                    self.networkHealthGridCard(self.pathNetworkHealthRow)
-                    self.networkHealthGridCard(self.coreNetworkHealthRow)
-                }
+                if appSession.isRemoteTarget {
+                    HStack(alignment: .top, spacing: T.space8) {
+                        self.networkHealthGridCard(self.domesticAccessHealthRow)
+                        self.networkHealthGridCard(self.globalAccessHealthRow)
+                    }
+                } else {
+                    HStack(alignment: .top, spacing: T.space8) {
+                        self.networkHealthGridCard(self.pathNetworkHealthRow)
+                        self.networkHealthGridCard(self.coreNetworkHealthRow)
+                    }
 
-                HStack(alignment: .top, spacing: T.space8) {
-                    self.networkHealthGridCard(self.domesticAccessHealthRow)
-                    self.networkHealthGridCard(self.globalAccessHealthRow)
+                    HStack(alignment: .top, spacing: T.space8) {
+                        self.networkHealthGridCard(self.domesticAccessHealthRow)
+                        self.networkHealthGridCard(self.globalAccessHealthRow)
+                    }
                 }
             }
             .menuRowPadding(vertical: T.space4)

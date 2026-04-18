@@ -180,9 +180,7 @@ extension AppSession {
             if !self.isRemoteTarget, self.hasSystemProxyOpenIntent {
                 await self.refreshSystemProxyStatus()
             }
-            if !self.isRemoteTarget {
-                await self.refreshRuntimeNetworkHealth()
-            }
+            await self.refreshRuntimeNetworkHealth()
         }
     }
 
@@ -262,8 +260,8 @@ extension AppSession {
             await refreshProvidersAndRules()
             if !self.isRemoteTarget {
                 await self.refreshSystemProxyStatus()
-                await self.refreshRuntimeNetworkHealth()
             }
+            await self.refreshRuntimeNetworkHealth()
         case .nodes:
             await refreshProvidersAndRules()
         case .rules:
@@ -271,8 +269,8 @@ extension AppSession {
         case .system:
             if !self.isRemoteTarget {
                 await self.refreshSystemProxyStatus()
-                await self.refreshRuntimeNetworkHealth()
             }
+            await self.refreshRuntimeNetworkHealth()
         case .connections, .logs:
             break
         }

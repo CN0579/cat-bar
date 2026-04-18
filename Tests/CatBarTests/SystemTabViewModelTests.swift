@@ -90,6 +90,35 @@ final class SystemTabViewModelTests: XCTestCase {
         XCTAssertEqual(globalRow.statusText, session.tr("ui.network_health.status.degraded"))
     }
 
+    func testRemoteTargetNetworkHealthRowsOnlyIncludeDomesticAndGlobalAccess() {
+        let session = self.makeRemoteSession()
+        session.runtimeNetworkHealth = RuntimeNetworkHealthPresentationState(
+            systemProxy: RuntimeNetworkFeatureHealth(status: .healthy),
+            tun: RuntimeNetworkFeatureHealth(status: .healthy),
+            domesticAccess: RuntimeNetworkFeatureHealth(status: .healthy),
+            globalAccess: RuntimeNetworkFeatureHealth(status: .mismatch))
+
+        let rows = SystemTabViewModel.networkHealthRows(session: session)
+
+        XCTAssertEqual(rows.map(\.id), ["domestic_access", "global_access"])
+    }
+
+    func testRemoteTargetNetworkHealthSummaryDependsOnlyOnDomesticAndGlobalAccess() {
+        let session = self.makeRemoteSession()
+        session.statusText = "Stopped"
+        session.apiStatus = .failed
+        session.runtimeNetworkHealth = RuntimeNetworkHealthPresentationState(
+            systemProxy: RuntimeNetworkFeatureHealth(status: .healthy),
+            tun: RuntimeNetworkFeatureHealth(status: .healthy),
+            domesticAccess: RuntimeNetworkFeatureHealth(status: .healthy),
+            globalAccess: RuntimeNetworkFeatureHealth(status: .healthy))
+
+        let summary = SystemTabViewModel.networkHealthSummary(session: session)
+
+        XCTAssertEqual(summary.kind, .success)
+        XCTAssertEqual(summary.symbol, "checkmark.shield.fill")
+    }
+
     private func makeSession() -> AppSession {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -97,5 +126,13 @@ final class SystemTabViewModelTests: XCTestCase {
             processManager: StubProcessManager(),
             workingDirectoryManager: WorkingDirectoryManager(homeDirectory: root),
             startBackgroundRefresh: false)
+    }
+
+    private func makeRemoteSession() -> AppSession {
+        let session = self.makeSession()
+        let machine = RemoteMachine(name: "Remote", host: "192.168.1.10")
+        session.remoteMachineStore.addMachine(machine)
+        session.remoteMachineStore.selectTarget(.remote(machine))
+        return session
     }
 }

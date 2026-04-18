@@ -67,6 +67,29 @@ enum SystemTabViewModel {
     }
 
     static func networkHealthSummary(session: AppSession) -> NetworkHealthSummaryState {
+        if session.isRemoteTarget {
+            let featureStates = [
+                session.runtimeNetworkHealth.domesticAccess.status,
+                session.runtimeNetworkHealth.globalAccess.status,
+            ]
+            if featureStates.contains(.mismatch) || featureStates.contains(.unavailable) {
+                return NetworkHealthSummaryState(
+                    message: session.tr("ui.network_health.status.degraded"),
+                    kind: .warning,
+                    symbol: "exclamationmark.triangle.fill")
+            }
+            if featureStates.contains(.healthy) {
+                return NetworkHealthSummaryState(
+                    message: session.tr("ui.network_health.status.healthy"),
+                    kind: .success,
+                    symbol: "checkmark.shield.fill")
+            }
+            return NetworkHealthSummaryState(
+                message: session.tr("ui.network_health.status.degraded"),
+                kind: .info,
+                symbol: "circle.dashed")
+        }
+
         if !session.isRuntimeRunning {
             return NetworkHealthSummaryState(
                 message: session.tr("ui.network_health.status.degraded"),
@@ -108,7 +131,26 @@ enum SystemTabViewModel {
     }
 
     static func networkHealthRows(session: AppSession) -> [NetworkHealthRowState] {
-        [
+        if session.isRemoteTarget {
+            return [
+                NetworkHealthRowState(
+                    id: "domestic_access",
+                    title: session.tr("ui.network_health.row.domestic_access"),
+                    statusText: self.featureStatusText(session: session, status: session.runtimeNetworkHealth.domesticAccess.status),
+                    detail: "qq.com",
+                    symbol: "flag.pattern.checkered.2.crossed",
+                    kind: self.featureStatusKind(status: session.runtimeNetworkHealth.domesticAccess.status)),
+                NetworkHealthRowState(
+                    id: "global_access",
+                    title: session.tr("ui.network_health.row.global_access"),
+                    statusText: self.featureStatusText(session: session, status: session.runtimeNetworkHealth.globalAccess.status),
+                    detail: "google.com",
+                    symbol: "globe.asia.australia",
+                    kind: self.featureStatusKind(status: session.runtimeNetworkHealth.globalAccess.status)),
+            ]
+        }
+
+        return [
             NetworkHealthRowState(
                 id: "core",
                 title: session.tr("ui.network_health.row.core"),
