@@ -27,7 +27,7 @@ final class SourceManagerWindowController: NSWindowController, NSWindowDelegate 
         self.appSession = appSession
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 436, height: 552),
+            contentRect: NSRect(x: 0, y: 0, width: 436, height: 500),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
@@ -41,8 +41,8 @@ final class SourceManagerWindowController: NSWindowController, NSWindowDelegate 
         window.backgroundColor = .clear
         window.isOpaque = false
         window.hasShadow = true
-        window.minSize = NSSize(width: 436, height: 552)
-        window.maxSize = NSSize(width: 436, height: 760)
+        window.minSize = NSSize(width: 436, height: 500)
+        window.maxSize = NSSize(width: 436, height: 700)
         window.standardWindowButton(.closeButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.standardWindowButton(.zoomButton)?.isHidden = true

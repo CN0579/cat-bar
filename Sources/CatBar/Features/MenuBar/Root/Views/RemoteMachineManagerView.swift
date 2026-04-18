@@ -32,7 +32,7 @@ struct RemoteMachineManagerView: View {
     }
 
     private var panelHeight: CGFloat {
-        552
+        500
     }
 
     private var outerPadding: CGFloat {

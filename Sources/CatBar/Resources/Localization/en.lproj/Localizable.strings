@@ -67,6 +67,8 @@
 "ui.machine.field.port" = "Port";
 "ui.machine.field.secret" = "Secret";
 "ui.machine.field.show_web_ui_button" = "Web UI";
+"ui.machine.secret.show" = "Show secret";
+"ui.machine.secret.hide" = "Hide secret";
 "ui.machine.error.host_protocol" = "Host must not include http:// or https://.";
 "ui.machine.remote_readonly" = "Remote, read-only";
 "ui.machine.return_local" = "Return to Local Core";

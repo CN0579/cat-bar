@@ -67,6 +67,8 @@
 "ui.machine.field.port" = "端口";
 "ui.machine.field.secret" = "密钥";
 "ui.machine.field.show_web_ui_button" = "Web UI";
+"ui.machine.secret.show" = "显示密钥";
+"ui.machine.secret.hide" = "隐藏密钥";
 "ui.machine.error.host_protocol" = "主机地址不能包含 http:// 或 https://";
 "ui.machine.remote_readonly" = "远程连接不可变更";
 "ui.machine.return_local" = "返回本地内核";

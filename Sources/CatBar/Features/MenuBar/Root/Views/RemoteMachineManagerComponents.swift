@@ -439,6 +439,7 @@ struct RemoteMachineEditorCard: View {
     @State private var secret: String = ""
     @State private var useHTTPS = false
     @State private var showsWebDashboardButton = false
+    @State private var isSecretVisible = false
     @FocusState private var focusedField: Field?
 
     private var language: AppLanguage {
@@ -551,27 +552,48 @@ struct RemoteMachineEditorCard: View {
                         .frame(width: 84)
                         .focused(self.$focusedField, equals: .port)
 
-                    Spacer(minLength: 0)
-
                     Toggle("HTTPS", isOn: self.$useHTTPS)
                         .toggleStyle(.switch)
                         .controlSize(.small)
                         .font(.app(size: 11, weight: .medium))
+
+                    Toggle(self.tr("ui.machine.field.show_web_ui_button"), isOn: self.$showsWebDashboardButton)
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .font(.app(size: 11, weight: .medium))
+
+                    Spacer(minLength: 0)
                 }
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.secret"), palette: self.palette) {
-                SecureField(self.tr("ui.machine.field.secret"), text: self.$secret)
+                HStack(spacing: 6) {
+                    Group {
+                        if self.isSecretVisible {
+                            TextField(self.tr("ui.machine.field.secret"), text: self.$secret)
+                        } else {
+                            SecureField(self.tr("ui.machine.field.secret"), text: self.$secret)
+                        }
+                    }
                     .textFieldStyle(.roundedBorder)
                     .font(.app(size: 12, weight: .regular))
                     .focused(self.$focusedField, equals: .secret)
-            }
-            self.separator
-            RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.show_web_ui_button"), palette: self.palette) {
-                Toggle("", isOn: self.$showsWebDashboardButton)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
+
+                    Button {
+                        self.isSecretVisible.toggle()
+                    } label: {
+                        Image(systemName: self.isSecretVisible ? "eye.slash" : "eye")
+                            .font(.app(size: 12, weight: .semibold))
+                            .foregroundStyle(self.palette.secondaryTextColor)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(self.palette.cardFill))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(self.tr(self.isSecretVisible ? "ui.machine.secret.hide" : "ui.machine.secret.show"))
+                    .help(self.tr(self.isSecretVisible ? "ui.machine.secret.hide" : "ui.machine.secret.show"))
+                }
             }
         }
         .background(self.formSurface)
