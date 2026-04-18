@@ -1,3 +1,20 @@
+## v0.9.0
+
+> 本次更新让配置编辑与远程机器管理更顺手，网络健康状态展示也更清晰准确。
+
+### ✨ 新增功能
+
+- **config**：add VSCode shortcut for config editing
+- **remote-machine**：improve remote machine editor usability
+
+### 🚀 优化改进
+
+- **system**：refine network health with grid cards
+
+### 🐞 问题修复
+
+- **system**：correct network health rendering for remote targets
+
 ## v0.8.1
 
 > 本次更新修复了符号链接配置路径的处理问题，让通过软链接管理配置时的加载与使用更加稳定。
