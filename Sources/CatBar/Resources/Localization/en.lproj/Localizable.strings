@@ -121,6 +121,25 @@
 "ui.rules.column.policy" = "Policy";
 "ui.rules.column.stats" = "Stats";
 "ui.rule.stats.rules" = "Rules";
+"ui.rules.search_placeholder" = "Search domain or IP";
+"ui.rules.search_action" = "Match";
+"ui.rules.search_subject.domain" = "Domain";
+"ui.rules.search_subject.ip" = "IP";
+"ui.rules.search_status.searching" = "Matching local rules…";
+"ui.rules.search_status.invalid" = "Enter a valid domain or IP address.";
+"ui.rules.search_status.no_config" = "No local config file is selected.";
+"ui.rules.search_status.no_match" = "No local match for %1$@ %2$@";
+"ui.rules.search_status.matched" = "Matched %1$@ %2$@";
+"ui.rules.search_status.failed" = "Local rule matching failed.";
+"ui.rules.search_result.effective" = "Effective match:";
+"ui.rules.search_result.policy" = "Policy: %@";
+"ui.rules.search_result.rule" = "Rule: %@ -> %@";
+"ui.rules.search_result.provider" = "Provider: %@";
+"ui.rules.search_result.provider_rule" = "Provider rule: %@ -> %@";
+"ui.rules.search_result.provider_path" = "Provider path: %@";
+"ui.rules.search_result.also_matched" = "%d more rule(s) also match, but will not take effect because they appear later:";
+"ui.rules.search_result.shadowed_rule" = "%@ · %@ -> %@";
+"ui.rules.search_result.shadowed_provider" = "%@ · %@ · %@ -> %@";
 "ui.rule.stats.sets" = "Sets";
 
 "ui.empty.proxy_providers" = "No proxy providers";

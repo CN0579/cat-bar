@@ -16,14 +16,18 @@ extension MenuBarRootView {
         let groupConcreteCounts = self.makeRuleGroupConcreteCounts(groups: groups, providerStats: providerStats)
         let totalConcreteCount = groupConcreteCounts.values.reduce(0, +)
 
-        return VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .leading, spacing: T.space6) {
             HStack(spacing: 0) {
                 self.rulesStatChip(title: tr("ui.rule.stats.rules"), value: "\(totalConcreteCount)")
 
                 Spacer(minLength: 0)
                 self.rulesRefreshButton
             }
-            .padding(.vertical, T.space6)
+            .padding(.top, T.space6)
+
+            if self.remoteMachineStore.activeTarget.isLocal {
+                self.rulesSearchSection
+            }
 
             if groups.isEmpty {
                 Text(tr("ui.empty.rules"))
@@ -44,6 +48,194 @@ extension MenuBarRootView {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var rulesSearchSection: some View {
+        VStack(alignment: .leading, spacing: T.space4) {
+            HStack(spacing: T.space4) {
+                NonActivatingTextField(
+                    placeholder: tr("ui.rules.search_placeholder"),
+                    text: $rulesViewModel.searchText,
+                    style: .plain,
+                    font: NSFont.monospacedSystemFont(ofSize: T.FontSize.body, weight: .regular),
+                    onChange: {
+                        if self.rulesViewModel.searchText.trimmed.isEmpty {
+                            self.rulesViewModel.clearSearchResult()
+                        }
+                    },
+                    onSubmit: {
+                        Task { await self.searchCurrentLocalRules() }
+                    })
+
+                if !rulesViewModel.searchText.isEmpty {
+                    Button {
+                        self.rulesViewModel.clearSearch()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.app(size: T.FontSize.caption, weight: .semibold))
+                            .foregroundStyle(nativeTertiaryLabel)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                self.compactTopIcon(
+                    "magnifyingglass",
+                    label: tr("ui.rules.search_action"),
+                    toneOverride: nativeInfo,
+                    isLoading: self.rulesViewModel.searchState == .searching)
+                {
+                    await self.searchCurrentLocalRules()
+                }
+                .help(tr("ui.rules.search_action"))
+                .disabled(self.rulesViewModel.searchText.trimmed.isEmpty)
+            }
+            .padding(.horizontal, T.space6)
+            .padding(.vertical, T.space4)
+            .background(
+                RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
+                    .fill(nativeControlFill.opacity(isDarkAppearance ? 0.54 : 0.38))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
+                            .stroke(
+                                nativeControlBorder.opacity(isDarkAppearance ? 0.40 : 0.12),
+                                lineWidth: T.stroke)
+                    })
+            .padding(.horizontal, T.space4)
+
+            if self.rulesViewModel.searchState != .idle {
+                self.rulesSearchResultCard
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var rulesSearchResultCard: some View {
+        switch self.rulesViewModel.searchState {
+        case .idle:
+            EmptyView()
+        case .searching:
+            self.rulesSearchInfoCard(
+                title: tr("ui.rules.search_status.searching"),
+                tone: nativeSecondaryLabel,
+                lines: [])
+        case .invalidInput:
+            self.rulesSearchInfoCard(
+                title: tr("ui.rules.search_status.invalid"),
+                tone: nativeWarning,
+                lines: [])
+        case .missingConfig:
+            self.rulesSearchInfoCard(
+                title: tr("ui.rules.search_status.no_config"),
+                tone: nativeWarning,
+                lines: [])
+        case let .noMatch(subject):
+            self.rulesSearchInfoCard(
+                title: tr(
+                    "ui.rules.search_status.no_match",
+                    self.rulesSearchSubjectLabel(subject),
+                    subject.normalizedInput),
+                tone: nativeSecondaryLabel,
+                lines: [])
+        case let .matched(result):
+            self.rulesSearchInfoCard(
+                title: tr(
+                    "ui.rules.search_status.matched",
+                    self.rulesSearchSubjectLabel(result.subject),
+                    result.subject.normalizedInput),
+                tone: nativePositive,
+                lines: self.rulesSearchLines(for: result))
+        case let .failed(message):
+            self.rulesSearchInfoCard(
+                title: tr("ui.rules.search_status.failed"),
+                tone: nativeCritical,
+                lines: [message])
+        }
+    }
+
+    private func rulesSearchInfoCard(title: String, tone: Color, lines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: T.space4) {
+            Text(title)
+                .font(.app(size: T.FontSize.caption, weight: .semibold))
+                .foregroundStyle(tone)
+
+            ForEach(lines, id: \.self) { line in
+                Text(line)
+                    .font(.app(size: T.FontSize.caption, weight: .regular))
+                    .foregroundStyle(nativePrimaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .menuRowPadding(vertical: T.space4)
+        .background(
+            RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
+                .fill(nativeControlFill.opacity(isDarkAppearance ? 0.32 : 0.22)))
+        .padding(.horizontal, T.space4)
+    }
+
+    private func rulesSearchSubjectLabel(_ subject: RuleSearchSubject) -> String {
+        switch subject.kind {
+        case .domain:
+            tr("ui.rules.search_subject.domain")
+        case .ip:
+            tr("ui.rules.search_subject.ip")
+        }
+    }
+
+    private func rulesSearchLines(for result: LocalRuleSearchResult) -> [String] {
+        guard let match = result.effectiveMatch else { return [] }
+
+        var lines = [
+            tr("ui.rules.search_result.effective"),
+            tr("ui.rules.search_result.policy", match.policy),
+            tr(
+                "ui.rules.search_result.rule",
+                match.matchedRuleType,
+                match.matchedRulePayload?.nonEmpty ?? tr("ui.common.na")),
+        ]
+
+        if let providerName = match.providerName?.trimmedNonEmpty {
+            lines.append(tr("ui.rules.search_result.provider", providerName))
+        }
+
+        if let providerRuleType = match.providerRuleType?.trimmedNonEmpty {
+            lines.append(tr(
+                "ui.rules.search_result.provider_rule",
+                providerRuleType,
+                match.providerRulePayload?.nonEmpty ?? tr("ui.common.na")))
+        }
+
+        if let providerPath = match.providerPath?.trimmedNonEmpty {
+            lines.append(tr("ui.rules.search_result.provider_path", providerPath))
+        }
+
+        let shadowedMatches = result.shadowedMatches
+        if !shadowedMatches.isEmpty {
+            lines.append(tr("ui.rules.search_result.also_matched", shadowedMatches.count))
+            lines.append(contentsOf: shadowedMatches.map { self.rulesSearchSummaryLine(for: $0) })
+        }
+
+        return lines
+    }
+
+    private func rulesSearchSummaryLine(for match: LocalRuleSearchMatch) -> String {
+        if let providerName = match.providerName?.trimmedNonEmpty,
+           let providerRuleType = match.providerRuleType?.trimmedNonEmpty,
+           let providerRulePayload = match.providerRulePayload?.trimmedNonEmpty
+        {
+            return tr(
+                "ui.rules.search_result.shadowed_provider",
+                match.policy,
+                providerName,
+                providerRuleType,
+                providerRulePayload)
+        }
+
+        return tr(
+            "ui.rules.search_result.shadowed_rule",
+            match.policy,
+            match.matchedRuleType,
+            match.matchedRulePayload?.nonEmpty ?? tr("ui.common.na"))
     }
 
     private func rulePolicyGroupSection(
@@ -226,5 +418,10 @@ extension MenuBarRootView {
         self.rulesViewModel.updateVisibleRules(
             items: self.appSession.ruleItems,
             providers: self.appSession.ruleProviders)
+    }
+
+    func searchCurrentLocalRules() async {
+        let configPath = await self.appSession.resolveSelectedConfigPath()
+        await self.rulesViewModel.searchCurrentLocalRules(configPath: configPath)
     }
 }

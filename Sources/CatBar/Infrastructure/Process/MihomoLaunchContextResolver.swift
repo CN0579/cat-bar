@@ -23,7 +23,7 @@ struct MihomoLaunchContextResolver {
             arguments: ["-d", workingDirectoryURL.path, "-f", configPath, "-ext-ctl", controller])
     }
 
-    private func workingDirectoryURL(for configPath: String) -> URL {
+    func workingDirectoryURL(for configPath: String) -> URL {
         let configFileURL = URL(fileURLWithPath: configPath).standardizedFileURL
         let configDirectoryURL = configFileURL.deletingLastPathComponent()
         if configDirectoryURL.lastPathComponent == "config" {
