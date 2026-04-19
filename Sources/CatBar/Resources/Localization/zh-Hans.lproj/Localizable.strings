@@ -121,6 +121,25 @@
 "ui.rules.column.policy" = "策略";
 "ui.rules.column.stats" = "统计";
 "ui.rule.stats.rules" = "规则";
+"ui.rules.search_placeholder" = "搜索域名或 IP";
+"ui.rules.search_action" = "匹配";
+"ui.rules.search_subject.domain" = "域名";
+"ui.rules.search_subject.ip" = "IP";
+"ui.rules.search_status.searching" = "正在匹配本地规则…";
+"ui.rules.search_status.invalid" = "请输入有效的域名或 IP 地址。";
+"ui.rules.search_status.no_config" = "当前没有选中的本地配置文件。";
+"ui.rules.search_status.no_match" = "本地规则中没有命中 %1$@ %2$@";
+"ui.rules.search_status.matched" = "已命中 %1$@ %2$@";
+"ui.rules.search_status.failed" = "本地规则匹配失败。";
+"ui.rules.search_result.effective" = "最终生效：";
+"ui.rules.search_result.policy" = "策略组：%@";
+"ui.rules.search_result.rule" = "规则：%@ -> %@";
+"ui.rules.search_result.provider" = "代理集：%@";
+"ui.rules.search_result.provider_rule" = "代理集规则：%@ -> %@";
+"ui.rules.search_result.provider_path" = "代理集路径：%@";
+"ui.rules.search_result.also_matched" = "还有 %d 条规则也能命中，但因为顺序靠后不会生效：";
+"ui.rules.search_result.shadowed_rule" = "%@ · %@ -> %@";
+"ui.rules.search_result.shadowed_provider" = "%@ · %@ · %@ -> %@";
 "ui.rule.stats.sets" = "规则集";
 
 "ui.empty.proxy_providers" = "暂无代理提供者";

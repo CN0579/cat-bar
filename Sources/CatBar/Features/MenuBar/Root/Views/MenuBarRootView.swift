@@ -354,6 +354,7 @@ struct MenuBarRootView: View {
     func refreshRulesDerivedDataIfVisible() {
         guard self.rootViewModel.currentTab == .rules else { return }
         self.refreshVisibleRules()
+        self.rulesViewModel.resetSearchAvailability(isLocalTarget: self.remoteMachineStore.activeTarget.isLocal)
     }
 
     private func prepareTabHeightTransition(to tab: RootTab) {
