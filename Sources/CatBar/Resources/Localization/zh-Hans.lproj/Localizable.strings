@@ -132,7 +132,7 @@
 "ui.rules.search_status.matched" = "已命中 %1$@ %2$@";
 "ui.rules.search_status.failed" = "本地规则匹配失败。";
 "ui.rules.search_result.effective" = "最终生效：";
-"ui.rules.search_result.policy" = "策略组：%@";
+"ui.rules.search_result.policy" = "代理组：%@";
 "ui.rules.search_result.rule" = "规则：%@ -> %@";
 "ui.rules.search_result.provider" = "代理集：%@";
 "ui.rules.search_result.provider_rule" = "代理集规则：%@ -> %@";
