@@ -32,12 +32,16 @@ extension AppSession {
         self.coreUpgradeFeedbackClearTask?.cancel()
         self.coreUpgradeFeedbackClearTask = nil
 
+        let state: CoreUpgradeState
         do {
             let response = try await self.upgradeCoreUseCase().execute()
-            self.applyCoreUpgradeState(self.coreUpgradeState(from: response))
+            state = self.coreUpgradeState(from: response)
         } catch {
-            self.applyCoreUpgradeState(self.coreUpgradeState(from: error))
+            state = self.coreUpgradeState(from: error)
         }
+
+        self.applyCoreUpgradeState(state)
+        await self.performCoreUpgradeFollowUpIfNeeded(state)
     }
 
     func flushFakeIPCache() async {
@@ -68,9 +72,6 @@ extension AppSession {
             return
         case .succeeded:
             self.appendLog(level: "info", message: tr("log.core_upgrade.updated"))
-            Task { [weak self] in
-                await self?.refreshCoreVersionAfterUpgradeIfPossible()
-            }
         case let .alreadyLatest(version):
             if let version, !version.isEmpty {
                 self.version = AppSemanticVersion.normalizedDisplayVersion(from: version)
@@ -83,6 +84,13 @@ extension AppSession {
         }
 
         self.scheduleCoreUpgradeFeedbackAutoClear()
+    }
+
+    private func performCoreUpgradeFollowUpIfNeeded(_ state: CoreUpgradeState) async {
+        guard case .succeeded = state else { return }
+
+        await self.restartCore()
+        await self.refreshCoreVersionAfterUpgradeIfPossible()
     }
 
     private func scheduleCoreUpgradeFeedbackAutoClear() {
