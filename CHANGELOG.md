@@ -1,3 +1,16 @@
+## v0.10.1
+
+> 本次更新统一了中文代理分组术语，修复了核心升级后未自动重启和远程机器 Web UI 地址生成不正确的问题，让使用体验更加顺畅可靠。
+
+### 🚀 优化改进
+
+- **rules**：align Chinese proxy group terminology
+
+### 🐞 问题修复
+
+- **core**：restart core after successful upgrade
+- **remote-machine**：build Web UI URL from config
+
 ## v0.10.0
 
 > 本次更新为本地规则匹配新增搜索能力，帮助你更快定位和查看目标规则。
