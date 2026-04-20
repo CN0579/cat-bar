@@ -28,9 +28,12 @@ extension AppSession {
                 let fallback = "127.0.0.1:9090"
                 self.controller = fallback
                 self.controllerSecret = nil
+                self.externalControllerTLS = nil
+                self.externalUI = nil
+                self.externalUIName = nil
                 self.externalControllerDisplay = fallback
                 self.localExternalControllerDisplay = fallback
-                self.controllerUIURL = self.makeControllerUIURL(fallback, secret: nil)
+                self.refreshControllerUIURL()
                 self.ensureAPIClient()
             }
 
@@ -47,8 +50,17 @@ extension AppSession {
                 message: self.tr("log.remote.switched_to_remote", machine.name, machine.displayAddress))
             self.controller = machine.controllerAddress
             self.controllerSecret = machine.secret
+            self.externalControllerTLS = nil
+            self.externalUI = nil
+            self.externalUIName = nil
             self.externalControllerDisplay = machine.displayAddress
-            self.controllerUIURL = self.makeControllerUIURL(machine.controllerAddress, secret: machine.secret)
+            self.refreshControllerUIURL(publicHost: machine.host)
+            if let configPath = await self.resolveSelectedConfigPath() {
+                self.applyControllerWebDashboardConfigFromSelectedConfigFile(
+                    configPath: configPath,
+                    publicHost: machine.host,
+                    shouldUpdateSecret: machine.secret?.trimmedNonEmpty == nil)
+            }
             self.ensureAPIClient()
             self.lastSyncedEditableSettings = nil
             self.preserveLocalSettingsOnNextSync = false

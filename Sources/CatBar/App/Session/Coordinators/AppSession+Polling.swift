@@ -217,6 +217,11 @@ extension AppSession {
         if !self.isRemoteTarget, let externalController = config.externalController {
             applyExternalControllerFromConfig(externalController)
         }
+        if config.secret != nil {
+            self.controllerSecret = config.secret?.trimmedNonEmpty
+            self.ensureAPIClient()
+        }
+        self.refreshControllerUIURL()
         syncEditableSettings(from: config)
         refreshLogsStreamLevelIfNeeded()
     }

@@ -112,9 +112,49 @@ struct ConfigSnapshot: Codable, Equatable {
     let mixedPort: Int?
     let tun: TunConfig?
     let externalController: String?
+    let externalControllerTLS: String?
+    let externalUI: String?
+    let externalUIName: String?
+    let secret: String?
 
     var tunEnabled: Bool? {
         self.tun?.enable
+    }
+
+    init(
+        allowLan: Bool?,
+        mode: String?,
+        logLevel: String?,
+        ipv6: Bool?,
+        tcpConcurrent: Bool?,
+        port: Int?,
+        socksPort: Int?,
+        redirPort: Int?,
+        tproxyPort: Int?,
+        mixedPort: Int?,
+        tun: TunConfig?,
+        externalController: String?,
+        externalControllerTLS: String? = nil,
+        externalUI: String? = nil,
+        externalUIName: String? = nil,
+        secret: String? = nil)
+    {
+        self.allowLan = allowLan
+        self.mode = mode
+        self.logLevel = logLevel
+        self.ipv6 = ipv6
+        self.tcpConcurrent = tcpConcurrent
+        self.port = port
+        self.socksPort = socksPort
+        self.redirPort = redirPort
+        self.tproxyPort = tproxyPort
+        self.mixedPort = mixedPort
+        self.tun = tun
+        self.externalController = externalController
+        self.externalControllerTLS = externalControllerTLS
+        self.externalUI = externalUI
+        self.externalUIName = externalUIName
+        self.secret = secret
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -130,5 +170,9 @@ struct ConfigSnapshot: Codable, Equatable {
         case mixedPort = "mixed-port"
         case tun
         case externalController = "external-controller"
+        case externalControllerTLS = "external-controller-tls"
+        case externalUI = "external-ui"
+        case externalUIName = "external-ui-name"
+        case secret
     }
 }
