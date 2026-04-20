@@ -409,6 +409,21 @@ final class AppSession: ObservableObject {
         set { self.coreRuntimePresentationState.controllerSecret = newValue }
     }
 
+    var externalControllerTLS: String? {
+        get { self.coreRuntimePresentationState.externalControllerTLS }
+        set { self.coreRuntimePresentationState.externalControllerTLS = newValue }
+    }
+
+    var externalUI: String? {
+        get { self.coreRuntimePresentationState.externalUI }
+        set { self.coreRuntimePresentationState.externalUI = newValue }
+    }
+
+    var externalUIName: String? {
+        get { self.coreRuntimePresentationState.externalUIName }
+        set { self.coreRuntimePresentationState.externalUIName = newValue }
+    }
+
     var currentMode: CoreMode {
         get { self.coreRuntimePresentationState.currentMode }
         set { self.coreRuntimePresentationState.currentMode = newValue }
@@ -1109,9 +1124,9 @@ final class AppSession: ObservableObject {
             self.controller = machine.controllerAddress
             self.controllerSecret = machine.secret
             self.externalControllerDisplay = machine.displayAddress
-            self.controllerUIURL = makeControllerUIURL(machine.controllerAddress, secret: machine.secret)
+            self.refreshControllerUIURL(publicHost: machine.host)
         } else {
-            self.controllerUIURL = makeControllerUIURL(self.controller, secret: self.controllerSecret)
+            self.refreshControllerUIURL()
         }
         if let persisted = loadPersistedEditableSettingsSnapshot() {
             applyEditableSettingsSnapshotToUI(persisted)
@@ -1133,9 +1148,12 @@ final class AppSession: ObservableObject {
                             let fallback = "127.0.0.1:9090"
                             self.controller = fallback
                             self.controllerSecret = nil
+                            self.externalControllerTLS = nil
+                            self.externalUI = nil
+                            self.externalUIName = nil
                             self.externalControllerDisplay = fallback
                             self.localExternalControllerDisplay = fallback
-                            self.controllerUIURL = self.makeControllerUIURL(fallback, secret: nil)
+                            self.refreshControllerUIURL()
                             self.ensureAPIClient()
                         }
                         self.appendLog(level: "warning", message: self.tr(

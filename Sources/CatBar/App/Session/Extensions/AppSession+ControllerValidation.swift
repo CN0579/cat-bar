@@ -32,7 +32,7 @@ extension AppSession {
         let didChangeController = controller != clientController
         if didChangeController {
             controller = clientController
-            controllerUIURL = makeControllerUIURL(clientController, secret: controllerSecret)
+            refreshControllerUIURL()
         }
         if didChangeController || apiClient == nil {
             ensureAPIClient()
@@ -86,7 +86,7 @@ extension AppSession {
     func applyExternalControllerFromSelectedConfigFile(configPath: String) -> String {
         let launchController = self.resolvedControllerFromSelectedConfigFile(configPath: configPath)
         self.applyExternalControllerFromConfig(launchController)
-        self.syncControllerSecretFromConfigFileIfReadable(configPath: configPath)
+        self.applyControllerWebDashboardConfigFromSelectedConfigFile(configPath: configPath)
         return launchController
     }
 
@@ -102,17 +102,75 @@ extension AppSession {
         let currentSecret = self.normalizedControllerSecret(controllerSecret)
         if normalizedSecret != currentSecret {
             controllerSecret = normalizedSecret
-            controllerUIURL = makeControllerUIURL(controller, secret: normalizedSecret)
+            refreshControllerUIURL()
         }
         ensureAPIClient()
     }
 
-    private func syncControllerSecretFromConfigFileIfReadable(configPath: String) {
+    func applyControllerWebDashboardConfigFromSelectedConfigFile(
+        configPath: String,
+        publicHost: String? = nil,
+        shouldUpdateSecret: Bool = true)
+    {
         guard let raw = try? String(contentsOfFile: configPath, encoding: .utf8) else {
             return
         }
+
         let parsedSecret = self.parseYAMLScalarValue(forKey: "secret", fromConfigContent: raw)
-        self.applyControllerSecretFromConfig(parsedSecret)
+        if shouldUpdateSecret {
+            self.applyControllerSecretFromConfig(parsedSecret)
+        }
+
+        self.externalControllerTLS = self.parseYAMLScalarValue(
+            forKey: "external-controller-tls",
+            fromConfigContent: raw)
+        self.externalUI = self.parseYAMLScalarValue(forKey: "external-ui", fromConfigContent: raw)
+        self.externalUIName = self.parseYAMLScalarValue(forKey: "external-ui-name", fromConfigContent: raw)
+        self.refreshControllerUIURL(publicHost: publicHost)
+    }
+
+    func controllerWebDashboardURLForOpening() async -> URL? {
+        if self.isRemoteTarget {
+            _ = try? await self.fetchRuntimeConfigSnapshot()
+            if let machine = self.remoteMachineStore.activeTarget.remoteMachine,
+               let configPath = await self.resolveSelectedConfigPath()
+            {
+                self.applyControllerWebDashboardConfigFromSelectedConfigFile(
+                    configPath: configPath,
+                    publicHost: machine.host,
+                    shouldUpdateSecret: self.controllerSecret?.trimmedNonEmpty == nil)
+            }
+        } else if let configPath = await self.resolveSelectedConfigPath() {
+            self.applyExternalControllerFromSelectedConfigFile(configPath: configPath)
+        } else {
+            self.refreshControllerUIURL()
+        }
+
+        return URL(string: self.controllerUIURL)
+    }
+
+    func refreshControllerUIURL(publicHost: String? = nil) {
+        self.controllerUIURL = self.makeControllerUIURL(
+            self.controller,
+            secret: self.controllerSecret,
+            tlsController: self.externalControllerTLS,
+            externalUI: self.externalUI,
+            externalUIName: self.externalUIName,
+            publicHost: publicHost ?? self.controllerUIPublicHost())
+    }
+
+    private func controllerUIPublicHost() -> String? {
+        if case let .remote(machine) = self.remoteMachineStore.activeTarget {
+            return machine.host
+        }
+        guard let tlsHost = self.externalControllerTLS.flatMap(self.controllerHost(from:)) else {
+            return nil
+        }
+        let normalized = tlsHost.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard normalized == "0.0.0.0" || normalized == "::" || normalized == "0:0:0:0:0:0:0:0" else {
+            return nil
+        }
+        return DeviceIPv4AddressResolver.currentAddress()
     }
 
     private func parseYAMLScalarValue(forKey key: String, fromConfigContent raw: String) -> String? {

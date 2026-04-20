@@ -30,29 +30,6 @@ struct RemoteMachine: Identifiable, Codable, Equatable, Hashable {
         return "\(self.host):\(self.port)"
     }
 
-    var webDashboardURL: URL? {
-        var components = URLComponents()
-        components.scheme = self.useHTTPS ? "https" : "http"
-        components.host = self.host
-        components.port = self.port
-        components.path = "/ui/"
-
-        let trimmedSecret = self.secret?.trimmingCharacters(in: .whitespacesAndNewlines)
-        var queryItems = [
-            URLQueryItem(name: "host", value: self.host),
-            URLQueryItem(name: "hostname", value: self.host),
-            URLQueryItem(name: "port", value: String(self.port)),
-        ]
-
-        if let trimmedSecret, !trimmedSecret.isEmpty {
-            queryItems.append(URLQueryItem(name: "secret", value: trimmedSecret))
-        }
-
-        components.queryItems = queryItems
-        components.fragment = "/proxies"
-        return components.url
-    }
-
     init(
         id: UUID = UUID(),
         name: String,

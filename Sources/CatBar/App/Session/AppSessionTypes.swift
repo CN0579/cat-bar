@@ -465,6 +465,9 @@ struct CoreRuntimePresentationState {
     var externalControllerDisplay: String = "127.0.0.1:9090"
     var controllerUIURL: String = "http://127.0.0.1:9090/ui"
     var controllerSecret: String?
+    var externalControllerTLS: String?
+    var externalUI: String?
+    var externalUIName: String?
     var currentMode: CoreMode = .rule
     var logLevel: String = ConfigLogLevel.info.rawValue
     var port: Int?
@@ -489,6 +492,9 @@ struct CoreRuntimePresentationState {
         self.redirPort = config.redirPort
         self.tproxyPort = config.tproxyPort
         self.mixedPort = config.mixedPort ?? 0
+        self.externalControllerTLS = config.externalControllerTLS
+        self.externalUI = config.externalUI
+        self.externalUIName = config.externalUIName
     }
 }
 

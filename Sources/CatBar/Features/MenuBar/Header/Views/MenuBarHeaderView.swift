@@ -171,12 +171,12 @@ extension MenuBarRootView {
     }
 
     var activeRemoteWebDashboardURL: URL? {
-        self.remoteMachineStore.activeTarget.remoteMachine?.webDashboardURL
+        URL(string: self.appSession.controllerUIURL)
     }
 
     var shouldShowHeaderRemoteWebUIButton: Bool {
         guard let machine = self.remoteMachineStore.activeTarget.remoteMachine else { return false }
-        return machine.showsWebDashboardButton && machine.webDashboardURL != nil
+        return machine.showsWebDashboardButton && self.activeRemoteWebDashboardURL != nil
     }
 
     var headerRemoteWebUIButton: some View {
@@ -189,7 +189,7 @@ extension MenuBarRootView {
             fontSize: MenuBarLayoutTokens.FontSize.caption,
             hierarchicalSymbol: true)
         {
-            guard let url = self.activeRemoteWebDashboardURL else { return }
+            guard let url = await self.appSession.controllerWebDashboardURLForOpening() else { return }
             NSWorkspace.shared.open(url)
         }
         .help(tr("ui.action.open_web_ui"))
