@@ -1,3 +1,29 @@
+## v0.11.0
+
+> 本次更新带来本地规则匹配搜索，并进一步提升了远程目标控制、核心升级与启动恢复、代理流量展示和界面细节的一致性与稳定性。
+
+### ✨ 新增功能
+
+- **rules**：add local rule match search
+
+### 🚀 优化改进
+
+- **changelog**：
+  - release 0.9.0
+  - release 0.10.0
+  - release 0.10.1
+- **rules**：align Chinese proxy group terminology
+- **menu-bar**：unify core mode switcher styling
+
+### 🐞 问题修复
+
+- **system**：stabilize network control cards for remote targets
+- **core**：restart core after successful upgrade
+- **remote-machine**：build Web UI URL from config
+- **session**：restore previous local core running state on launch
+- **menu-bar**：unify text input styling and placeholder alignment
+- **proxy**：refine traffic overview layout and compact speed format
+
 ## v0.10.1
 
 > 本次更新统一了中文代理分组术语，修复了核心升级后未自动重启和远程机器 Web UI 地址生成不正确的问题，让使用体验更加顺畅可靠。
