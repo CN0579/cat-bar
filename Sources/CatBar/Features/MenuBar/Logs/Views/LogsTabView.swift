@@ -53,8 +53,9 @@ extension MenuBarRootView {
             NonActivatingTextField(
                 placeholder: tr("ui.placeholder.search_logs"),
                 text: $logsViewModel.searchText,
-                style: .roundedBorder,
+                style: .plain,
                 font: NSFont.monospacedSystemFont(ofSize: T.FontSize.body, weight: .regular))
+                .menuBarTextInputSurface()
         }
         .menuRowPadding(vertical: T.space4)
     }

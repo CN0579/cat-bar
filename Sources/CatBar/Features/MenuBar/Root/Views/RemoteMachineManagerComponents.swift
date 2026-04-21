@@ -528,15 +528,15 @@ struct RemoteMachineEditorCard: View {
         VStack(spacing: 0) {
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.name"), palette: self.palette) {
                 TextField(self.tr("ui.machine.field.name"), text: self.$name)
-                    .textFieldStyle(.roundedBorder)
                     .font(.app(size: 12, weight: .regular))
+                    .menuBarTextInputSurface(horizontalPadding: 10, verticalPadding: 7)
                     .focused(self.$focusedField, equals: .name)
             }
             self.separator
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.host"), palette: self.palette) {
                 TextField(self.tr("ui.machine.field.host_placeholder"), text: self.$host)
-                    .textFieldStyle(.roundedBorder)
                     .font(.app(size: 12, weight: .regular))
+                    .menuBarTextInputSurface(horizontalPadding: 10, verticalPadding: 7)
                     .focused(self.$focusedField, equals: .host)
             }
             if self.hostContainsProtocolPrefix {
@@ -547,8 +547,8 @@ struct RemoteMachineEditorCard: View {
             RemoteMachineEditorLabeledRow(title: self.tr("ui.machine.field.port"), palette: self.palette) {
                 HStack(spacing: 8) {
                     TextField(self.tr("ui.machine.field.port"), text: self.$port)
-                        .textFieldStyle(.roundedBorder)
                         .font(.app(size: 12, weight: .regular))
+                        .menuBarTextInputSurface(horizontalPadding: 10, verticalPadding: 7)
                         .frame(width: 84)
                         .focused(self.$focusedField, equals: .port)
 
@@ -575,8 +575,8 @@ struct RemoteMachineEditorCard: View {
                             SecureField(self.tr("ui.machine.field.secret"), text: self.$secret)
                         }
                     }
-                    .textFieldStyle(.roundedBorder)
                     .font(.app(size: 12, weight: .regular))
+                    .menuBarTextInputSurface(horizontalPadding: 10, verticalPadding: 7)
                     .focused(self.$focusedField, equals: .secret)
 
                     Button {

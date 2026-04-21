@@ -105,10 +105,11 @@ extension MenuBarRootView {
             NonActivatingTextField(
                 placeholder: tr("ui.placeholder.filter_connection"),
                 text: $connectionsViewModel.filterText,
-                style: .roundedBorder,
+                style: .plain,
                 font: NSFont.monospacedSystemFont(
                     ofSize: MenuBarLayoutTokens.FontSize.body,
                     weight: .regular))
+                .menuBarTextInputSurface()
         }
         .menuRowPadding(vertical: MenuBarLayoutTokens.space4)
     }

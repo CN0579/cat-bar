@@ -13,7 +13,7 @@ struct SettingsPortTextField: View {
         NonActivatingTextField(
             placeholder: self.placeholder,
             text: self.$text,
-            style: .roundedBorder,
+            style: .plain,
             alignment: .right,
             font: NSFont.monospacedDigitSystemFont(
                 ofSize: NSFont.systemFontSize(for: .regular),
@@ -21,5 +21,6 @@ struct SettingsPortTextField: View {
             lineBreakMode: .byTruncatingTail,
             onChange: self.onChange,
             onSubmit: self.onSubmit)
+            .menuBarTextInputSurface()
     }
 }

@@ -50,9 +50,16 @@ struct NonActivatingTextField: NSViewRepresentable {
         field.alignment = self.alignment
         field.lineBreakMode = self.lineBreakMode
         field.textColor = .labelColor
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = self.alignment
+        paragraphStyle.lineBreakMode = self.lineBreakMode
         field.placeholderAttributedString = NSAttributedString(
             string: self.placeholder,
-            attributes: [.foregroundColor: NSColor.placeholderTextColor])
+            attributes: [
+                .foregroundColor: NSColor.placeholderTextColor,
+                .font: self.font,
+                .paragraphStyle: paragraphStyle,
+            ])
 
         switch self.style {
         case .plain:

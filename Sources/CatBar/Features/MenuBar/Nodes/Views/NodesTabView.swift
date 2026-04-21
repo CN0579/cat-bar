@@ -35,17 +35,10 @@ extension MenuBarRootView {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, T.space6)
-        .padding(.vertical, T.space4)
-        .background(
-            RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
-                .fill(nativeControlFill.opacity(isDarkAppearance ? 0.54 : 0.38))
-                .overlay {
-                    RoundedRectangle(cornerRadius: T.cornerRadius, style: .continuous)
-                        .stroke(
-                            nativeControlBorder.opacity(isDarkAppearance ? 0.40 : 0.12),
-                            lineWidth: T.stroke)
-                })
+        .menuBarTextInputSurface(
+            horizontalPadding: T.space6,
+            verticalPadding: T.space4,
+            cornerRadius: T.cornerRadius)
         .padding(.horizontal, T.space4)
     }
 
