@@ -125,6 +125,19 @@ extension AppSession {
         return result
     }
 
+    var shouldRestoreRunningCoreOnLaunch: Bool {
+        get { defaults.bool(forKey: shouldRestoreRunningCoreOnLaunchKey) }
+        set { defaults.set(newValue, forKey: shouldRestoreRunningCoreOnLaunchKey) }
+    }
+
+    func migrateLegacyAutoStartCorePreferenceIfNeeded() {
+        guard defaults.object(forKey: shouldRestoreRunningCoreOnLaunchKey) == nil else { return }
+
+        let legacyValue = defaults.bool(forKey: legacyAutoStartCoreKey)
+        defaults.set(legacyValue, forKey: shouldRestoreRunningCoreOnLaunchKey)
+        defaults.removeObject(forKey: legacyAutoStartCoreKey)
+    }
+
     func persistRemoteConfigSources() {
         defaults.set(remoteConfigSources, forKey: remoteConfigSourcesKey)
     }

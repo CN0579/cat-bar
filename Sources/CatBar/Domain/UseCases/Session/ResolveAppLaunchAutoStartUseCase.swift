@@ -2,7 +2,8 @@ import Foundation
 
 struct AppLaunchAutoStartContext: Equatable {
     let startBackgroundRefresh: Bool
-    let autoStartCoreEnabled: Bool
+    let shouldRestoreRunningCoreOnLaunch: Bool
+    let isRemoteTarget: Bool
     let shouldDeferForMissingManagedCore: Bool
 }
 
@@ -14,7 +15,8 @@ enum AppLaunchAutoStartDecision: Equatable {
 struct ResolveAppLaunchAutoStartUseCase {
     func execute(_ context: AppLaunchAutoStartContext) -> AppLaunchAutoStartDecision {
         guard context.startBackgroundRefresh,
-              context.autoStartCoreEnabled,
+              context.shouldRestoreRunningCoreOnLaunch,
+              !context.isRemoteTarget,
               !context.shouldDeferForMissingManagedCore
         else {
             return .skip

@@ -172,6 +172,7 @@ extension AppSession {
                 }
 
                 try await self.executeStartCoreLaunchPlan(plan)
+                self.recordDesiredLocalCoreRunningStateIfNeeded(for: trigger)
             } catch {
                 self.handleStartCoreExecutionFailure(error, trigger: trigger)
             }
@@ -194,6 +195,7 @@ extension AppSession {
             statusText = "Stopped"
             apiStatus = .unknown
             resetTrafficPresentation()
+            self.recordDesiredLocalCoreStoppedStateIfNeeded(for: trigger)
         }
     }
 
@@ -401,6 +403,24 @@ extension AppSession {
     func attemptAutoStartIfNeeded() async {
         guard self.beginLifecycleAutoStartAttempt() else { return }
         await self.startCore(trigger: .auto)
+    }
+
+    private func recordDesiredLocalCoreRunningStateIfNeeded(for trigger: StartTrigger) {
+        switch trigger {
+        case .manual:
+            self.shouldRestoreRunningCoreOnLaunch = true
+        case .auto, .networkRecovery:
+            break
+        }
+    }
+
+    private func recordDesiredLocalCoreStoppedStateIfNeeded(for trigger: StopTrigger) {
+        switch trigger {
+        case .manual:
+            self.shouldRestoreRunningCoreOnLaunch = false
+        case .networkLoss:
+            break
+        }
     }
 
     private func prepareStartCoreLaunchPlan(trigger: StartTrigger) async throws -> CoreLaunchPlan? {

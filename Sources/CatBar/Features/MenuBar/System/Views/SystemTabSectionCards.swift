@@ -332,13 +332,6 @@ extension MenuBarRootView {
 
             if !appSession.isRemoteTarget {
                 self.settingsToggleRow(
-                    tr("ui.settings.auto_start_core"),
-                    symbol: "power.circle",
-                    isOn: Binding(
-                        get: { appSession.autoStartCoreEnabled },
-                        set: { appSession.autoStartCoreEnabled = $0 }))
-
-                self.settingsToggleRow(
                     tr("ui.settings.auto_core_network_recovery"),
                     symbol: "network.badge.shield.half.filled",
                     isOn: Binding(

@@ -879,11 +879,6 @@ final class AppSession: ObservableObject {
         return self.isRuntimeRunning
     }
 
-    var autoStartCoreEnabled: Bool {
-        get { self.autoStartCore }
-        set { self.autoStartCore = newValue }
-    }
-
     var autoManageCoreOnNetworkChangeEnabled: Bool {
         get { self.autoCoreControlOnNetworkChange }
         set {
@@ -957,11 +952,12 @@ final class AppSession: ObservableObject {
     var configFileSignatureSnapshot: [String: String] = [:]
     var pendingConfigChangeRestart = false
     let defaults = UserDefaults.standard
-    @AppStorage("catbar.auto.start.core") private var autoStartCore: Bool = false
     @AppStorage("catbar.auto.core.network.recovery") private var autoCoreControlOnNetworkChange: Bool = true
     @AppStorage("catbar.statusbar.display.mode") private var statusBarDisplayModeRaw: String = StatusBarDisplayMode
         .iconOnly.rawValue
     @AppStorage("catbar.proxy.node.hide_unavailable") var hideUnavailableProxyNodes: Bool = false
+    let shouldRestoreRunningCoreOnLaunchKey = "catbar.core.restore.running.on.launch"
+    let legacyAutoStartCoreKey = "catbar.auto.start.core"
     let selectedConfigKey = "catbar.config.selected.filename"
     let legacySelectedConfigKey = "catbar.config.selected"
     let remoteConfigSourcesKey = "catbar.config.remote.sources.v1"
@@ -1066,6 +1062,7 @@ final class AppSession: ObservableObject {
         self.uiLanguage = loadPersistedUILanguage()
         self.appearanceMode = loadPersistedAppearanceMode()
         applyAppAppearance()
+        self.migrateLegacyAutoStartCorePreferenceIfNeeded()
         refreshLaunchAtLoginStatus()
 
         self.mihomoBinaryPath = self.coreRepository.detectedBinaryPath ?? "-"
@@ -1185,7 +1182,8 @@ final class AppSession: ObservableObject {
         }
         if self.resolveAppLaunchAutoStartUseCase.execute(.init(
             startBackgroundRefresh: startBackgroundRefresh,
-            autoStartCoreEnabled: self.autoStartCore,
+            shouldRestoreRunningCoreOnLaunch: self.shouldRestoreRunningCoreOnLaunch,
+            isRemoteTarget: self.isRemoteTarget,
             shouldDeferForMissingManagedCore: self.shouldDeferAutoStartForMissingManagedCore())) == .schedule
         {
             Task { [weak self] in

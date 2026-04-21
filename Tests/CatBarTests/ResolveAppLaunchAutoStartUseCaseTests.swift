@@ -4,10 +4,11 @@ import XCTest
 final class ResolveAppLaunchAutoStartUseCaseTests: XCTestCase {
     private let useCase = ResolveAppLaunchAutoStartUseCase()
 
-    func testExecuteSchedulesWhenBackgroundRefreshAndAutoStartAreEnabled() {
+    func testExecuteSchedulesWhenLaunchShouldRestoreRunningLocalCore() {
         let decision = self.useCase.execute(.init(
             startBackgroundRefresh: true,
-            autoStartCoreEnabled: true,
+            shouldRestoreRunningCoreOnLaunch: true,
+            isRemoteTarget: false,
             shouldDeferForMissingManagedCore: false))
 
         XCTAssertEqual(decision, .schedule)
@@ -16,16 +17,28 @@ final class ResolveAppLaunchAutoStartUseCaseTests: XCTestCase {
     func testExecuteSkipsWhenBackgroundRefreshIsDisabled() {
         let decision = self.useCase.execute(.init(
             startBackgroundRefresh: false,
-            autoStartCoreEnabled: true,
+            shouldRestoreRunningCoreOnLaunch: true,
+            isRemoteTarget: false,
             shouldDeferForMissingManagedCore: false))
 
         XCTAssertEqual(decision, .skip)
     }
 
-    func testExecuteSkipsWhenAutoStartIsDisabled() {
+    func testExecuteSkipsWhenLaunchShouldNotRestoreRunningCore() {
         let decision = self.useCase.execute(.init(
             startBackgroundRefresh: true,
-            autoStartCoreEnabled: false,
+            shouldRestoreRunningCoreOnLaunch: false,
+            isRemoteTarget: false,
+            shouldDeferForMissingManagedCore: false))
+
+        XCTAssertEqual(decision, .skip)
+    }
+
+    func testExecuteSkipsWhenRemoteTargetIsActive() {
+        let decision = self.useCase.execute(.init(
+            startBackgroundRefresh: true,
+            shouldRestoreRunningCoreOnLaunch: true,
+            isRemoteTarget: true,
             shouldDeferForMissingManagedCore: false))
 
         XCTAssertEqual(decision, .skip)
@@ -34,7 +47,8 @@ final class ResolveAppLaunchAutoStartUseCaseTests: XCTestCase {
     func testExecuteSkipsWhenManagedCoreIsMissing() {
         let decision = self.useCase.execute(.init(
             startBackgroundRefresh: true,
-            autoStartCoreEnabled: true,
+            shouldRestoreRunningCoreOnLaunch: true,
+            isRemoteTarget: false,
             shouldDeferForMissingManagedCore: true))
 
         XCTAssertEqual(decision, .skip)
