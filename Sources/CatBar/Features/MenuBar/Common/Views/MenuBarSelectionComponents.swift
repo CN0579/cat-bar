@@ -15,29 +15,43 @@ struct MenuBarFilterChipButton: View {
     let title: String
     let selected: Bool
     let palette: MenuBarFilterChipPalette
+    let symbol: String?
+    let isLoading: Bool
+    let expandsHorizontally: Bool
     let action: () -> Void
 
     @State private var isHovered = false
 
     var body: some View {
         Button(action: self.action) {
-            Text(self.title)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, T.space6)
-                .padding(.vertical, T.space2)
-                .foregroundStyle(self.selected ? self.palette.selectedText : self.palette.normalText)
-                .background {
-                    Capsule(style: .continuous)
-                        .fill(self.selected ? self.palette.selectedFill : (self.isHovered ? self.palette.hoverFill : .clear))
-                        .overlay {
-                            if self.selected {
-                                Capsule(style: .continuous)
-                                    .stroke(self.palette.selectedBorder, lineWidth: T.stroke)
-                            }
-                        }
+            HStack(spacing: T.space4) {
+                if self.isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if let symbol = self.symbol {
+                    Image(systemName: symbol)
+                        .font(.app(size: T.FontSize.caption, weight: .bold))
                 }
-                .contentShape(Capsule(style: .continuous))
+
+                Text(self.title)
+                    .font(.app(size: T.FontSize.caption, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: self.expandsHorizontally ? .infinity : nil)
+            .padding(.horizontal, T.space6)
+            .padding(.vertical, T.space2)
+            .foregroundStyle(self.selected ? self.palette.selectedText : self.palette.normalText)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(self.selected ? self.palette.selectedFill : (self.isHovered ? self.palette.hoverFill : .clear))
+                    .overlay {
+                        if self.selected {
+                            Capsule(style: .continuous)
+                                .stroke(self.palette.selectedBorder, lineWidth: T.stroke)
+                        }
+                    }
+            }
+            .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { self.isHovered = $0 }
@@ -152,12 +166,18 @@ extension MenuBarRootView {
     func filterChipButton(
         title: String,
         selected: Bool,
+        symbol: String? = nil,
+        isLoading: Bool = false,
+        expandsHorizontally: Bool = false,
         action: @escaping () -> Void) -> some View
     {
         MenuBarFilterChipButton(
             title: title,
             selected: selected,
             palette: self.filterChipPalette,
+            symbol: symbol,
+            isLoading: isLoading,
+            expandsHorizontally: expandsHorizontally,
             action: action)
     }
 
