@@ -53,6 +53,10 @@ enum ValueFormatter {
         return String(format: "%.0f KB/s", kb)
     }
 
+    static func speedCompactNoSpace(_ value: Int64) -> String {
+        self.speed(value).replacingOccurrences(of: " ", with: "")
+    }
+
     static func bytesInteger(_ value: Int64) -> String {
         let normalized = max(0, value)
         let kb: Int64 = 1024

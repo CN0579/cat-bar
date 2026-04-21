@@ -46,8 +46,8 @@ struct MenuBarDisplayResolver {
     func resolveSpeedLines(traffic: TrafficSnapshot, isRuntimeRunning: Bool) -> MenuBarSpeedLines {
         guard isRuntimeRunning else { return .zero }
 
-        let up = ValueFormatter.speed(max(0, traffic.up)).replacingOccurrences(of: " ", with: "")
-        let down = ValueFormatter.speed(max(0, traffic.down)).replacingOccurrences(of: " ", with: "")
+        let up = ValueFormatter.speedCompactNoSpace(max(0, traffic.up))
+        let down = ValueFormatter.speedCompactNoSpace(max(0, traffic.down))
         return MenuBarSpeedLines(up: "\(up)↑", down: "\(down)↓")
     }
 

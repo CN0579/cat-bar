@@ -146,35 +146,51 @@ extension MenuBarRootView {
 
             VStack(spacing: 0) {
                 HStack(spacing: T.space6) {
-                    self.cornerMetric(
+                    self.metricCell(
                         symbol: "link",
                         value: "\(connectionsStore.connectionsCount)",
-                        color: nativeIndigo)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        color: nativeIndigo,
+                        alignment: .leading)
+                        .frame(maxWidth: .infinity)
 
-                    self.alignedTrafficMetric(
-                        speed: ValueFormatter.speed(appSession.traffic.up),
-                        total: ValueFormatter.bytesCompactNoSpace(appSession.displayUpTotal),
+                    self.metricCell(
                         symbol: "arrow.up.circle",
-                        color: nativeInfo)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        value: ValueFormatter.bytesCompactNoSpace(appSession.displayUpTotal),
+                        color: nativeInfo,
+                        alignment: .trailing)
+                        .frame(maxWidth: .infinity)
+
+                    self.metricCell(
+                        symbol: "arrow.up.circle.fill",
+                        value: ValueFormatter.speedCompactNoSpace(appSession.traffic.up),
+                        color: nativeInfo,
+                        alignment: .trailing)
+                        .frame(maxWidth: .infinity)
                 }
 
                 Spacer(minLength: 0)
 
                 HStack(spacing: T.space6) {
-                    self.cornerMetric(
+                    self.metricCell(
                         symbol: "memorychip",
                         value: ValueFormatter.bytesInteger(appSession.memory.inuse),
-                        color: nativeTeal)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        color: nativeTeal,
+                        alignment: .leading)
+                        .frame(maxWidth: .infinity)
 
-                    self.alignedTrafficMetric(
-                        speed: ValueFormatter.speed(appSession.traffic.down),
-                        total: ValueFormatter.bytesCompactNoSpace(appSession.displayDownTotal),
+                    self.metricCell(
                         symbol: "arrow.down.circle",
-                        color: nativePositive.opacity(T.Opacity.solid))
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        value: ValueFormatter.bytesCompactNoSpace(appSession.displayDownTotal),
+                        color: nativePositive.opacity(T.Opacity.solid),
+                        alignment: .trailing)
+                        .frame(maxWidth: .infinity)
+
+                    self.metricCell(
+                        symbol: "arrow.down.circle.fill",
+                        value: ValueFormatter.speedCompactNoSpace(appSession.traffic.down),
+                        color: nativePositive.opacity(T.Opacity.solid),
+                        alignment: .trailing)
+                        .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, T.space4)
@@ -184,11 +200,11 @@ extension MenuBarRootView {
         .padding(.top, T.space2)
     }
 
-    func cornerMetric(
+    func metricCell(
         symbol: String,
         value: String,
         color: Color,
-        iconTrailing: Bool = false) -> some View
+        alignment: Alignment) -> some View
     {
         let icon = Image(systemName: symbol)
             .font(.app(size: T.FontSize.caption, weight: .semibold))
@@ -199,34 +215,11 @@ extension MenuBarRootView {
             .lineLimit(1)
             .minimumScaleFactor(T.minimumScale)
 
-        return HStack(spacing: iconTrailing ? T.space1 : T.space2) {
-            if iconTrailing { text; icon } else { icon; text }
+        return HStack(spacing: T.space2) {
+            icon
+            text
         }
-    }
-
-    func alignedTrafficMetric(
-        speed: String,
-        total: String,
-        symbol: String,
-        color: Color
-    ) -> some View {
-        HStack(spacing: T.space2) {
-            Text(total)
-                .font(.app(size: T.FontSize.body, weight: .regular))
-                .foregroundStyle(nativeSecondaryLabel.opacity(0.8))
-                .lineLimit(1)
-                .truncationMode(.tail)
-            
-            Text(speed)
-                .font(.app(size: T.FontSize.body, weight: .medium).monospacedDigit())
-                .foregroundStyle(nativeSecondaryLabel)
-                .frame(minWidth: 70, alignment: .trailing)
-                .lineLimit(1)
-            
-            Image(systemName: symbol)
-                .font(.app(size: T.FontSize.body, weight: .semibold))
-                .foregroundStyle(color)
-        }
+        .frame(maxWidth: .infinity, alignment: alignment)
     }
 
 
