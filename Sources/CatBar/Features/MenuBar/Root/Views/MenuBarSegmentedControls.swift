@@ -128,28 +128,25 @@ extension MenuBarRootView {
         HStack(spacing: MenuBarLayoutTokens.space2) {
             self.modeSegmentButton(
                 title: tr("ui.mode.rule"),
-                mode: .rule,
-                symbol: "shield.lefthalf.filled")
+                mode: .rule)
             self.modeSegmentButton(
                 title: tr("ui.mode.global"),
-                mode: .global,
-                symbol: "globe")
+                mode: .global)
             self.modeSegmentButton(
                 title: tr("ui.mode.direct"),
-                mode: .direct,
-                symbol: "bolt.fill")
+                mode: .direct)
         }
         .frame(width: contentWidth)
     }
 
-    func modeSegmentButton(title: String, mode: CoreMode, symbol: String) -> some View {
+    func modeSegmentButton(title: String, mode: CoreMode) -> some View {
         let selected = appSession.currentMode == mode
         let switchingThisMode = switchingMode == mode
 
         return self.filterChipButton(
             title: title,
             selected: selected,
-            symbol: switchingThisMode ? nil : symbol,
+            symbol: nil,
             isLoading: switchingThisMode,
             expandsHorizontally: true)
         {

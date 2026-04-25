@@ -5,7 +5,6 @@ private typealias T = MenuBarLayoutTokens
 
 struct SettingsSelectionRowConfiguration<Option: Hashable> {
     let title: String
-    let symbol: String
     let valueText: String
     let options: [Option]
     let optionTitle: (Option) -> String
@@ -14,42 +13,16 @@ struct SettingsSelectionRowConfiguration<Option: Hashable> {
 }
 
 extension MenuBarRootView {
-    func settingsRowLabel(symbol: String, title: String) -> some View {
-        HStack(spacing: T.space6) {
-            Image(systemName: symbol)
-                .font(.app(size: T.FontSize.caption, weight: .semibold))
-                .foregroundStyle(nativeTertiaryLabel)
-                .frame(width: 14, alignment: .center)
-            Text(title)
-                .font(.app(size: T.FontSize.body, weight: .medium))
-                .foregroundStyle(nativePrimaryLabel)
-                .lineLimit(1)
-                .truncationMode(.tail)
-        }
-    }
-
-    func settingsToggleRow(
-        _ title: String,
-        symbol: String,
-        isOn: Binding<Bool>,
-        isDisabled: Bool = false) -> some View
-    {
-        HStack(spacing: T.space8) {
-            self.settingsRowLabel(symbol: symbol, title: title)
-                .layoutPriority(1)
-            Spacer(minLength: 0)
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .disabled(isDisabled)
-        }
-        .menuRowPadding(vertical: T.space4)
+    func settingsRowLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.app(size: T.FontSize.body, weight: .medium))
+            .foregroundStyle(nativePrimaryLabel)
+            .lineLimit(1)
+            .truncationMode(.tail)
     }
 
     func settingsMenuRow(
         _ title: String,
-        symbol: String,
         valueText: String,
         controlWidth: CGFloat? = nil,
         popoverWidth: CGFloat? = nil,
@@ -58,7 +31,7 @@ extension MenuBarRootView {
         let resolvedControlWidth = controlWidth ?? self.settingsMenuControlWidth
 
         return HStack(spacing: T.space8) {
-            self.settingsRowLabel(symbol: symbol, title: title)
+            self.settingsRowLabel(title)
                 .layoutPriority(1)
             Spacer(minLength: 0)
             AttachedPopoverMenu(width: popoverWidth ?? resolvedControlWidth) { _ in
@@ -88,7 +61,6 @@ extension MenuBarRootView {
     {
         self.settingsMenuRow(
             configuration.title,
-            symbol: configuration.symbol,
             valueText: configuration.valueText)
         { dismiss in
             ForEach(configuration.options, id: \.self) { option in
@@ -103,34 +75,91 @@ extension MenuBarRootView {
         }
     }
 
-    func settingsPortFieldRow(_ title: String, symbol: String, text: Binding<String>) -> some View {
-        HStack(spacing: T.space8) {
-            self.settingsRowLabel(symbol: symbol, title: title)
-                .layoutPriority(1)
+    func settingsTwoColumnRow<Leading: View, Trailing: View>(
+        verticalPadding: CGFloat = T.space4,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing) -> some View
+    {
+        HStack(alignment: .top, spacing: T.space8) {
+            leading()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            trailing()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .menuRowPadding(vertical: verticalPadding)
+    }
 
-            Spacer(minLength: 0)
+    func settingsEmptyColumn() -> some View {
+        Color.clear
+            .frame(maxWidth: .infinity, minHeight: T.compactRowHeight, alignment: .leading)
+    }
+
+    func settingsSingleCompactToggleRow(
+        _ title: String,
+        isOn: Binding<Bool>,
+        isDisabled: Bool = false) -> some View
+    {
+        self.settingsTwoColumnRow(verticalPadding: T.space2) {
+            self.settingsCompactToggleCell(
+                title,
+                isOn: isOn,
+                isDisabled: isDisabled)
+        } trailing: {
+            self.settingsEmptyColumn()
+        }
+    }
+
+    func settingsCompactToggleCell(
+        _ title: String,
+        isOn: Binding<Bool>,
+        isDisabled: Bool = false) -> some View
+    {
+        HStack(spacing: T.space6) {
+            self.settingsRowLabel(title)
+                .layoutPriority(1)
+                .minimumScaleFactor(T.minimumScale)
+
+            Spacer(minLength: T.space2)
+
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(isDisabled)
+        }
+        .frame(minHeight: T.compactRowHeight, alignment: .center)
+    }
+
+    func settingsCompactPortFieldCell(_ title: String, text: Binding<String>) -> some View {
+        HStack(spacing: T.space6) {
+            Text(title)
+                .font(.app(size: T.FontSize.body, weight: .medium))
+                .foregroundStyle(nativePrimaryLabel)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(1)
+                .minimumScaleFactor(T.minimumScale)
+
+            Spacer(minLength: T.space2)
 
             SettingsPortTextField(placeholder: tr("ui.placeholder.port"), text: text) {
                 appSession.scheduleProxyPortsAutoSaveIfNeeded()
             } onSubmit: {
                 Task { await appSession.applyProxyPorts(autoSaved: true) }
             }
-            .frame(width: self.settingsPortFieldWidth, alignment: .trailing)
+            .frame(width: self.settingsCompactPortFieldWidth, alignment: .trailing)
         }
+        .frame(minHeight: T.compactRowHeight, alignment: .center)
     }
 
-    func maintenanceActionButton(_ title: String, symbol: String, action: @escaping () async -> Void) -> some View {
+    func maintenanceActionButton(_ title: String, action: @escaping () async -> Void) -> some View {
         Button {
             Task { await action() }
         } label: {
-            Label {
-                Text(title)
-                    .lineLimit(1)
-                    .multilineTextAlignment(.center)
-            } icon: {
-                Image(systemName: symbol)
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
+            Text(title)
+                .lineLimit(1)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .appBorderedButtonStyle()
         .controlSize(.small)
@@ -143,16 +172,10 @@ extension MenuBarRootView {
             Task { await self.appSession.upgradeCore() }
         } label: {
             HStack(spacing: T.space6) {
-                Group {
-                    if self.appSession.isCoreUpgradeInFlight {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else if let symbol = self.footerCoreUpgradeButtonSymbolName {
-                        Image(systemName: symbol)
-                            .foregroundStyle(self.footerCoreUpgradeButtonTint)
-                    }
+                if self.appSession.isCoreUpgradeInFlight {
+                    ProgressView()
+                        .controlSize(.small)
                 }
-                .frame(width: 14, alignment: .center)
 
                 Text(self.footerCoreUpgradeButtonTitle)
                     .lineLimit(1)
@@ -253,8 +276,8 @@ extension MenuBarRootView {
         min(152, max(118, contentWidth * 0.43))
     }
 
-    var settingsPortFieldWidth: CGFloat {
-        min(108, max(92, contentWidth * 0.30))
+    var settingsCompactPortFieldWidth: CGFloat {
+        min(76, max(68, contentWidth * 0.20))
     }
 
     var maintenanceActionEnabled: Bool {
@@ -331,7 +354,7 @@ extension MenuBarRootView {
         let showManagedTargetAction = localTargetDisplay != managedTargetDisplay
 
         return HStack(spacing: T.space8) {
-            self.settingsRowLabel(symbol: "terminal", title: tr("ui.quick.copy_terminal"))
+            self.settingsRowLabel(tr("ui.quick.copy_terminal"))
                 .layoutPriority(1)
             Spacer(minLength: 0)
             HStack(spacing: 2) {
