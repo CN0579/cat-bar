@@ -1076,19 +1076,7 @@ final class AppSession: ObservableObject {
             managedProcess.onTermination = { [weak self] code in
                 Task { @MainActor in
                     guard self?.isRemoteTarget != true else { return }
-                    let message = self?.tr("log.process.terminated", code) ?? ""
-                    self?.statusText = "Failed"
-                    self?.apiStatus = .failed
-                    self?.resetTrafficPresentation()
-                    self?.appendLog(level: "error", message: message)
-                    self?.cancelPolling()
-                    if self?.coreActionState == .idle, let self, !message.isEmpty {
-                        self.presentCoreFailureAlert(
-                            title: self.tr("app.core.alert.process_terminated.title"),
-                            message: message,
-                            dedupeKey: "core-process-terminated",
-                            style: .critical)
-                    }
+                    await self?.handleUnexpectedLocalCoreTermination(exitCode: code)
                 }
             }
         }

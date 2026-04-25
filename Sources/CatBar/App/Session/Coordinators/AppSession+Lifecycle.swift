@@ -43,6 +43,10 @@ extension AppSession {
         ResolveCoreFeatureRecoveryCompletionUseCase()
     }
 
+    private var resolveCoreRuntimeStopCleanupUseCase: ResolveCoreRuntimeStopCleanupUseCase {
+        ResolveCoreRuntimeStopCleanupUseCase()
+    }
+
     private struct CoreLaunchContext {
         let configPath: String
         let launchController: String
@@ -185,9 +189,7 @@ extension AppSession {
             if trigger == .manual {
                 shouldResumeCoreAfterNetworkRecovery = false
             }
-            let recoverySnapshotBeforeStop = self.currentCoreFeatureRecoverySnapshot()
-            await self.prepareCoreFeatureRecoveryBeforeCoreTransition(
-                fallbackRecovery: recoverySnapshotBeforeStop)
+            await self.prepareForCoreRuntimeStop(preserveFeatureRecovery: true)
             self.cancelDeferredEditableSettingsOverlaySync()
             cancelProviderRefresh(reason: "stop requested")
             await self.stopCoreUseCase.execute()
@@ -195,6 +197,7 @@ extension AppSession {
             statusText = "Stopped"
             apiStatus = .unknown
             resetTrafficPresentation()
+            await self.refreshRuntimeNetworkHealth(autoRepair: false)
             self.recordDesiredLocalCoreStoppedStateIfNeeded(for: trigger)
         }
     }
@@ -290,6 +293,26 @@ extension AppSession {
     private func stopCoreForTerminationIfNeeded() async {
         guard coreRepository.isRunning else { return }
         await self.stopCoreUseCase.execute()
+    }
+
+    func handleUnexpectedLocalCoreTermination(exitCode: Int32) async {
+        await self.prepareForCoreRuntimeStop(preserveFeatureRecovery: true)
+
+        let message = self.tr("log.process.terminated", exitCode)
+        self.statusText = "Failed"
+        self.apiStatus = .failed
+        self.resetTrafficPresentation()
+        self.appendLog(level: "error", message: message)
+        self.cancelPolling()
+        await self.refreshRuntimeNetworkHealth(autoRepair: false)
+
+        if self.coreActionState == .idle, !message.isEmpty {
+            self.presentCoreFailureAlert(
+                title: self.tr("app.core.alert.process_terminated.title"),
+                message: message,
+                dedupeKey: "core-process-terminated",
+                style: .critical)
+        }
     }
 
     private func finishTerminationCleanup() {
@@ -551,6 +574,24 @@ extension AppSession {
         }
 
         guard transitionPlan.shouldDisableSystemProxyBeforeTransition else { return }
+        await self.disableSystemProxyBeforeCoreTransition()
+    }
+
+    private func prepareForCoreRuntimeStop(preserveFeatureRecovery: Bool) async {
+        let plan = self.resolveCoreRuntimeStopCleanupUseCase.execute(.init(
+            preserveFeatureRecovery: preserveFeatureRecovery,
+            systemProxyEnabled: self.isSystemProxyEnabled,
+            tunEnabled: self.isTunEnabled,
+            pendingRecovery: self.pendingCoreFeatureRecoveryState))
+
+        self.pendingCoreFeatureRecoveryState = plan.pendingRecovery
+
+        if plan.shouldDeactivateTunPresentation {
+            self.isTunEnabled = false
+            self.appendLog(level: "info", message: self.tr("log.tun.toggled", self.tr("log.tun.disabled")))
+        }
+
+        guard plan.shouldDisableSystemProxy else { return }
         await self.disableSystemProxyBeforeCoreTransition()
     }
 
