@@ -1,3 +1,12 @@
+## v0.11.1
+
+> 本次更新优化了核心停止后的清理与恢复处理，并收紧了菜单栏系统页布局，使整体使用体验更稳定、界面更清爽。
+
+### 🚀 优化改进
+
+- **session**：extract core stop cleanup and recovery planning
+- **menu-bar**：tighten system tab layout
+
 ## v0.11.0
 
 > 本次更新带来本地规则匹配搜索，并进一步提升了远程目标控制、核心升级与启动恢复、代理流量展示和界面细节的一致性与稳定性。
